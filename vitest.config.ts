@@ -6,7 +6,7 @@ export default defineConfig({
       test: {
         name: 'unit',
         environment: 'jsdom',
-        setupFiles: ['tests/unit/setup.ts'],
+        setupFiles: ['tests/setup.shared.ts', 'tests/unit/setup.ts'],
         include: ['tests/unit/**/*.spec.{ts,tsx}'],
       },
     }, {
@@ -17,7 +17,7 @@ export default defineConfig({
           instances: [{ browser: 'chromium' }],
           headless: true
         },
-        setupFiles: ['tests/ui/setup.ts'],
+        setupFiles: ['tests/setup.shared.ts', 'tests/ui/setup.ts'],
         include: ['tests/ui/**/*.spec.{ts,tsx}'],
       }
     }],
