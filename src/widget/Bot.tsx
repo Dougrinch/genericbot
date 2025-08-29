@@ -2,7 +2,7 @@ function Bot() {
   console.log("Bot");
 
   return (
-    <button className="bot"> AutoClick OFF</button>
+    <button className="bot">AutoClick OFF</button>
   )
 }
 

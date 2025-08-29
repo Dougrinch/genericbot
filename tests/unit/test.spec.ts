@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, test } from 'vitest'
 
 describe('test', () => {
-  it('it just works', () => {
+  test('it just works', () => {
     document.body.innerHTML = `<div id="root"></div>`
     expect(document.getElementById('root')).toBeTruthy()
   })
