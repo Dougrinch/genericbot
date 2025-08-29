@@ -14,7 +14,7 @@ describe('App', () => {
   })
 
   test('render Bot', async () => {
-    const { getByRole } = render(<div id={'root'}><Bot/></div>)
+    const { getByRole } = render(<Bot/>)
     await getByRole('button', { hasText: 'AutoClick OFF' }).click()
   })
 })
