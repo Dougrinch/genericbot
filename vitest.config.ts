@@ -19,6 +19,9 @@ export default defineConfig({
         },
         setupFiles: ['tests/setup.shared.ts', 'tests/ui/setup.ts'],
         include: ['tests/ui/**/*.spec.{ts,tsx}'],
+      },
+      optimizeDeps: {
+        include: ['react/jsx-dev-runtime']
       }
     }],
     coverage: {
