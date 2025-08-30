@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest'
 import { page } from "@vitest/browser/context";
 import { render } from "vitest-browser-react";
-import Bot from "../../src/widget/Bot.tsx";
+import Bot from "../../src/bot/Bot.tsx";
 
-describe('App', () => {
+describe('Game', () => {
   test('import main', async () => {
     await expect.element(page.getByText('Vite + React')).not.toBeInTheDocument()
     await import("../../src/main.tsx")

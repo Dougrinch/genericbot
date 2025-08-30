@@ -20,11 +20,11 @@ This is a **browser autoclicker bot for idle/clicker games** built with React + 
 ```
 src/
 ├── main.tsx           # Development entry point
-├── page/              # Development test page (NOT production)
-│   ├── App.tsx        # Test page with clickable elements for bot development
-│   ├── App.css        # Test page styles
+├── game/              # Development test page (NOT production)
+│   ├── Game.tsx       # Test page with clickable elements for bot development
+│   ├── Game.css       # Test page styles
 │   └── index.css      # Global styles
-└── widget/            # PRODUCTION: Autoclicker bot components
+└── bot/               # PRODUCTION: Autoclicker bot components
     ├── Bot.tsx        # Main bot floating panel UI
     ├── bot.css        # Bot panel styling
     └── injection.tsx  # Browser injection and DOM manipulation utilities
@@ -36,7 +36,7 @@ tests/
 │   └── test.spec.ts   # Core functionality tests
 └── ui/                # Browser UI tests (Playwright)
     ├── setup.ts       # UI test specific setup
-    └── App.spec.tsx   # Bot integration tests
+    └── Game.spec.tsx  # Bot integration tests
 ```
 
 ## Testing Architecture
@@ -58,18 +58,18 @@ Uses **Vitest** with a dual-project configuration:
 
 ### Coverage
 - **Provider**: V8
-- **Focus**: `src/widget/**` (production bot components only)
+- **Focus**: `src/bot/**` (production bot components only)
 - **Reports**: Generated in `coverage/` directory
 
 ## Architecture
 
-### Production Components (`src/widget/`)
+### Production Components (`src/bot/`)
 - **Bot.tsx**: Main autoclicker bot UI - floating control panel with settings, buttons, and status indicators
 - **injection.tsx**: Browser DOM manipulation utilities for game page integration
 - **bot.css**: Bot panel styling optimized for overlay display on any website
 
-### Development Environment (`src/page/`)
-- **App.tsx**: Test page simulating clicker game elements (buttons, counters, etc.)
+### Development Environment (`src/game/`)
+- **Game.tsx**: Test page simulating clicker game elements (buttons, counters, etc.)
 - **main.tsx**: Development entry point combining test page + bot for rapid development
 - **Enables HMR**: Live reloading during bot development without manual browser injection
 

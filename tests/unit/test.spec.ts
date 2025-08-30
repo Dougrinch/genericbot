@@ -4,7 +4,7 @@ describe('test', () => {
   test('it just works', async () => {
     expect(document.getElementById('root')).toBeTruthy()
 
-    await import("../../src/widget/injection.tsx")
+    await import("../../src/bot/injection.tsx")
 
     expect(document.getElementById('bot')).toBeTruthy()
   })

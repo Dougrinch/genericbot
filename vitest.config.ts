@@ -26,7 +26,7 @@ export default defineConfig({
     }],
     coverage: {
       provider: "v8",
-      include: ['src/widget/**'],
+      include: ['src/bot/**'],
     }
   },
 })
