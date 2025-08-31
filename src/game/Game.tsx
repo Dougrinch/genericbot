@@ -1,24 +1,12 @@
-import { useState } from 'react'
 import './Game.css'
+import { GameLoop } from "./GameLoop.tsx";
+import { GamePanel } from "./GamePanel.tsx";
 
-function Game() {
-  const [count, setCount] = useState(0)
-
+export function Game() {
   return (
-    <>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/game/Game.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <GameLoop>
+      <GamePanel/>
+    </GameLoop>
   )
 }
 

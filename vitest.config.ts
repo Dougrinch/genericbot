@@ -19,6 +19,7 @@ export default defineConfig({
         },
         setupFiles: ['tests/setup.shared.ts', 'tests/ui/setup.ts'],
         include: ['tests/ui/**/*.spec.{ts,tsx}'],
+        testTimeout: 2000
       },
       optimizeDeps: {
         include: ['react/jsx-dev-runtime']
@@ -26,7 +27,7 @@ export default defineConfig({
     }],
     coverage: {
       provider: "v8",
-      include: ['src/bot/**'],
+      include: ['src/bot/**', 'src/utils/**'],
     }
   },
 })

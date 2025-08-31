@@ -1,8 +1,6 @@
 import { useState } from "react";
 
 function Bot() {
-  console.log("Bot");
-
   const [enabled, setEnabled] = useState(false);
 
   return (

@@ -6,6 +6,6 @@ import './bot/injection.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Game />
+    <Game/>
   </StrictMode>,
 )
