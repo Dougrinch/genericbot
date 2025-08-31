@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useBotState, useDispatch } from "./BotStateContext.ts";
 
 function Bot() {
-  const [enabled, setEnabled] = useState(false);
+  const enabled = useBotState(s => s.enabled);
+  const dispatch = useDispatch();
 
   return (
     <button className="bot"
-            onClick={() => setEnabled(prevState => !prevState)}>
+            onClick={() => dispatch({ type: 'buttonClicked' })}>
       AutoClick {enabled ? 'ON' : 'OFF'}
     </button>
   )

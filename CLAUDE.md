@@ -122,3 +122,13 @@ Uses flat config format (`eslint.config.js`) with:
 - React component rendering with `vitest-browser-react`
 
 The testing setup validates both bot functionality and its ability to integrate with various game page structures.
+
+## Architecture Rules
+
+- **Use specific state selectors instead of getting the whole state** - When using `useGame()` or `useBot()`, MUST select only the specific properties you need (e.g., `useGame(s => s.enabled)`) rather than getting the entire state with `useGameState()` or `useBotState()`. This is critical for performance as it prevents unnecessary re-renders when unrelated state changes.
+- **All tests must pass before changes are considered complete** - After making any changes, MUST run `npm run test` and ensure all tests are green. Changes are not complete until all tests pass.
+
+## Code Style Guidelines
+
+- **Always place a new line at the end of every file** - This follows standard Unix conventions and prevents git diff issues.
+- Don't use trailing commas
