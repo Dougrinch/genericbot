@@ -55,9 +55,9 @@ export function BotPanel({ children }: BotPanelProps) {
         bottom: `${position.bottom}px`,
         right: `${position.right}px`
       }}
+      onMouseDown={onDragStart}
     >
       {children}
-      <div className="drag" title="Drag" onMouseDown={onDragStart}>⠿</div>
     </div>
   )
 }
