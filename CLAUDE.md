@@ -150,6 +150,6 @@ The testing setup validates both bot functionality and its ability to integrate 
 
 ## Code Style Guidelines
 
-- **CRITICAL: Always place a new line at the end of every file** - This follows standard Unix conventions and prevents git diff issues. Every file MUST end with a newline character (\n). When using the Write tool, always add an empty line after the final closing brace or statement. When using Edit tool, if editing the final line, ensure it ends with \n.
+- **CRITICAL: ESLint must pass without errors** - All code changes MUST pass ESLint validation. Run `npm run lint` to verify code meets project standards. ESLint enforces consistent formatting, proper imports, React best practices, and coding conventions. Changes are not complete until ESLint shows green (no errors or warnings).
 - **CRITICAL: Add new files to git immediately** - When creating new files with the Write tool, immediately add them to git using `git add <filepath>`. This ensures proper version control tracking from the moment of creation.
 - Don't use trailing commas
