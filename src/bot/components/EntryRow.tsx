@@ -27,7 +27,6 @@ export function EntryRow({ entry }: EntryRowProps) {
     <div className="entry" data-entry-id={entry.id}>
       <div className="label">Name</div>
       <input
-        className="name"
         type="text"
         placeholder="Dig"
         value={entry.name}
@@ -36,7 +35,6 @@ export function EntryRow({ entry }: EntryRowProps) {
 
       <div className="label">XPath</div>
       <input
-        className="xpath"
         type="text"
         placeholder="//button[@id='dig']"
         value={entry.xpath}
@@ -45,7 +43,6 @@ export function EntryRow({ entry }: EntryRowProps) {
 
       <div className="label">Interval (ms)</div>
       <input
-        className="intr"
         type="number"
         value={entry.interval}
         onChange={handleInputChange("interval")}
@@ -53,7 +50,6 @@ export function EntryRow({ entry }: EntryRowProps) {
 
       <div className="label">Condition</div>
       <input
-        className="condition"
         type="text"
         placeholder="score > 100 && lives >= 3"
         value={entry.condition || ""}
@@ -63,21 +59,19 @@ export function EntryRow({ entry }: EntryRowProps) {
       <div className="label">Allow multiple</div>
       <div className="inline">
         <input
-          className="multi"
           type="checkbox"
           checked={!!entry.allowMultiple}
           onChange={handleInputChange("allowMultiple")}
         />
-        <div className="label" style={{ display: entry.allowMultiple ? "" : "none" }}>
+        <div className="label" style={{ visibility: entry.allowMultiple ? "visible" : "hidden" }}>
           Update every (ms)
         </div>
         <input
-          className="update"
           type="number"
           min="100"
           value={entry.updateEvery || 1000}
           onChange={handleInputChange("updateEvery")}
-          style={{ display: entry.allowMultiple ? "" : "none" }}
+          style={{ visibility: entry.allowMultiple ? "visible" : "hidden" }}
         />
       </div>
 
