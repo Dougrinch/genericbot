@@ -9,13 +9,9 @@ function Bot() {
 
   return (
     <BotPanel>
-      {onDragStart => (
-        <>
-          <BotHeader onDragStart={onDragStart} />
-          <ConfigWrapper isVisible={isConfigVisible} />
-          <ActionRow onToggleConfig={() => setIsConfigVisible(!isConfigVisible)} />
-        </>
-      )}
+      <BotHeader />
+      <ConfigWrapper isVisible={isConfigVisible} />
+      <ActionRow onToggleConfig={() => setIsConfigVisible(!isConfigVisible)} />
     </BotPanel>
   )
 }

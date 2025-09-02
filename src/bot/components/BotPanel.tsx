@@ -2,7 +2,7 @@ import * as React from "react"
 import { type ReactNode, useRef, useState } from "react"
 
 interface BotPanelProps {
-  children: (onDragStart: (e: React.MouseEvent) => void) => ReactNode
+  children: ReactNode
 }
 
 export function BotPanel({ children }: BotPanelProps) {
@@ -56,7 +56,8 @@ export function BotPanel({ children }: BotPanelProps) {
         right: `${position.right}px`
       }}
     >
-      {children(onDragStart)}
+      {children}
+      <div className="drag" title="Drag" onMouseDown={onDragStart}>⠿</div>
     </div>
   )
 }
