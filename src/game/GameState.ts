@@ -1,4 +1,5 @@
 import type { Draft, Immutable } from "immer"
+import type { Action } from "../utils/mutableStateReducer.ts"
 
 export type GameState = Immutable<{
   gold: number
@@ -13,6 +14,8 @@ export function initialGameState(): GameState {
     snowWhites: 0
   }
 }
+
+export type GameEvent = Action<typeof gameUpdaters>
 
 export const gameUpdaters = {
   dig(game: Draft<GameState>) {

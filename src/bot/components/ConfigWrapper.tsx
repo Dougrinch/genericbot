@@ -1,3 +1,6 @@
+import { EntriesList } from "./EntriesList"
+import { dispatch } from "../ConfigContext.ts"
+
 interface ConfigWrapperProps {
   isVisible: boolean
 }
@@ -16,13 +19,11 @@ export function ConfigWrapper({ isVisible }: ConfigWrapperProps) {
       </div>
       <div className="config-tab">
         <div className="tab-header">Automation Entries</div>
-        <div className="entries">
-          {/* Automation entries will be added here */}
-        </div>
+        <EntriesList />
         <div className="config-actions">
           <button title="Reload AutoClick from clipboard">Hot Reload</button>
           <button title="Rebind all entries and refresh matches">Refresh</button>
-          <button>+ Add Entry</button>
+          <button onClick={() => { dispatch({ type: "addEntry" }) }}>+ Add Entry</button>
           <button title="Close AutoClick widget">✕ Close</button>
         </div>
       </div>

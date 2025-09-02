@@ -1,11 +1,7 @@
 import * as React from "react"
-import { type ReactNode, useRef, useState } from "react"
+import { type PropsWithChildren, useRef, useState } from "react"
 
-interface BotPanelProps {
-  children: ReactNode
-}
-
-export function BotPanel({ children }: BotPanelProps) {
+export function BotPanel({ children }: PropsWithChildren) {
   const [position, setPosition] = useState({ bottom: 10, right: 10 })
   const dragRef = useRef<HTMLDivElement>(null)
   const isDragging = useRef(false)

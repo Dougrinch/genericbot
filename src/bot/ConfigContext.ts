@@ -2,8 +2,11 @@ import { createMutableStateReducer } from "../utils/mutableStateReducer.ts"
 import { type Config, configUpdaters, initialBotState } from "./Config.ts"
 
 import { createStore } from "../utils/Store.ts"
+import type { Draft } from "immer"
 
-const store = createStore(createMutableStateReducer(configUpdaters), initialBotState)
+const store = createStore(createMutableStateReducer(configUpdaters), () => {
+  return initialBotState() as Draft<Config>
+})
 
 export function useConfig(): Config
 export function useConfig<T>(selector: (state: Config) => T): T
