@@ -14,6 +14,16 @@ export function BotPanel({ children }: BotPanelProps) {
   const onDragStart = (e: React.MouseEvent) => {
     if (!dragRef.current) return
 
+    // Only allow dragging when clicking directly on the panel, not on interactive elements
+    const target = e.target as HTMLElement
+    const isInteractiveElement = target.tagName.toLowerCase() === "button"
+      || target.tagName.toLowerCase() === "input"
+      || target.tagName.toLowerCase() === "select"
+      || target.tagName.toLowerCase() === "textarea"
+      || target.closest("button, input, select, textarea")
+
+    if (isInteractiveElement) return
+
     isDragging.current = true
     const rect = dragRef.current.getBoundingClientRect()
 

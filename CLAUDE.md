@@ -148,6 +148,44 @@ The testing setup validates both bot functionality and its ability to integrate 
 
 - **Configuration State Updates** - All updates to configuration state MUST be done via the `configUpdaters` object defined in `src/bot/Config.ts`. Never directly mutate configuration state. Always use the provided updater functions to ensure state consistency and proper immutability with Immer.
 
+## Code Completion Checklist
+
+**CRITICAL: All code modifications MUST complete this checklist before being considered finished. NO EXCEPTIONS.**
+
+### Required Validation Steps (in order):
+
+1. **✅ ESLint Validation** - Run `npm run lint` and ensure zero errors/warnings
+   - All code formatting, imports, and style rules must pass
+   - Use `npm run lint -- --fix` for auto-fixable issues
+   - Changes are NOT complete until ESLint shows green
+
+2. **✅ Test Coverage Validation** - Ensure all new code is covered by tests
+   - **All new code MUST be covered by tests** - New functions, components, and features require corresponding test coverage to ensure reliability and prevent regressions
+   - Write unit tests for new utility functions and components
+   - Write UI tests for new user interactions and workflows
+   - Verify tests actually exercise the new code paths
+
+3. **✅ Test Suite Validation** - Run `npm run test` and ensure all tests pass
+   - Both unit tests (jsdom) and UI tests (browser) must pass
+   - No TypeScript compilation errors
+   - No build warnings or failures
+   - No test failures, errors, or timeouts permitted
+   - If tests fail, fix the underlying issues before proceeding
+
+4. **✅ Git Tracking** - Ensure all new files are added to version control
+   - Use `git add <filepath>` for any newly created files
+   - Run `git status` to verify all changes are tracked
+
+### Completion Criteria
+
+Code modifications are only complete when:
+- ✅ ESLint passes with zero issues
+- ✅ All new code is covered by appropriate tests
+- ✅ All tests pass without failures (including TypeScript compilation)
+- ✅ All files are tracked in git
+
+**If ANY step fails, the code modification is INCOMPLETE and must be fixed.**
+
 ## Code Style Guidelines
 
 - **CRITICAL: ESLint must pass without errors** - All code changes MUST pass ESLint validation. Run `npm run lint` to verify code meets project standards. ESLint enforces consistent formatting, proper imports, React best practices, and coding conventions. Changes are not complete until ESLint shows green (no errors or warnings).
