@@ -1,14 +1,22 @@
-import { useBotState, useDispatch } from "./BotStateContext.ts";
+import { useState } from "react"
+import { BotPanel } from "./components/BotPanel"
+import { BotHeader } from "./components/BotHeader"
+import { ConfigWrapper } from "./components/ConfigWrapper"
+import { ActionRow } from "./components/ActionRow"
 
 function Bot() {
-  const enabled = useBotState(s => s.enabled);
-  const dispatch = useDispatch();
+  const [isConfigVisible, setIsConfigVisible] = useState(false)
 
   return (
-    <button className="bot"
-            onClick={() => dispatch({ type: 'buttonClicked' })}>
-      AutoClick {enabled ? 'ON' : 'OFF'}
-    </button>
+    <BotPanel>
+      {onDragStart => (
+        <>
+          <BotHeader onDragStart={onDragStart} />
+          <ConfigWrapper isVisible={isConfigVisible} />
+          <ActionRow onToggleConfig={() => setIsConfigVisible(!isConfigVisible)} />
+        </>
+      )}
+    </BotPanel>
   )
 }
 

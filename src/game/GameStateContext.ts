@@ -1,17 +1,13 @@
-import { createMutableStateReducer } from "../utils/mutableStateReducer.ts";
-import { create } from "zustand/react";
-import { redux } from "zustand/middleware";
-import { type GameEvent, type GameState, gameUpdaters, initialGameState } from "./GameState.ts";
+import { createMutableStateReducer } from "../utils/mutableStateReducer.ts"
+import { type GameState, gameUpdaters, initialGameState } from "./GameState.ts"
+import { createStore } from "../utils/Store.ts"
 
-export const useGame = create(redux(
-  createMutableStateReducer(gameUpdaters),
-  initialGameState()
-));
+const store = createStore(createMutableStateReducer(gameUpdaters), initialGameState)
 
-export function useGameState(): GameState {
-  return useGame(s => s)
-}
+export const dispatch = store.dispatch
 
-export function useDispatch(): (event: GameEvent) => void {
-  return useGame(s => s.dispatch)
+export function useGame(): GameState
+export function useGame<T>(selector: (state: GameState) => T): T
+export function useGame<T>(selector?: (state: GameState) => T): T {
+  return store.useStoreState(selector)
 }

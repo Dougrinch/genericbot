@@ -1,18 +1,16 @@
-import { type PropsWithChildren, useEffect, useRef } from "react";
-import { useDispatch } from "./GameStateContext.ts";
+import { type PropsWithChildren, useEffect, useRef } from "react"
+import { dispatch } from "./GameStateContext.ts"
 
 export function GameLoop({ children }: PropsWithChildren) {
-  const dispatch = useDispatch()
-
   const animationFrameHandleRef = useRef<number | null>(null)
   const previousTimeRef = useRef(-1)
 
   useEffect(() => {
     const tick = (time: number) => {
       if (previousTimeRef.current == -1) {
-        dispatch({ type: 'tick', dt: 0 });
+        dispatch({ type: "tick", dt: 0 })
       } else {
-        dispatch({ type: 'tick', dt: time - previousTimeRef.current });
+        dispatch({ type: "tick", dt: time - previousTimeRef.current })
       }
       previousTimeRef.current = time
       animationFrameHandleRef.current = requestAnimationFrame(tick)
@@ -24,7 +22,7 @@ export function GameLoop({ children }: PropsWithChildren) {
         cancelAnimationFrame(handle)
       }
     }
-  }, [dispatch]);
+  })
 
   return (
     <>

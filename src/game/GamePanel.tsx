@@ -1,26 +1,25 @@
-import { getGnomePrice, getSnowWhitePrice } from "./GameState.ts";
-import { useShallow } from "zustand/react/shallow";
-import { useDispatch, useGame, useGameState } from "./GameStateContext.ts";
+import { getGnomePrice, getSnowWhitePrice } from "./GameState.ts"
+import { dispatch, useGame } from "./GameStateContext.ts"
 
 export function GamePanel() {
   return (
     <>
       <h1>Gnome Gold Mine</h1>
       <div className="card">
-        <div style={{ marginBottom: '20px', fontSize: '18px' }}>
-          <GameTopPanel/>
+        <div style={{ marginBottom: "20px", fontSize: "18px" }}>
+          <GameTopPanel />
         </div>
 
-        <div style={{ marginBottom: '10px' }}>
-          <DigButton/>
+        <div style={{ marginBottom: "10px" }}>
+          <DigButton />
         </div>
 
-        <div style={{ marginBottom: '10px' }}>
-          <BuyGnomeButton/>
+        <div style={{ marginBottom: "10px" }}>
+          <BuyGnomeButton />
         </div>
 
         <div>
-          <BuySnowWhiteButton/>
+          <BuySnowWhiteButton />
         </div>
       </div>
     </>
@@ -28,7 +27,7 @@ export function GamePanel() {
 }
 
 function GameTopPanel() {
-  const state = useGameState()
+  const state = useGame()
   return (
     <>
       <div>Gold: {Math.floor(state.gold)}</div>
@@ -40,27 +39,26 @@ function GameTopPanel() {
 }
 
 function DigButton() {
-  const dispatch = useDispatch()
-
   return (
-    <button onClick={() => dispatch({ type: 'dig' })}>
+    <button onClick={() => dispatch({ type: "dig" })}>
       Dig for 1 Gold
     </button>
   )
 }
 
 function BuyGnomeButton() {
-  const [gold, price, dispatch] = useGame(useShallow(s => {
-    return [Math.floor(s.gold), getGnomePrice(s), s.dispatch];
-  }));
+  const [price, enabled] = useGame(s => {
+    const price = getGnomePrice(s)
+    return [price, s.gold >= getGnomePrice(s)]
+  })
 
   return (
     <button
-      onClick={() => dispatch({ type: 'buyGnome' })}
-      disabled={gold < price}
+      onClick={() => dispatch({ type: "buyGnome" })}
+      disabled={!enabled}
       style={{
-        opacity: gold < price ? 0.5 : 1,
-        cursor: gold < price ? 'not-allowed' : 'pointer'
+        opacity: enabled ? 1 : 0.5,
+        cursor: enabled ? "pointer" : "not-allowed"
       }}
     >
       Buy Gnome ({price} gold)
@@ -71,15 +69,14 @@ function BuyGnomeButton() {
 function BuySnowWhiteButton() {
   const gnomes = useGame(s => s.gnomes)
   const price = useGame(s => getSnowWhitePrice(s))
-  const dispatch = useDispatch()
 
   return (
     <button
-      onClick={() => dispatch({ type: 'buySnowWhite' })}
+      onClick={() => dispatch({ type: "buySnowWhite" })}
       disabled={gnomes < price}
       style={{
         opacity: gnomes < price ? 0.5 : 1,
-        cursor: gnomes < price ? 'not-allowed' : 'pointer'
+        cursor: gnomes < price ? "not-allowed" : "pointer"
       }}
     >
       Buy Snow White ({price} gnomes)

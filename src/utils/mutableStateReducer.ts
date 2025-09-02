@@ -1,56 +1,67 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { type Draft, produce } from "immer";
+import { type Draft, produce } from "immer"
 
-export type Updaters<S> = Record<string, (state: Draft<S>, payload?: any) => void>
+type Is<A, B> = A extends B ? true : false
+type Eq<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false
+type And<A, B> = A extends true ? (B extends true ? true : false) : false
+type Or<A, B> = A extends true ? true : (B extends true ? true : false)
 
-export type ActionsFromUpdaters<S, U extends Updaters<S>> = {
+type IsUpdater<F, S> = F extends (...args: infer A) => infer R
+  ? And<Or<Is<A, [S]>, Is<A, [S, object]>>, Eq<R, void>>
+  : never
+
+type Updater<S> = (state: Draft<S>, action?: any) => S
+type UpdaterParameters<F> = F extends (...args: infer A) => any
+  ? A
+  : never
+
+type ActionFromUpdaters<S, U> = {
   [K in keyof U]:
-  Parameters<U[K]> extends [S]
-    ? { type: K }
-    : ({ type: K } & Parameters<U[K]>[1])
-}[keyof U];
+  IsUpdater<U[K], S> extends true
+    ? (UpdaterParameters<U[K]> extends [S]
+      ? { type: K }
+      : ({ type: K } & UpdaterParameters<U[K]>[1]))
+    : never
+}[keyof U]
 
-type Reducer<S, U extends Updaters<S>> = (state: S, action: ActionsFromUpdaters<S, U>) => S;
+type Reducer<S, U> = (state: S, action: ActionFromUpdaters<S, U>) => S
 
-function createMutableStateReducerInternal<S, U extends Updaters<S>>(api: U): Reducer<S, U> {
-  return ((state, action) => {
-    const fn = api[action.type];
+function createMutableStateReducerInternal<S, U>(api: U): Reducer<S, U> {
+  return (state, action) => {
+    const fn = api[action.type] as Updater<S>
 
     return produce(state, draft => {
       if (fn.length === 1) {
-        fn(draft);
+        fn(draft)
       } else {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { type, ...payload } = action;
-        fn(draft, payload);
+        const { type, ...payload } = action
+        fn(draft, payload)
       }
     })
-  });
+  }
 }
 
+type AnyUpdaters = Record<string, (state: Draft<any>, payload?: any) => void>
+type StateArg<F> = F extends any
+  ? IsUpdater<F, any> extends true
+    ? F extends (state: infer S, payload?: any) => void
+      ? S
+      : never
+    : never
+  : never
+type StatesOf<U> = StateArg<U[keyof U]>
 
-type AnyUpdaters = Record<string, (state: Draft<any>, payload?: any) => void>;
-type StateArg<F> = F extends (state: infer S, payload?: any) => void ? S : never;
-type StatesOf<U extends AnyUpdaters> = StateArg<U[keyof U]>;
+type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends ((x: infer I) => void) ? I : never
+type IsUnion<T> = [T] extends [UnionToIntersection<T>] ? false : true
 
-type IsUnion<T, U = T> =
-  (T extends any ? (U extends T ? 1 : 2) : never) extends 1 ? false : true;
+type StateFromUpdaters<U> = IsUnion<StatesOf<U>> extends true ? never : StatesOf<U>
 
-type StateFromUpdaters<U extends AnyUpdaters> =
-  IsUnion<StatesOf<U>> extends true ? never : StatesOf<U>;
+export type Action<U extends AnyUpdaters> = IsUnion<StatesOf<U>> extends true
+  ? never
+  : ActionFromUpdaters<StateFromUpdaters<U>, U>
 
-export type Actions<U extends AnyUpdaters> =
-  IsUnion<StatesOf<U>> extends true
-    ? never
-    : ActionsFromUpdaters<StateFromUpdaters<U>, U>
-
-export function createMutableStateReducer<U extends AnyUpdaters>(
-  api: U,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ..._why: [StateFromUpdaters<U>] extends [never]
-    ? ['❌ Updaters must share the same State', StatesOf<U>]
-    : []
-): Reducer<StateFromUpdaters<U>, U> {
-  return createMutableStateReducerInternal<StateFromUpdaters<U>, U>(api)
+export function createMutableStateReducer<U>(api: U): Reducer<StateFromUpdaters<U>, U> {
+  return createMutableStateReducerInternal(api)
 }

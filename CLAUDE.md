@@ -125,10 +125,11 @@ The testing setup validates both bot functionality and its ability to integrate 
 
 ## Architecture Rules
 
-- **Use specific state selectors instead of getting the whole state** - When using `useGame()` or `useBot()`, MUST select only the specific properties you need (e.g., `useGame(s => s.enabled)`) rather than getting the entire state with `useGameState()` or `useBotState()`. This is critical for performance as it prevents unnecessary re-renders when unrelated state changes.
-- **All tests must pass before changes are considered complete** - After making any changes, MUST run `npm run test` and ensure all tests are green. Changes are not complete until all tests pass.
+- **CRITICAL: Use specific state selectors instead of getting the whole state** - When using `useGame()` or `useBot()`, MUST select only the specific properties you need (e.g., `useGame(s => s.enabled)`) rather than getting the entire state with `useGameState()` or `useBotState()`. This is critical for performance as it prevents unnecessary re-renders when unrelated state changes.
+- **CRITICAL: All tests must pass before changes are considered complete** - After making any changes, MUST run `npm run test` and ensure all tests are green. Changes are not complete until all tests pass.
 
 ## Code Style Guidelines
 
-- **Always place a new line at the end of every file** - This follows standard Unix conventions and prevents git diff issues.
+- **CRITICAL: Always place a new line at the end of every file** - This follows standard Unix conventions and prevents git diff issues. Every file MUST end with a newline character (\n). When using the Write tool, always add an empty line after the final closing brace or statement. When using Edit tool, if editing the final line, ensure it ends with \n.
+- **CRITICAL: Add new files to git immediately** - When creating new files with the Write tool, immediately add them to git using `git add <filepath>`. This ensures proper version control tracking from the moment of creation.
 - Don't use trailing commas

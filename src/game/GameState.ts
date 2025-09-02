@@ -1,10 +1,9 @@
-import type { Draft, Immutable } from "immer";
-import { type Actions } from "../utils/mutableStateReducer.ts";
+import type { Draft, Immutable } from "immer"
 
 export type GameState = Immutable<{
-  gold: number;
-  gnomes: number;
-  snowWhites: number;
+  gold: number
+  gnomes: number
+  snowWhites: number
 }>
 
 export function initialGameState(): GameState {
@@ -14,8 +13,6 @@ export function initialGameState(): GameState {
     snowWhites: 0
   }
 }
-
-export type GameEvent = Actions<typeof gameUpdaters>
 
 export const gameUpdaters = {
   dig(state: Draft<GameState>) {
@@ -40,7 +37,7 @@ export const gameUpdaters = {
     if (totalIncome > 0) {
       state.gold += totalIncome * (action.dt! / 1000)
     }
-  },
+  }
 }
 
 export const getGnomePrice = (state: GameState) => 10 + (state.gnomes * 5)
