@@ -11,7 +11,7 @@ export function initialBotState(): Config {
 }
 
 export const configUpdaters = {
-  buttonClicked(state: Draft<Config>) {
-    state.enabled = !state.enabled
+  buttonClicked(config: Draft<Config>) {
+    config.enabled = !config.enabled
   }
 }

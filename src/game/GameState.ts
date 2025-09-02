@@ -15,30 +15,30 @@ export function initialGameState(): GameState {
 }
 
 export const gameUpdaters = {
-  dig(state: Draft<GameState>) {
-    state.gold += 1
+  dig(game: Draft<GameState>) {
+    game.gold += 1
   },
-  buyGnome(state: Draft<GameState>) {
-    const price = getGnomePrice(state)
-    if (state.gold >= price) {
-      state.gold -= price
-      state.gnomes += 1
+  buyGnome(game: Draft<GameState>) {
+    const price = getGnomePrice(game)
+    if (game.gold >= price) {
+      game.gold -= price
+      game.gnomes += 1
     }
   },
-  buySnowWhite(state: Draft<GameState>) {
-    const price = getSnowWhitePrice(state)
-    if (state.gold >= price) {
-      state.gnomes -= price
-      state.snowWhites += 1
+  buySnowWhite(game: Draft<GameState>) {
+    const price = getSnowWhitePrice(game)
+    if (game.gold >= price) {
+      game.gnomes -= price
+      game.snowWhites += 1
     }
   },
-  tick(state: Draft<GameState>, action: { dt: number }) {
-    const totalIncome = state.gnomes + (state.snowWhites * 10)
+  tick(game: Draft<GameState>, action: { dt: number }) {
+    const totalIncome = game.gnomes + (game.snowWhites * 10)
     if (totalIncome > 0) {
-      state.gold += totalIncome * (action.dt! / 1000)
+      game.gold += totalIncome * (action.dt! / 1000)
     }
   }
 }
 
-export const getGnomePrice = (state: GameState) => 10 + (state.gnomes * 5)
-export const getSnowWhitePrice = (state: GameState) => 7 + state.snowWhites
+export const getGnomePrice = (game: GameState) => 10 + (game.gnomes * 5)
+export const getSnowWhitePrice = (game: GameState) => 7 + game.snowWhites

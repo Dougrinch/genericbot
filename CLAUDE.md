@@ -125,8 +125,28 @@ The testing setup validates both bot functionality and its ability to integrate 
 
 ## Architecture Rules
 
-- **CRITICAL: Use specific state selectors instead of getting the whole state** - When using `useGame()` or `useBot()`, MUST select only the specific properties you need (e.g., `useGame(s => s.enabled)`) rather than getting the entire state with `useGameState()` or `useBotState()`. This is critical for performance as it prevents unnecessary re-renders when unrelated state changes.
+- **CRITICAL: Use specific state selectors instead of getting the whole state** - When using `useGame()` or `useConfig()`, MUST select only the specific properties you need (e.g., `useGame(s => s.enabled)`) rather than getting the entire state with `useGame()` or `useConfig()`. This is critical for performance as it prevents unnecessary re-renders when unrelated state changes.
 - **CRITICAL: All tests must pass before changes are considered complete** - After making any changes, MUST run `npm run test` and ensure all tests are green. Changes are not complete until all tests pass.
+
+## Component Architecture Guidelines
+
+- **CRITICAL: Component Separation & SOLID Principles** - All new interface code MUST be well separated into individual components. Each component MUST follow React guidelines and basic SOLID principles:
+  - **Single Responsibility**: Each component should have one clear purpose and reason to change
+  - **Open/Closed**: Components should be open for extension but closed for modification through proper prop interfaces
+  - **Liskov Substitution**: Components should be replaceable with their subtypes without breaking functionality
+  - **Interface Segregation**: Component props should be focused and not force dependence on unused properties
+  - **Dependency Inversion**: Components should depend on abstractions (props/interfaces) not concretions
+
+## State Management Architecture
+
+- **UI-Specific State Location** - All UI-specific state (component visibility, form inputs, loading states, etc.) MUST be located directly in React components using `useState`, `useReducer`, or other React state management hooks. Do NOT store UI state in external stores.
+
+- **Configuration State Management** - All bot configuration state MUST be located in `src/bot/Config.ts`. This includes:
+  - Bot settings and preferences
+  - Feature toggles and enabled/disabled states
+  - Persistent configuration that should survive component re-renders
+
+- **Configuration State Updates** - All updates to configuration state MUST be done via the `configUpdaters` object defined in `src/bot/Config.ts`. Never directly mutate configuration state. Always use the provided updater functions to ensure state consistency and proper immutability with Immer.
 
 ## Code Style Guidelines
 
