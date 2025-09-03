@@ -1,7 +1,7 @@
 import * as React from "react"
 import { useState, useEffect, useRef } from "react"
 import type { VariableConfig } from "../Config.ts"
-import { dispatch } from "../ConfigContext.ts"
+import { dispatch, useConfig } from "../ConfigContext.ts"
 
 interface VariableRowProps {
   variable: VariableConfig
@@ -13,6 +13,11 @@ export function VariableRow({ variable }: VariableRowProps) {
   const [statusLine] = useState("")
   const [statusType] = useState<"warn" | "ok" | "err">("ok")
   const nameInputRef = useRef<HTMLInputElement>(null)
+  const dragHandleRef = useRef<HTMLDivElement>(null)
+  const rowRef = useRef<HTMLDivElement>(null)
+
+  // Get all variables for reordering
+  const allVariables = useConfig(c => c.variables)
 
   // Auto-focus name field when editing starts and name is empty
   useEffect(() => {
@@ -20,6 +25,155 @@ export function VariableRow({ variable }: VariableRowProps) {
       nameInputRef.current.focus()
     }
   }, [isEditing, variable.name])
+
+  // Drag and drop functionality
+  useEffect(() => {
+    const dragHandle = dragHandleRef.current
+    const row = rowRef.current
+    if (!dragHandle || !row) return
+
+    let isDragging = false
+    let draggedRow: HTMLElement | null = null
+    let originalNextSibling: Node | null = null
+    let variableBoundaries: Array<{ top: number, bottom: number, element: HTMLElement }> = []
+    let lastCrossedBoundary = -1
+
+    const updateBoundaries = () => {
+      const container = row.parentElement
+      if (!container) return
+
+      variableBoundaries = []
+      const allRows = Array.from(container.querySelectorAll(".variable-list-item"))
+
+      for (const rowEl of allRows) {
+        const rect = (rowEl as HTMLElement).getBoundingClientRect()
+        variableBoundaries.push({
+          top: rect.top,
+          bottom: rect.bottom,
+          element: rowEl as HTMLElement
+        })
+      }
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !draggedRow) return
+
+      const container = draggedRow.parentElement
+      if (!container) return
+
+      // Determine which boundary we've crossed based on Y position
+      let crossedBoundary = -1
+      for (let i = 0; i < variableBoundaries.length; i++) {
+        if (e.clientY <= variableBoundaries[i].bottom) {
+          crossedBoundary = i
+          break
+        }
+      }
+
+      // If we haven't crossed any boundary, we're below all variables
+      if (crossedBoundary === -1) {
+        crossedBoundary = variableBoundaries.length - 1
+      }
+
+      // Only move if we've actually crossed to a different boundary
+      if (crossedBoundary !== lastCrossedBoundary) {
+        lastCrossedBoundary = crossedBoundary
+
+        const allRows = Array.from(container.querySelectorAll(".variable-list-item"))
+        const draggedIndex = allRows.indexOf(draggedRow)
+
+        // Don't move if we're trying to move to our current position
+        if (crossedBoundary === draggedIndex) {
+          return
+        }
+
+        // Move the dragged row to the new position
+        const targetRow = allRows[crossedBoundary]
+        if (targetRow && targetRow !== draggedRow) {
+          if (crossedBoundary > draggedIndex) {
+            // Moving down: insert after target
+            container.insertBefore(draggedRow, targetRow.nextSibling)
+          } else {
+            // Moving up: insert before target
+            container.insertBefore(draggedRow, targetRow)
+          }
+
+          // Recalculate boundaries after DOM change
+          updateBoundaries()
+        }
+      }
+    }
+
+    const handleMouseUp = () => {
+      if (!isDragging || !draggedRow) return
+
+      isDragging = false
+      draggedRow.classList.remove("dragging")
+
+      // Remove event listeners
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
+
+      // Check if position actually changed
+      const currentNextSibling = draggedRow.nextSibling
+      if (currentNextSibling !== originalNextSibling) {
+        // Position changed - save the new order
+        const container = draggedRow.parentElement
+        if (container) {
+          const allRows = Array.from(container.querySelectorAll(".variable-list-item"))
+          const orderedIds = allRows.map(rowEl => (rowEl as HTMLElement).dataset.variableId).filter(Boolean) as string[]
+          dispatch({ type: "reorderVariables", orderedIds })
+        }
+      }
+
+      // Reset
+      draggedRow = null
+      originalNextSibling = null
+      variableBoundaries = []
+      lastCrossedBoundary = -1
+    }
+
+    const handleMouseDown = (e: MouseEvent) => {
+      // Don't allow dragging when in editing mode
+      if (row.classList.contains("editing")) {
+        e.preventDefault()
+        return
+      }
+
+      isDragging = true
+      draggedRow = row
+      originalNextSibling = row.nextSibling
+      lastCrossedBoundary = -1
+
+      // Calculate initial boundaries
+      updateBoundaries()
+
+      // Find which boundary we're starting at
+      const container = row.parentElement
+      if (container) {
+        const allRows = Array.from(container.querySelectorAll(".variable-list-item"))
+        lastCrossedBoundary = allRows.indexOf(draggedRow)
+      }
+
+      // Add dragging class for visual feedback
+      row.classList.add("dragging")
+
+      // Add document event listeners
+      document.addEventListener("mousemove", handleMouseMove)
+      document.addEventListener("mouseup", handleMouseUp)
+
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    dragHandle.addEventListener("mousedown", handleMouseDown)
+
+    return () => {
+      dragHandle.removeEventListener("mousedown", handleMouseDown)
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
+    }
+  }, [variable.id, allVariables])
 
   function handleInputChange(field: keyof VariableConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void {
     return e => {
@@ -35,7 +189,7 @@ export function VariableRow({ variable }: VariableRowProps) {
 
   if (isEditing) {
     return (
-      <div className="variable-list-item editing" data-variable-id={variable.id}>
+      <div ref={rowRef} className="variable-list-item editing" data-variable-id={variable.id}>
         <div className="variable-summary">
           <span className="variable-summary-info">
             <span style={{ fontWeight: "bold" }}>
@@ -107,8 +261,8 @@ export function VariableRow({ variable }: VariableRowProps) {
   }
 
   return (
-    <div className="variable-list-item" data-variable-id={variable.id}>
-      <div className="variable-drag-handle" draggable={false}>
+    <div ref={rowRef} className="variable-list-item" data-variable-id={variable.id}>
+      <div ref={dragHandleRef} className="variable-drag-handle" draggable={false}>
         <div className="dot"></div>
       </div>
 

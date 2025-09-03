@@ -145,6 +145,26 @@ export const configUpdaters = {
     if (i !== null) {
       config.variables.splice(i, 1)
     }
+  },
+
+  reorderVariables(config: Draft<Config>, action: { orderedIds: string[] }): void {
+    // Create a map of id to variable for fast lookup
+    const variableMap = new Map<string, VariableConfig>()
+    for (const variable of config.variables) {
+      variableMap.set(variable.id, variable)
+    }
+
+    // Reorder variables according to the provided order
+    const reorderedVariables: VariableConfig[] = []
+    for (const id of action.orderedIds) {
+      const variable = variableMap.get(id)
+      if (variable) {
+        reorderedVariables.push(variable)
+      }
+    }
+
+    // Replace the variables array with the reordered one
+    config.variables = reorderedVariables
   }
 }
 
