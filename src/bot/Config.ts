@@ -41,8 +41,7 @@ export function initialBotState(): Config {
 
 export const configUpdaters = {
   reset(config: Draft<Config>): void {
-    const newConfig = initialBotState() as Draft<Config>
-    config.entries = newConfig.entries
+    Object.assign(config, initialBotState())
   },
 
   addEntry(config: Draft<Config>): void {
