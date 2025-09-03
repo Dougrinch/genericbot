@@ -32,10 +32,10 @@ src/
 tests/
 ├── setup.shared.ts    # Shared test configuration
 ├── unit/              # Unit tests (jsdom environment)
-│   ├── setup.ts       # Unit test specific setup
+│   ├── setup.unit.ts  # Unit test specific setup
 │   └── test.spec.ts   # Core functionality tests
 └── ui/                # Browser UI tests (Playwright)
-    ├── setup.ts       # UI test specific setup
+    ├── setup.ui.ts    # UI test specific setup
     └── Game.spec.tsx  # Bot integration tests
 ```
 

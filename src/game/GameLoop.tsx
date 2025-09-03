@@ -6,16 +6,16 @@ export function GameLoop({ children }: PropsWithChildren) {
   const previousTimeRef = useRef(-1)
 
   useEffect(() => {
-    const tick = (time: number) => {
-      if (previousTimeRef.current == -1) {
-        dispatch({ type: "tick", dt: 0 })
-      } else {
-        dispatch({ type: "tick", dt: time - previousTimeRef.current })
-      }
+    previousTimeRef.current = performance.now()
+
+    const tick = () => {
+      const time = performance.now()
+      dispatch({ type: "tick", dt: time - previousTimeRef.current })
       previousTimeRef.current = time
       animationFrameHandleRef.current = requestAnimationFrame(tick)
     }
     animationFrameHandleRef.current = requestAnimationFrame(tick)
+
     return () => {
       const handle = animationFrameHandleRef.current
       if (handle !== null) {
