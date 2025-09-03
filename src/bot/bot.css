@@ -202,3 +202,157 @@ select {
     align-items: center;
     gap: 8px;
 }
+
+/* Variables container styles */
+.variables-container {
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 4px;
+    position: relative;
+}
+
+.variable-list-item {
+    position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, .1);
+    padding: 4px 6px 4px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-height: 24px;
+    cursor: default;
+    transition: all 0.2s ease-out;
+}
+
+.variable-list-item:last-child {
+    border-bottom: none;
+}
+
+.variable-list-item:hover {
+    background-color: rgba(255, 255, 255, .05);
+}
+
+.variable-list-item.dragging {
+    opacity: 0.6;
+    background-color: rgba(255, 255, 255, .15);
+}
+
+.variable-drag-handle {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 20px;
+    cursor: move;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    opacity: 0.7;
+    transition: all 0.2s;
+    border-radius: 3px;
+    z-index: 10;
+}
+
+.variable-drag-handle:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.variable-drag-handle::before,
+.variable-drag-handle::after {
+    content: '●';
+    font-size: 4px;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.variable-drag-handle .dot {
+    font-size: 4px;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.variable-drag-handle .dot::before {
+    content: '●';
+}
+
+.variable-list-item .variable-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.variable-list-item .variable-name {
+    font-weight: bold;
+    font-size: 12px;
+    min-width: 80px;
+}
+
+.variable-list-item .variable-value {
+    font-size: 11px;
+    opacity: .8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.variable-list-item .variable-current-value {
+    font-weight: 500;
+}
+
+.variable-list-item .variable-type {
+    opacity: 0.6;
+    font-size: 10px;
+}
+
+.variable-list-item .edit-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.variable-list-item.editing {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px;
+}
+
+.variable-list-item.editing .variable-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 8px;
+}
+
+.variable-list-item .variable-summary-info {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.variable-list-item .variable-summary-value {
+    opacity: 0.8;
+    font-weight: normal;
+}
+
+.variable-list-item .remove-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+.variable-list-item.editing .variable-fields {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px;
+    align-items: center;
+}

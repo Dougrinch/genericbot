@@ -1,4 +1,5 @@
 import { EntriesList } from "./EntriesList"
+import { VariablesList } from "./VariablesList"
 import { dispatch } from "../ConfigContext.ts"
 
 interface ConfigWrapperProps {
@@ -10,11 +11,9 @@ export function ConfigWrapper({ isVisible }: ConfigWrapperProps) {
     <div className="config-wrapper" hidden={!isVisible}>
       <div className="config-tab">
         <div className="tab-header">Variables</div>
-        <div className="variables">
-          {/* Variables will be added here */}
-        </div>
+        <VariablesList />
         <div className="config-actions">
-          <button>+ Add Variable</button>
+          <button onClick={() => { dispatch({ type: "addVariable" }) }}>+ Add Variable</button>
         </div>
       </div>
       <div className="config-tab">

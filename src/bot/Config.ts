@@ -2,6 +2,7 @@ import type { Draft, Immutable } from "immer"
 
 export type Config = Immutable<{
   entries: EntryConfig[]
+  variables: VariableConfig[]
 }>
 
 export type EntryConfig = Immutable<{
@@ -12,6 +13,14 @@ export type EntryConfig = Immutable<{
   allowMultiple?: boolean
   updateEvery?: number
   condition?: string
+}>
+
+export type VariableConfig = Immutable<{
+  id: string
+  name: string
+  xpath: string
+  regex: string
+  type: "number" | "string"
 }>
 
 export function initialBotState(): Config {
@@ -34,6 +43,29 @@ export function initialBotState(): Config {
         allowMultiple: true,
         updateEvery: 1500,
         condition: "score > 100"
+      }
+    ],
+    variables: [
+      {
+        id: "var_1",
+        name: "score",
+        xpath: "//span[@id='score']",
+        regex: "",
+        type: "number"
+      },
+      {
+        id: "var_2",
+        name: "lives",
+        xpath: "//div[@class='lives']",
+        regex: "(\\d+)",
+        type: "number"
+      },
+      {
+        id: "var_3",
+        name: "name",
+        xpath: "//div[@id='name']",
+        regex: "",
+        type: "string"
       }
     ]
   }
@@ -76,6 +108,42 @@ export const configUpdaters = {
     const i = indexOf(config.entries, action.id)
     if (i !== null) {
       config.entries.splice(i, 1)
+    }
+  },
+
+  addVariable(config: Draft<Config>): void {
+    const oldIds = config.variables
+      .map(v => v.id.match(/^var_(\d+)$/))
+      .filter(m => m !== null)
+      .map(m => Number(m[1]))
+
+    const newId = oldIds.length > 0
+      ? `var_${Math.max(...oldIds) + 1}`
+      : "var_1"
+
+    config.variables.push({
+      id: newId,
+      name: "",
+      xpath: "",
+      regex: "",
+      type: "number"
+    })
+  },
+
+  updateVariable(config: Draft<Config>, action: { id: string, updates: Partial<VariableConfig> }): void {
+    const i = indexOf(config.variables, action.id)
+    if (i !== null) {
+      config.variables[i] = {
+        ...config.variables[i],
+        ...action.updates
+      }
+    }
+  },
+
+  removeVariable(config: Draft<Config>, action: { id: string }): void {
+    const i = indexOf(config.variables, action.id)
+    if (i !== null) {
+      config.variables.splice(i, 1)
     }
   }
 }
