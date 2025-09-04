@@ -271,9 +271,9 @@ export function VariableRow({ variable }: VariableRowProps) {
       </div>
 
       <div className="variable-info">
-        <div className="variable-name">
+        <span className="variable-name">
           {variable.name || "Unnamed"}
-        </div>
+        </span>
         <div className="variable-value">
           <span className="variable-current-value">(not evaluated)</span>
           <span className="variable-type">({variable.type})</span>

@@ -54,6 +54,16 @@ export function enrichLocator() {
       return originalClick.apply(this)
     }
   })
+
+  const originalFill = locatorPrototype["fill"]!
+  Object.defineProperty(locatorPrototype, "fill", {
+    configurable: false,
+    writable: false,
+    async value(this: Locator, text: string): Promise<void> {
+      await safeWaitFor(() => expect(this.element()).toBeVisible())
+      return originalFill.apply(this, [text])
+    }
+  })
 }
 
 declare module "@vitest/browser/context" {
