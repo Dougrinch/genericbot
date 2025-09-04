@@ -1,5 +1,5 @@
 import { cleanup, configure } from "vitest-browser-react/pure"
-import { afterEach, beforeAll } from "vitest"
+import { beforeAll, beforeEach } from "vitest"
 import { Locator } from "@vitest/browser/locator"
 
 configure({
@@ -16,7 +16,7 @@ beforeAll(() => {
   })
 })
 
-afterEach(() => {
+beforeEach(() => {
   cleanup()
 })
 
