@@ -16,15 +16,14 @@ export function elements(locator: Locator): Promisify<Assertion<Element[]>> {
   return waitForPromisify(() => expect(locator.elements()))
 }
 
+export type ProtoOf<T> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [K in keyof T as T[K] extends (...args: any) => any ? K : never]?: T[K] extends (...a: infer A) => infer R
+    ? (this: T, ...a: A) => R
+    : never;
+}
+
 export function enrichLocator() {
-  type ProtoOf<T> = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [K in keyof T as T[K] extends (...args: any) => any ? K : never]?: T[K] extends (...a: infer A) => infer R
-      ? (this: T, ...a: A) => R
-      : never;
-  }
-
-
   const locatorPrototype = Object.getPrototypeOf(page.getByText("")) as ProtoOf<Locator>
 
   Object.defineProperty(locatorPrototype, "clickN", {
@@ -42,6 +41,14 @@ export function enrichLocator() {
     writable: false,
     value(this: Locator): Promisify<Assertion<Element>> {
       return element(this)
+    }
+  })
+
+  Object.defineProperty(locatorPrototype, "expectMany", {
+    configurable: false,
+    writable: false,
+    value(this: Locator): Promisify<Assertion<Element[]>> {
+      return elements(this)
     }
   })
 
@@ -70,5 +77,6 @@ declare module "@vitest/browser/context" {
   interface Locator {
     clickN(n: number): Promise<void>
     expect(): Promisify<Assertion<Element>>
+    expectMany(): Promisify<Assertion<Element[]>>
   }
 }

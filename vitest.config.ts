@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config"
+import { BrowserInstanceOption } from "vitest/node"
 
 export default defineConfig({
   test: {
@@ -14,7 +15,12 @@ export default defineConfig({
         browser: {
           enabled: true,
           provider: "playwright",
-          instances: [{ browser: "chromium" }],
+          instances: [{
+            browser: "chromium",
+            launch: {
+              args: ["--remote-debugging-port=9222"]
+            }
+          } as BrowserInstanceOption],
           headless: true,
           viewport: {
             width: 1024,
