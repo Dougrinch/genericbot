@@ -1,5 +1,14 @@
 import { vi } from "vitest"
 
+export type WaitForOpts = Parameters<typeof vi.waitFor>[1]
+
+export async function safeWaitFor<T>(
+  callback: () => T | Promise<T>,
+  opts: WaitForOpts = { timeout: 1000, interval: 0 }
+): Promise<Awaited<T>> {
+  return await vi.waitFor(callback, opts)
+}
+
 export type Promisify<O> = {
   [K in keyof O]: O[K] extends (...args: infer A) => infer R
     ? O extends R
@@ -8,11 +17,8 @@ export type Promisify<O> = {
     : O[K];
 }
 
-export function waitForPromisify<T>(
-  callback: () => T | Promise<T>,
-  opts: Parameters<typeof vi.waitFor>[1] = { timeout: 1000, interval: 0 }
-): Promisify<Awaited<T>> {
-  return promisify(vi.waitFor(callback, opts))
+export function waitForPromisify<T>(callback: () => T | Promise<T>): Promisify<Awaited<T>> {
+  return promisify(safeWaitFor(callback))
 }
 
 export function promisify<T>(promise: Promise<T>): Promisify<Awaited<T>> {

@@ -14,7 +14,6 @@ export function ActionRow({ onToggleConfig }: ActionRowProps) {
       <div className="icons">
         <button
           className="icon"
-          title="Configuration"
           onClick={onToggleConfig}
         >
           ⚙️

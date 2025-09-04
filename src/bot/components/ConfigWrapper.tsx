@@ -20,10 +20,10 @@ export function ConfigWrapper({ isVisible }: ConfigWrapperProps) {
         <div className="tab-header">Automation Entries</div>
         <EntriesList />
         <div className="config-actions">
-          <button title="Reload AutoClick from clipboard">Hot Reload</button>
-          <button title="Rebind all entries and refresh matches">Refresh</button>
+          <button>Hot Reload</button>
+          <button>Refresh</button>
           <button onClick={() => { dispatch({ type: "addEntry" }) }}>+ Add Entry</button>
-          <button title="Close AutoClick widget">✕ Close</button>
+          <button>✕ Close</button>
         </div>
       </div>
     </div>
