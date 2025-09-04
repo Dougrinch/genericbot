@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { VariableConfig } from "../Config.ts"
 import { dispatch, useConfig } from "../ConfigContext.ts"
 
@@ -189,7 +189,7 @@ export function VariableRow({ variable }: VariableRowProps) {
 
   if (isEditing) {
     return (
-      <div ref={rowRef} className="variable-list-item editing" data-variable-id={variable.id}>
+      <div ref={rowRef} className="variable-list-item editing" id={`var-${variable.id}`}>
         <div className="variable-summary">
           <span className="variable-summary-info">
             <span style={{ fontWeight: "bold" }}>
@@ -203,36 +203,40 @@ export function VariableRow({ variable }: VariableRowProps) {
         </div>
 
         <div className="variable-fields">
-          <div className="label">Name:</div>
+          <label className="label" htmlFor={`var-name-${variable.id}`}>Name</label>
           <input
             ref={nameInputRef}
             type="text"
+            id={`var-name-${variable.id}`}
             className="var-name"
             placeholder="Variable name"
             value={variable.name}
             onChange={handleInputChange("name")}
           />
 
-          <div className="label">XPath:</div>
+          <label className="label" htmlFor={`var-xpath-${variable.id}`}>XPath</label>
           <input
             type="text"
+            id={`var-xpath-${variable.id}`}
             className="var-xpath"
             placeholder="XPath — must match exactly one element"
             value={variable.xpath}
             onChange={handleInputChange("xpath")}
           />
 
-          <div className="label">Regex:</div>
+          <label className="label" htmlFor={`var-regex-${variable.id}`}>Regex</label>
           <input
             type="text"
+            id={`var-regex-${variable.id}`}
             className="var-regex"
             placeholder="Optional regex to extract value"
             value={variable.regex}
             onChange={handleInputChange("regex")}
           />
 
-          <div className="label">Type:</div>
+          <label className="label" htmlFor={`var-type-${variable.id}`}>Type</label>
           <select
+            id={`var-type-${variable.id}`}
             className="var-type"
             value={variable.type}
             onChange={handleInputChange("type")}

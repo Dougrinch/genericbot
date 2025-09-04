@@ -24,50 +24,60 @@ export function EntryRow({ entry }: EntryRowProps) {
   }
 
   return (
-    <div className="entry" data-entry-id={entry.id}>
-      <div className="label">Name</div>
+    <div className="entry" id={`entry-${entry.id}`}>
+      <label className="label" htmlFor={`entry-name-${entry.id}`}>Name</label>
       <input
         type="text"
+        id={`entry-name-${entry.id}`}
         placeholder="Dig"
         value={entry.name}
         onChange={handleInputChange("name")}
       />
 
-      <div className="label">XPath</div>
+      <label className="label" htmlFor={`entry-xpath-${entry.id}`}>XPath</label>
       <input
         type="text"
+        id={`entry-xpath-${entry.id}`}
         placeholder="//button[@id='dig']"
         value={entry.xpath}
         onChange={handleInputChange("xpath")}
       />
 
-      <div className="label">Interval (ms)</div>
+      <label className="label" htmlFor={`entry-interval-${entry.id}`}>Interval (ms)</label>
       <input
         type="number"
+        id={`entry-interval-${entry.id}`}
         value={entry.interval}
         onChange={handleInputChange("interval")}
       />
 
-      <div className="label">Condition</div>
+      <label className="label" htmlFor={`entry-condition-${entry.id}`}>Condition</label>
       <input
         type="text"
+        id={`entry-condition-${entry.id}`}
         placeholder="score > 100 && lives >= 3"
         value={entry.condition || ""}
         onChange={handleInputChange("condition")}
       />
 
-      <div className="label">Allow multiple</div>
+      <label className="label" htmlFor={`entry-allowMultiple-${entry.id}`}>Allow multiple</label>
       <div className="inline">
         <input
           type="checkbox"
+          id={`entry-allowMultiple-${entry.id}`}
           checked={!!entry.allowMultiple}
           onChange={handleInputChange("allowMultiple")}
         />
-        <div className="label" style={{ visibility: entry.allowMultiple ? "visible" : "hidden" }}>
+        <label
+          className="label"
+          htmlFor={`entry-updateEvery-${entry.id}`}
+          style={{ visibility: entry.allowMultiple ? "visible" : "hidden" }}
+        >
           Update every (ms)
-        </div>
+        </label>
         <input
           type="number"
+          id={`entry-updateEvery-${entry.id}`}
           min="100"
           value={entry.updateEvery || 1000}
           onChange={handleInputChange("updateEvery")}

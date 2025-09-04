@@ -50,7 +50,7 @@ export function enrichLocator() {
     configurable: false,
     writable: false,
     async value(this: Locator): Promise<void> {
-      await safeWaitFor(() => this.element())
+      await safeWaitFor(() => expect(this.element()).toBeVisible())
       return originalClick.apply(this)
     }
   })
