@@ -35,7 +35,7 @@ export const gameUpdaters = {
   tick(game: Draft<GameState>, action: { dt: number }) {
     const totalIncome = game.gnomes + (game.snowWhites * 10)
     if (totalIncome > 0) {
-      game.gold += totalIncome * (action.dt! / 1000)
+      game.gold += totalIncome * (action.dt / 1000)
     }
   }
 }

@@ -10,21 +10,20 @@ function useCss(): string | null {
   useEffect(() => {
     let ignored = false
     const loadCss = async () => {
-      return await import("./bot.css?inline")
-    }
-    loadCss().then(module => {
+      const initial = await import("./bot.css?inline")
       if (!ignored) {
-        setValue(module.default)
+        setValue(initial.default)
 
         if (import.meta.hot) {
-          import.meta.hot.accept("./bot.css?inline", mn => {
+          import.meta.hot.accept("./bot.css?inline", updated => {
             if (!ignored) {
-              setValue(mn!.default)
+              setValue(updated!.default as string)
             }
           })
         }
       }
-    })
+    }
+    void loadCss()
     return () => {
       ignored = true
     }

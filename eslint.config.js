@@ -18,6 +18,7 @@ const stylisticPreset = stylistic.configs.customize({
 const presetIndent = stylisticPreset.rules?.["@stylistic/indent"] ?? ["error", 2]
 const [lvl, step, opts] = presetIndent
 
+// noinspection JSCheckFunctionSignatures
 export default tseslint.config([
   globalIgnores(["dist", "coverage"]),
   {
@@ -27,7 +28,16 @@ export default tseslint.config([
     files: ["**/*.{ts,tsx}"],
     extends: [
       js.configs.recommended,
-      tseslint.configs.recommended,
+      tseslint.configs.recommendedTypeChecked,
+      {
+        languageOptions: {
+          parserOptions: {
+            projectService: {
+              allowDefaultProject: ["vitest.config.ts"]
+            }
+          }
+        }
+      },
       reactHooks.configs["recommended-latest"],
       reactRefresh.configs.vite,
       stylisticPreset

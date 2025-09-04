@@ -16,7 +16,7 @@ const api = {
 }
 
 describe("mutableStateReducer.spec.ts", () => {
-  test("events are dispatched to the right updater", async () => {
+  test("events are dispatched to the right updater", () => {
     const reducer = createMutableStateReducer(api)
 
     function check(action: Action<typeof api>) {
