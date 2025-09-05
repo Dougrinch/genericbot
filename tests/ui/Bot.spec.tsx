@@ -20,7 +20,7 @@ describe("Bot", () => {
     await expectVariables(["score", "health", "name"])
   })
 
-  test("reorder variables via drag and drop", async () => {
+  test("reorder variables", async () => {
     render(<Bot />)
 
     await page.getByText("⚙️").click()
@@ -42,6 +42,21 @@ describe("Bot", () => {
     await dragAndDrop(livesRow, nameRow.element().getBoundingClientRect().top + 1)
     await expectVariables(["score", "name", "lives"])
   })
+
+  test("move back while reordering variables", async () => {
+    render(<Bot />)
+
+    await page.getByText("⚙️").click()
+    await expectVariables(["score", "lives", "name"])
+
+    const scoreRow = page.getVariableRow("score")
+    const livesRow = page.getVariableRow("lives")
+
+    const border = scoreRow.element().getBoundingClientRect().bottom
+    await dragAndDrop(livesRow, border, border + 1)
+
+    await expectVariables(["score", "lives", "name"])
+  })
 })
 
 async function expectVariables(names: string[]): Promise<void> {
@@ -50,7 +65,7 @@ async function expectVariables(names: string[]): Promise<void> {
     .toEqual(names)
 }
 
-async function dragAndDrop(variableRow: Locator, toY: number) {
+async function dragAndDrop(variableRow: Locator, ...toYs: number[]) {
   const dragHandle = variableRow.getBySelector(".variable-drag-handle")
   await dragHandle.expect().toBeVisible()
 
@@ -58,26 +73,30 @@ async function dragAndDrop(variableRow: Locator, toY: number) {
   const dragHandleBounds = dragHandleElement.getBoundingClientRect()
 
   const startX = dragHandleBounds.right - dragHandleBounds.left
-  const startY = dragHandleBounds.bottom - dragHandleBounds.top
+  let currentY = dragHandleBounds.bottom - dragHandleBounds.top
 
   dragHandleElement.dispatchEvent(new MouseEvent("mousedown", {
     bubbles: true,
     cancelable: true,
     clientX: startX,
-    clientY: startY
+    clientY: currentY
   }))
 
-  document.dispatchEvent(new MouseEvent("mousemove", {
-    bubbles: true,
-    cancelable: true,
-    clientX: startX,
-    clientY: toY
-  }))
+  for (const toY of toYs) {
+    currentY = toY
+
+    document.dispatchEvent(new MouseEvent("mousemove", {
+      bubbles: true,
+      cancelable: true,
+      clientX: startX,
+      clientY: currentY
+    }))
+  }
 
   document.dispatchEvent(new MouseEvent("mouseup", {
     bubbles: true,
     cancelable: true,
     clientX: startX,
-    clientY: toY
+    clientY: currentY
   }))
 }
