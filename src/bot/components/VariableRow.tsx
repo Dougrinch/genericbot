@@ -30,7 +30,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
   const [statusType] = useState<"warn" | "ok" | "err">("ok")
   const nameInputRef = useRef<HTMLInputElement>(null)
 
-  // Auto-focus name field when editing starts and name is empty
+  // Autofocus name field when editing starts and name is empty
   useEffect(() => {
     if (isEditing && !variable.name && nameInputRef.current) {
       nameInputRef.current.focus()

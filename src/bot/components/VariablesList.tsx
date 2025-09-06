@@ -1,7 +1,37 @@
 import { VariableRow } from "./VariableRow"
 import { dispatch, useConfig } from "../ConfigContext.ts"
 import * as React from "react"
-import { useCallback, useRef } from "react"
+import { type DependencyList, useRef } from "react"
+import { type CompositeKey, CompositeMap } from "../../utils/CompositeMap.ts"
+
+function useCurryCallback<C extends CompositeKey, A extends unknown[], R>(
+  f: (c: C, ...a: A) => R,
+  deps: DependencyList = []
+): (c: C) => (...a: A) => R {
+  const cache = useRef<CompositeMap<C, { f: (...a: A) => R, deps: unknown[] }>>(new CompositeMap())
+  return c => {
+    const cached = cache.current.get(c)
+    if (cached && cached.deps.length == deps.length && cached.deps.every((v, i) => Object.is(v, deps[i]))) {
+      return cached.f
+    }
+
+    const fn = (...a: A) => f(c, ...a)
+    cache.current.set(c, {
+      f: fn,
+      deps: [...deps]
+    })
+    return fn
+  }
+}
+
+function useCurryCallback2<C1 extends CompositeKey, C2 extends CompositeKey, A extends unknown[], R>(
+  f: (c1: C1, c2: C2, ...a: A) => R,
+  deps: DependencyList = []
+): (c1: C1, c2: C2) => (...a: A) => R {
+  const curried = useCurryCallback((c: [C1, C2], ...a: A) => f(c[0], c[1], ...a), deps)
+  return (c1, c2) => curried([c1, c2])
+}
+
 
 export function VariablesList() {
   const variables = useConfig(c => c.variables)
@@ -9,8 +39,7 @@ export function VariablesList() {
 
   // Create refs for each variable row
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map())
-
-  const setRowRef = useCallback((variableId: string) => (element: HTMLDivElement | null) => {
+  const getRowRef = useCurryCallback((variableId: string, element: HTMLDivElement | null) => {
     if (element) {
       rowRefs.current.set(variableId, element)
     } else {
@@ -19,13 +48,11 @@ export function VariablesList() {
   }, [])
 
   const onDragStops = useRef<Map<string, () => void>>(new Map())
-  const setOnDragStop = useCallback((variableId: string): (callback: () => void) => void => {
-    return (callback: () => void) => {
-      onDragStops.current.set(variableId, callback)
-    }
+  const setOnDragStop = useCurryCallback((variableId: string, callback: () => void) => {
+    onDragStops.current.set(variableId, callback)
   }, [])
 
-  const onDragStart = useCallback((draggedIndex: number) => (e: React.MouseEvent) => {
+  const onDragStart = useCurryCallback2((draggedIndex: number, draggedVariableId: string, e: React.MouseEvent) => {
     const container = containerRef.current
     if (!container) {
       throw Error("Container not found")
@@ -35,7 +62,6 @@ export function VariablesList() {
     let lastCrossedBoundary = draggedIndex
 
     // Find the dragged row element and store its original next sibling
-    const draggedVariableId = variables[draggedIndex].id
     const draggedRowElement = rowRefs.current.get(draggedVariableId)
     if (!draggedRowElement) {
       throw Error("Dragged Row not found")
@@ -141,7 +167,7 @@ export function VariablesList() {
 
     e.preventDefault()
     e.stopPropagation()
-  }, [variables])
+  }, [])
 
   if (variables.length === 0) {
     return null
@@ -153,9 +179,9 @@ export function VariablesList() {
         {variables.map((variable, index) => (
           <VariableRow
             key={variable.id}
-            ref={setRowRef(variable.id)}
+            ref={getRowRef(variable.id)}
             variable={variable}
-            onDragStart={onDragStart(index)}
+            onDragStart={onDragStart(index, variable.id)}
             setOnDragStop={setOnDragStop(variable.id)}
           />
         ))}
