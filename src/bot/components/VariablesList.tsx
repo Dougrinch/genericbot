@@ -1,12 +1,11 @@
 import { VariableRow } from "./VariableRow"
 import { dispatch, useConfig } from "../ConfigContext.ts"
 import * as React from "react"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useRef } from "react"
 
 export function VariablesList() {
   const variables = useConfig(c => c.variables)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
   // Create refs for each variable row
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map())
@@ -19,10 +18,18 @@ export function VariablesList() {
     }
   }, [])
 
-  const onDragStart = useCallback((draggedIndex: number, e: React.MouseEvent) => {
-    setDraggedIndex(draggedIndex)
+  const onDragStops = useRef<Map<string, () => void>>(new Map())
+  const setOnDragStop = useCallback((variableId: string): (callback: () => void) => void => {
+    return (callback: () => void) => {
+      onDragStops.current.set(variableId, callback)
+    }
+  }, [])
+
+  const onDragStart = useCallback((draggedIndex: number) => (e: React.MouseEvent) => {
     const container = containerRef.current
-    if (!container) return
+    if (!container) {
+      throw Error("Container not found")
+    }
 
     let variableBoundaries: Array<{ top: number, bottom: number, element: HTMLElement }> = []
     let lastCrossedBoundary = draggedIndex
@@ -30,7 +37,9 @@ export function VariablesList() {
     // Find the dragged row element and store its original next sibling
     const draggedVariableId = variables[draggedIndex].id
     const draggedRowElement = rowRefs.current.get(draggedVariableId)
-    if (!draggedRowElement) return
+    if (!draggedRowElement) {
+      throw Error("Dragged Row not found")
+    }
     const originalNextSibling = draggedRowElement.nextSibling
 
     const updateBoundaries = () => {
@@ -118,7 +127,11 @@ export function VariablesList() {
         dispatch({ type: "reorderVariables", orderedIds })
       }
 
-      setDraggedIndex(null)
+      const onDragStop = onDragStops.current.get(draggedVariableId)
+      if (!onDragStop) {
+        throw Error("onDragStop not found")
+      }
+      onDragStop()
       document.removeEventListener("mousemove", handleMouseMove)
       document.removeEventListener("mouseup", handleMouseUp)
     }
@@ -142,8 +155,8 @@ export function VariablesList() {
             key={variable.id}
             ref={setRowRef(variable.id)}
             variable={variable}
-            isDragging={draggedIndex === index}
-            onDragStart={(e: React.MouseEvent) => onDragStart(index, e)}
+            onDragStart={onDragStart(index)}
+            setOnDragStop={setOnDragStop(variable.id)}
           />
         ))}
       </div>

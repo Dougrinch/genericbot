@@ -1,16 +1,29 @@
 import * as React from "react"
-import { type Ref, useEffect, useRef, useState } from "react"
+import { memo, type Ref, useEffect, useRef, useState } from "react"
 import type { VariableConfig } from "../Config.ts"
 import { dispatch } from "../ConfigContext.ts"
 
 interface VariableRowProps {
   variable: VariableConfig
-  isDragging: boolean
   onDragStart: (e: React.MouseEvent) => void
+  setOnDragStop: (callback: () => void) => void
   ref: Ref<HTMLDivElement>
 }
 
-export function VariableRow({ variable, isDragging, onDragStart, ref }: VariableRowProps) {
+export const VariableRow = memo((props: VariableRowProps) => {
+  const variable = props.variable
+  const [isDragging, setIsDragging] = useState(false)
+  const onDragStart = props.onDragStart
+  const ref = props.ref
+
+  const onDragStop = props.setOnDragStop
+
+  useEffect(() => {
+    onDragStop(() => {
+      setIsDragging(false)
+    })
+  }, [onDragStop])
+
   // New variables (empty name) should start in editing mode
   const [isEditing, setIsEditing] = useState(!variable.name)
   const [statusLine] = useState("")
@@ -114,7 +127,14 @@ export function VariableRow({ variable, isDragging, onDragStart, ref }: Variable
   } else {
     return (
       <div ref={ref} className={`variable-list-item ${isDragging ? "dragging" : ""}`} id={`var-${variable.id}`}>
-        <div className="variable-drag-handle" draggable={false} onMouseDown={onDragStart}>
+        <div
+          className="variable-drag-handle"
+          draggable={false}
+          onMouseDown={e => {
+            setIsDragging(true)
+            onDragStart(e)
+          }}
+        >
           <div className="dot"></div>
         </div>
 
@@ -140,4 +160,4 @@ export function VariableRow({ variable, isDragging, onDragStart, ref }: Variable
       </div>
     )
   }
-}
+})
