@@ -3,7 +3,7 @@ export function findElementsByXPath(xpath: string) {
   const elements = []
   for (let i = 0; i < res.snapshotLength; i++) {
     const element = res.snapshotItem(i)
-    if (element instanceof Element) {
+    if (element instanceof HTMLElement) {
       elements.push(element)
     }
   }

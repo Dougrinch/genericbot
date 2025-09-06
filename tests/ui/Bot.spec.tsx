@@ -5,19 +5,24 @@ import Bot from "../../src/bot/Bot.tsx"
 
 describe("Bot", () => {
   test("rename variable", async () => {
-    render(<Bot />)
+    await import("../../src/main.tsx")
+
+    const dig = page.getByRole("button", { name: /^Dig/ })
+    await dig.clickN(15)
 
     await page.getByText(/Add Variable/).expect().not.toBeVisible()
     await page.getByText("⚙️").click()
     await page.getByText(/Add Variable/).expect().toBeVisible()
 
-    await expectVariables(["score", "lives", "name"])
+    await expectVariables(["score", "lives", "name", "Gold"])
 
-    await page.getVariableRow("lives").getByText("Edit").click()
-    await page.getVariableRow("lives").getByLabelText("Name").fill("health")
-    await page.getVariableRow("health").getByText("Done").click()
+    await page.getVariableRow("Gold").getByText("Edit").click()
+    await page.getVariableRow("Gold").getByLabelText("Name").fill("Money")
+    await page.getVariableRow("Money").getByText("Done").click()
 
-    await expectVariables(["score", "health", "name"])
+    await expectVariables(["score", "lives", "name", "Money"])
+
+    await page.getByText("Money15(number)Edit").expect().toBeInTheDocument()
   })
 
   test("reorder variables", async () => {
@@ -25,7 +30,7 @@ describe("Bot", () => {
 
     await page.getByText("⚙️").click()
 
-    await expectVariables(["score", "lives", "name"])
+    await expectVariables(["score", "lives", "name", "Gold"])
 
     const scoreRow = page.getVariableRow("score")
     const livesRow = page.getVariableRow("lives")
@@ -33,21 +38,21 @@ describe("Bot", () => {
 
     //Still above lives
     await dragAndDrop(livesRow, scoreRow.element().getBoundingClientRect().bottom + 1)
-    await expectVariables(["score", "lives", "name"])
+    await expectVariables(["score", "lives", "name", "Gold"])
 
     //Finally moved into scores region
     await dragAndDrop(livesRow, scoreRow.element().getBoundingClientRect().bottom)
-    await expectVariables(["lives", "score", "name"])
+    await expectVariables(["lives", "score", "name", "Gold"])
 
     await dragAndDrop(livesRow, nameRow.element().getBoundingClientRect().top + 1)
-    await expectVariables(["score", "name", "lives"])
+    await expectVariables(["score", "name", "lives", "Gold"])
   })
 
   test("move back while reordering variables", async () => {
     render(<Bot />)
 
     await page.getByText("⚙️").click()
-    await expectVariables(["score", "lives", "name"])
+    await expectVariables(["score", "lives", "name", "Gold"])
 
     const scoreRow = page.getVariableRow("score")
     const livesRow = page.getVariableRow("lives")
@@ -55,7 +60,7 @@ describe("Bot", () => {
     const border = scoreRow.element().getBoundingClientRect().bottom
     await dragAndDrop(livesRow, border, border + 1)
 
-    await expectVariables(["score", "lives", "name"])
+    await expectVariables(["score", "lives", "name", "Gold"])
   })
 })
 

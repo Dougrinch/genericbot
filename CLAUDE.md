@@ -141,12 +141,12 @@ The testing setup validates both bot functionality and its ability to integrate 
 
 - **UI-Specific State Location** - All UI-specific state (component visibility, form inputs, loading states, etc.) MUST be located directly in React components using `useState`, `useReducer`, or other React state management hooks. Do NOT store UI state in external stores.
 
-- **Configuration State Management** - All bot configuration state MUST be located in `src/bot/Config.ts`. This includes:
+- **Configuration State Management** - All bot configuration state MUST be located in `src/bot/BotState.ts`. This includes:
   - Bot settings and preferences
   - Feature toggles and enabled/disabled states
   - Persistent configuration that should survive component re-renders
 
-- **Configuration State Updates** - All updates to configuration state MUST be done via the `configUpdaters` object defined in `src/bot/Config.ts`. Never directly mutate configuration state. Always use the provided updater functions to ensure state consistency and proper immutability with Immer.
+- **Configuration State Updates** - All updates to configuration state MUST be done via the `configUpdaters` object defined in `src/bot/BotState.ts`. Never directly mutate configuration state. Always use the provided updater functions to ensure state consistency and proper immutability with Immer.
 
 ## Code Completion Checklist
 

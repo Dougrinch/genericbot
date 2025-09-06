@@ -51,6 +51,6 @@ describe("Game", () => {
 })
 
 async function goldIs(gold: number) {
-  const goldLabel = page.getByText(/^Gold/)
+  const goldLabel = page.getByText(/^Gold: \d+/)
   await goldLabel.expect().toHaveTextContent(new RegExp(`.*: ${gold}$`))
 }

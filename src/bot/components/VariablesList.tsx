@@ -1,5 +1,5 @@
 import { VariableRow } from "./VariableRow"
-import { dispatch, useConfig } from "../ConfigContext.ts"
+import { dispatch, useConfig } from "../BotStateContext.ts"
 import * as React from "react"
 import { type DependencyList, useRef } from "react"
 import { type CompositeKey, CompositeMap } from "../../utils/CompositeMap.ts"

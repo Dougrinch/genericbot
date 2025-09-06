@@ -2,8 +2,9 @@ import { configure } from "vitest-browser-react/pure"
 import { afterEach, beforeAll, beforeEach } from "vitest"
 import { enrichLocator } from "./locator.ts"
 import { installCustomLocators } from "./helpers.ts"
-import { dispatch } from "../../src/bot/ConfigContext.ts"
+import { dispatch } from "../../src/bot/BotStateContext.ts"
 import { installCustomMatchers } from "./matchers.ts"
+import { page } from "@vitest/browser/context"
 
 configure({
   reactStrictMode: true
@@ -22,7 +23,5 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  for (const config of document.getElementsByClassName("config-wrapper")) {
-    config.scrollTo(0, 0)
-  }
+  page.getBySelector(".config-wrapper").element().scrollTo(0, 0)
 })

@@ -1,4 +1,4 @@
-import { dispatch } from "../ConfigContext.ts"
+import { dispatch } from "../BotStateContext.ts"
 
 interface ActionRowProps {
   onToggleConfig: () => void

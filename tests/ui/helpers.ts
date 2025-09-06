@@ -10,7 +10,7 @@ export async function advanceBy(ms: number) {
 export function installCustomLocators() {
   locators.extend({
     getVariableRow(name: string): string {
-      return `xpath=//div[contains(@class, 'variable-list-item') and descendant::span[text()='${name}']]`
+      return `div.variable-list-item:has(span:has-text("${name}"))`
     },
     getBySelector(selectors: string): string {
       return selectors

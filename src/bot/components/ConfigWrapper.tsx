@@ -1,6 +1,6 @@
 import { EntriesList } from "./EntriesList"
 import { VariablesList } from "./VariablesList"
-import { dispatch } from "../ConfigContext.ts"
+import { dispatch } from "../BotStateContext.ts"
 
 interface ConfigWrapperProps {
   isVisible: boolean

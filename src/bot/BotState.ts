@@ -1,4 +1,12 @@
-import type { Draft, Immutable } from "immer"
+import { type Draft, enableMapSet, type Immutable } from "immer"
+import { findElementByXPath } from "../utils/xpath.ts"
+
+enableMapSet()
+
+export type BotState = Immutable<{
+  config: Config
+  variables: Map<string, VariableData>
+}>
 
 export type Config = Immutable<{
   entries: EntryConfig[]
@@ -23,7 +31,18 @@ export type VariableConfig = Immutable<{
   type: "number" | "string"
 }>
 
-export function initialBotState(): Config {
+export type VariableData = Immutable<{
+  value?: number | string
+}>
+
+export function initialBotState(): BotState {
+  return {
+    config: initialBotConfig(),
+    variables: new Map()
+  }
+}
+
+function initialBotConfig(): Config {
   return {
     entries: [
       {
@@ -66,17 +85,26 @@ export function initialBotState(): Config {
         xpath: "//div[@id='name']",
         regex: "",
         type: "string"
+      },
+      {
+        id: "var_4",
+        name: "Gold",
+        xpath: "//div[starts-with(., 'Gold')][not(.//div[starts-with(., 'Gold')])]",
+        regex: "Gold: (\\d+)",
+        type: "number"
       }
     ]
   }
 }
 
-export const configUpdaters = {
-  reset(config: Draft<Config>): void {
-    Object.assign(config, initialBotState())
+export const stateUpdaters = {
+  reset(botState: Draft<BotState>): void {
+    Object.assign(botState, initialBotState())
   },
 
-  addEntry(config: Draft<Config>): void {
+  addEntry(botState: Draft<BotState>): void {
+    const config = botState.config
+
     const oldIds = config.entries
       .map(e => e.id.match(/^entry_(\d+)$/))
       .filter(m => m !== null)
@@ -94,7 +122,9 @@ export const configUpdaters = {
     })
   },
 
-  updateEntry(config: Draft<Config>, action: { id: string, updates: Partial<EntryConfig> }): void {
+  updateEntry(botState: Draft<BotState>, action: { id: string, updates: Partial<EntryConfig> }): void {
+    const config = botState.config
+
     const i = indexOf(config.entries, action.id)
     if (i !== null) {
       config.entries[i] = {
@@ -104,14 +134,18 @@ export const configUpdaters = {
     }
   },
 
-  removeEntry(config: Draft<Config>, action: { id: string }): void {
+  removeEntry(botState: Draft<BotState>, action: { id: string }): void {
+    const config = botState.config
+
     const i = indexOf(config.entries, action.id)
     if (i !== null) {
       config.entries.splice(i, 1)
     }
   },
 
-  addVariable(config: Draft<Config>): void {
+  addVariable(botState: Draft<BotState>): void {
+    const config = botState.config
+
     const oldIds = config.variables
       .map(v => v.id.match(/^var_(\d+)$/))
       .filter(m => m !== null)
@@ -128,26 +162,37 @@ export const configUpdaters = {
       regex: "",
       type: "number"
     })
+
+    updateVariableValue(botState, newId)
   },
 
-  updateVariable(config: Draft<Config>, action: { id: string, updates: Partial<VariableConfig> }): void {
+  updateVariable(botState: Draft<BotState>, action: { id: string, updates: Partial<VariableConfig> }): void {
+    const config = botState.config
+
     const i = indexOf(config.variables, action.id)
     if (i !== null) {
       config.variables[i] = {
         ...config.variables[i],
         ...action.updates
       }
+
+      updateVariableValue(botState, action.id)
     }
   },
 
-  removeVariable(config: Draft<Config>, action: { id: string }): void {
+  removeVariable(botState: Draft<BotState>, action: { id: string }): void {
+    const config = botState.config
+
     const i = indexOf(config.variables, action.id)
     if (i !== null) {
       config.variables.splice(i, 1)
+      botState.variables.delete(action.id)
     }
   },
 
-  reorderVariables(config: Draft<Config>, action: { orderedIds: string[] }): void {
+  reorderVariables(botState: Draft<BotState>, action: { orderedIds: string[] }): void {
+    const config = botState.config
+
     // Create a map of id to variable for fast lookup
     const variableMap = new Map<string, VariableConfig>()
     for (const variable of config.variables) {
@@ -168,7 +213,47 @@ export const configUpdaters = {
   }
 }
 
-function indexOf(entries: { id: string }[], id: string): number | null {
+function updateVariableValue(botState: Draft<BotState>, id: string) {
+  const i = indexOf(botState.config.variables, id)
+  if (!i) {
+    throw Error(`Variable ${id} not found`)
+  }
+
+  const variable = botState.config.variables[i]
+  const data = getVariablesData(botState, id)
+
+  try {
+    const element = findElementByXPath(variable.xpath)
+    let textValue = element.innerText
+    if (variable.regex) {
+      const match = new RegExp(variable.regex).exec(textValue)
+      if (match) {
+        textValue = match[1] !== undefined ? match[1] : match[0]
+      }
+    }
+
+    if (variable.type == "number") {
+      data.value = Number(textValue)
+    } else {
+      data.value = textValue
+    }
+  } catch (e) {
+    data.value = undefined
+    console.error(e)
+  }
+}
+
+function getVariablesData(botState: Draft<BotState>, id: string): Draft<VariableData> {
+  const result = botState.variables.get(id)
+  if (result) {
+    return result
+  }
+  const newData = {}
+  botState.variables.set(id, newData)
+  return newData
+}
+
+function indexOf(entries: readonly { id: string }[], id: string): number | null {
   for (let i = 0; i < entries.length; i++) {
     if (entries[i].id === id)
       return i
