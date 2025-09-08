@@ -1,22 +1,38 @@
-export function findElementsByXPath(xpath: string) {
-  const res = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
-  const elements = []
-  for (let i = 0; i < res.snapshotLength; i++) {
-    const element = res.snapshotItem(i)
-    if (element instanceof HTMLElement) {
-      elements.push(element)
-    }
-  }
-  return elements
+export type Try<T> = {
+  ok: true
+  value: T
+} | {
+  ok: false
+  error: string
 }
 
-export function findElementByXPath(xpath: string) {
-  const elements = findElementsByXPath(xpath)
-  if (elements.length > 1) {
-    throw new Error(`Found ${elements.length} elements, xpath: ${xpath}`)
+export function findElementsByXPath(xpath: string): Try<HTMLElement[]> {
+  if (!xpath || !xpath.trim()) {
+    return { ok: false, error: "XPath is empty" }
   }
-  if (elements.length == 0) {
-    throw new Error(`Element not found, xpath: ${xpath}`)
+  try {
+    const res = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null)
+    const nodes = []
+    let n: Node | null
+    while ((n = res.iterateNext()) != null) {
+      if (n instanceof HTMLElement) {
+        nodes.push(n)
+      }
+    }
+    return { ok: true, value: nodes }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { ok: false, error: `XPath error: ${error.message}` }
+    } else {
+      return { ok: false, error: `XPath error: ${String(error)}` }
+    }
   }
-  return elements[0]
+}
+
+export function findElementByXPath(xpath: string): Try<HTMLElement> {
+  const res = findElementsByXPath(xpath)
+  if (!res.ok) return { ok: false, error: res.error }
+  if (res.value.length === 0) return { ok: false, error: "XPath matched 0 elements." }
+  if (res.value.length > 1) return { ok: false, error: `XPath matched ${res.value.length} elements (need exactly 1).` }
+  return { ok: true, value: res.value[0] }
 }

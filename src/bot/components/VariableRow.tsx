@@ -1,7 +1,7 @@
 import * as React from "react"
 import { memo, type Ref, useEffect, useRef, useState } from "react"
 import type { VariableConfig } from "../BotState.ts"
-import { dispatch, useVariableValue } from "../BotStateContext.ts"
+import { dispatch, useVariableData, useVariableValue } from "../BotStateContext.ts"
 
 interface VariableRowProps {
   variable: VariableConfig
@@ -26,8 +26,6 @@ export const VariableRow = memo((props: VariableRowProps) => {
 
   // New variables (empty name) should start in editing mode
   const [isEditing, setIsEditing] = useState(!variable.name)
-  const [statusLine] = useState("")
-  const [statusType] = useState<"warn" | "ok" | "err">("ok")
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   // Autofocus name field when editing starts and name is empty
@@ -38,6 +36,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
   }, [isEditing, variable.name])
 
   const value = useVariableValue(variable.id)
+  const [statusLine, statusType] = useVariableData(variable.id)
 
   function handleInputChange(field: keyof VariableConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void {
     return e => {
@@ -59,7 +58,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
             <span style={{ fontWeight: "bold" }}>
               {variable.name || "Unnamed Variable"}
             </span>
-            <span className="variable-summary-value"> — {value ? value : "(not evaluated)"}</span>
+            <span className="variable-summary-value"> — {value !== undefined ? value : "(not evaluated)"}</span>
           </span>
           <button className="edit-btn" onClick={() => setIsEditing(false)}>
             Done
@@ -119,7 +118,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
           </button>
         </div>
 
-        {statusLine && (
+        {statusLine !== undefined && (
           <div className={`statusline status-${statusType}`}>
             {statusLine}
           </div>
@@ -145,7 +144,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
             {variable.name || "Unnamed"}
           </span>
           <div className="variable-value">
-            <span className="variable-current-value">{value ? value : "(not evaluated)"}</span>
+            <span className="variable-current-value">{value !== undefined ? value : "(not evaluated)"}</span>
             <span className="variable-type">({variable.type})</span>
           </div>
         </div>
@@ -154,7 +153,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
           Edit
         </button>
 
-        {statusLine && (
+        {statusLine !== undefined && (
           <div className={`statusline status-${statusType}`}>
             {statusLine}
           </div>

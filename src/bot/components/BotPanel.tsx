@@ -16,7 +16,7 @@ export function BotPanel({ children }: PropsWithChildren) {
       || target.tagName.toLowerCase() === "input"
       || target.tagName.toLowerCase() === "select"
       || target.tagName.toLowerCase() === "textarea"
-      || target.closest("button, input, select, textarea")
+      || target.closest("button, input, select, textarea") != null
 
     if (isInteractiveElement) return
 

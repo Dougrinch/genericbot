@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config"
-import { BrowserInstanceOption } from "vitest/node"
+import type { BrowserInstanceOption } from "vitest/node"
 
 export default defineConfig({
   test: {

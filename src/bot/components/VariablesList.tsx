@@ -11,7 +11,7 @@ function useCurryCallback<C extends CompositeKey, A extends unknown[], R>(
   const cache = useRef<CompositeMap<C, { f: (...a: A) => R, deps: unknown[] }>>(new CompositeMap())
   return c => {
     const cached = cache.current.get(c)
-    if (cached && cached.deps.length == deps.length && cached.deps.every((v, i) => Object.is(v, deps[i]))) {
+    if (cached && cached.deps.length === deps.length && cached.deps.every((v, i) => Object.is(v, deps[i]))) {
       return cached.f
     }
 
@@ -123,7 +123,7 @@ export function VariablesList() {
 
         // Move the dragged row to the new position in the DOM (for visual feedback)
         const targetRow = allRows[crossedBoundary]
-        if (targetRow && targetRow !== draggedRowElement && container) {
+        if (targetRow !== draggedRowElement) {
           if (crossedBoundary > draggedElementIndex) {
             // Moving down: insert after target
             container.insertBefore(draggedRowElement, targetRow.nextSibling)

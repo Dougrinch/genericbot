@@ -18,4 +18,11 @@ export function useVariableValue(id: string): number | string | undefined {
   return store.useStoreState(bs => bs.variables.get(id)?.value)
 }
 
+export function useVariableData(id: string) {
+  return store.useStoreState(bs => ([
+    bs.variables.get(id)?.statusLine,
+    bs.variables.get(id)?.statusType
+  ]))
+}
+
 export const dispatch = store.dispatch

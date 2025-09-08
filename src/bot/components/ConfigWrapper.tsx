@@ -1,12 +1,17 @@
 import { EntriesList } from "./EntriesList"
 import { VariablesList } from "./VariablesList"
 import { dispatch } from "../BotStateContext.ts"
+import { useEffect } from "react"
 
 interface ConfigWrapperProps {
   isVisible: boolean
 }
 
 export function ConfigWrapper({ isVisible }: ConfigWrapperProps) {
+  useEffect(() => {
+    dispatch({ type: "init" })
+  }, [])
+
   return (
     <div className="config-wrapper" hidden={!isVisible}>
       <div className="config-tab">

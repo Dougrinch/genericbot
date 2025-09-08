@@ -3,7 +3,7 @@ import globals from "globals"
 import reactHooks from "eslint-plugin-react-hooks"
 import reactRefresh from "eslint-plugin-react-refresh"
 import tseslint from "typescript-eslint"
-import { globalIgnores } from "eslint/config"
+import {globalIgnores} from "eslint/config"
 import stylistic from "@stylistic/eslint-plugin"
 
 const stylisticPreset = stylistic.configs.customize({
@@ -32,9 +32,7 @@ export default tseslint.config([
       {
         languageOptions: {
           parserOptions: {
-            projectService: {
-              allowDefaultProject: ["vitest.config.ts"]
-            }
+            projectService: true
           }
         }
       },
@@ -55,7 +53,9 @@ export default tseslint.config([
       "@stylistic/jsx-one-expression-per-line": ["error", {"allow": "non-jsx"}],
       "@stylistic/no-multiple-empty-lines": ["error", {"max": 2, "maxEOF": 0, "maxBOF": 0}],
       "@stylistic/arrow-parens": ["error", "as-needed"],
-      "@stylistic/spaced-comment": "off"
+      "@stylistic/spaced-comment": "off",
+      "@typescript-eslint/strict-boolean-expressions": "error",
+      "eqeqeq": ["error", "smart"]
     }
   }
 ])

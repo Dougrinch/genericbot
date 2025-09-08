@@ -56,7 +56,7 @@ export function EntryRow({ entry }: EntryRowProps) {
         type="text"
         id={`entry-condition-${entry.id}`}
         placeholder="score > 100 && lives >= 3"
-        value={entry.condition || ""}
+        value={entry.condition != null ? entry.condition : ""}
         onChange={handleInputChange("condition")}
       />
 
@@ -65,13 +65,13 @@ export function EntryRow({ entry }: EntryRowProps) {
         <input
           type="checkbox"
           id={`entry-allowMultiple-${entry.id}`}
-          checked={!!entry.allowMultiple}
+          checked={entry.allowMultiple === true}
           onChange={handleInputChange("allowMultiple")}
         />
         <label
           className="label"
           htmlFor={`entry-updateEvery-${entry.id}`}
-          style={{ visibility: entry.allowMultiple ? "visible" : "hidden" }}
+          style={{ visibility: entry.allowMultiple === true ? "visible" : "hidden" }}
         >
           Update every (ms)
         </label>
@@ -79,9 +79,9 @@ export function EntryRow({ entry }: EntryRowProps) {
           type="number"
           id={`entry-updateEvery-${entry.id}`}
           min="100"
-          value={entry.updateEvery || 1000}
+          value={entry.updateEvery !== undefined ? entry.updateEvery : 1000}
           onChange={handleInputChange("updateEvery")}
-          style={{ visibility: entry.allowMultiple ? "visible" : "hidden" }}
+          style={{ visibility: entry.allowMultiple === true ? "visible" : "hidden" }}
         />
       </div>
 

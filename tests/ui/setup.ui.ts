@@ -23,5 +23,5 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  page.getBySelector(".config-wrapper").element().scrollTo(0, 0)
+  page.getBySelector(".config-wrapper").query()?.scrollTo(0, 0)
 })
