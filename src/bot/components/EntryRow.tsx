@@ -1,7 +1,7 @@
 import * as React from "react"
 import { useState } from "react"
 import type { EntryConfig } from "../BotState.ts"
-import { dispatch } from "../BotStateContext.ts"
+import { dispatch } from "../BotStateHooks.tsx"
 
 interface EntryRowProps {
   entry: EntryConfig

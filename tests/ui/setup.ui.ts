@@ -2,7 +2,7 @@ import { cleanup, configure } from "vitest-browser-react/pure"
 import { afterEach, beforeAll, beforeEach, vi } from "vitest"
 import { enrichLocator } from "./locator.ts"
 import { installCustomLocators } from "./helpers.tsx"
-import { dispatch } from "../../src/bot/BotStateContext.ts"
+import { dispatch } from "../../src/bot/BotStateHooks.tsx"
 import { installCustomMatchers } from "./matchers.ts"
 import { page } from "@vitest/browser/context"
 

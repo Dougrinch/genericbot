@@ -3,6 +3,7 @@ import { BotPanel } from "./components/BotPanel"
 import { BotHeader } from "./components/BotHeader"
 import { ConfigWrapper } from "./components/ConfigWrapper"
 import { ActionRow } from "./components/ActionRow"
+import { BotStateContext } from "./BotStateContext.tsx"
 
 function useCss(): string | null {
   const [value, setValue] = useState<string | null>(null)
@@ -41,12 +42,14 @@ function Bot() {
   }
 
   return (
-    <BotPanel>
-      <style>{css}</style>
-      <BotHeader />
-      <ConfigWrapper isVisible={isConfigVisible} />
-      <ActionRow onToggleConfig={() => setIsConfigVisible(!isConfigVisible)} />
-    </BotPanel>
+    <BotStateContext>
+      <BotPanel>
+        <style>{css}</style>
+        <BotHeader />
+        <ConfigWrapper isVisible={isConfigVisible} />
+        <ActionRow onToggleConfig={() => setIsConfigVisible(!isConfigVisible)} />
+      </BotPanel>
+    </BotStateContext>
   )
 }
 

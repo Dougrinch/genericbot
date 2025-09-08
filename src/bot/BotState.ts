@@ -1,6 +1,6 @@
 import { type Draft, enableMapSet, type Immutable, type WritableDraft } from "immer"
 import { findElementByXPath } from "../utils/xpath.ts"
-import { dispatch } from "./BotStateContext.ts"
+import { dispatch } from "./BotStateHooks.tsx"
 
 enableMapSet()
 
@@ -110,6 +110,12 @@ export const stateUpdaters = {
 
   init(botState: Draft<BotState>): void {
     resetVariables(botState)
+  },
+
+  stop(botState: Draft<BotState>): void {
+    for (const data of botState.variables.values()) {
+      clearObservers(data)
+    }
   },
 
   addEntry(botState: Draft<BotState>): void {

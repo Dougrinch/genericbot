@@ -1,5 +1,5 @@
 import { EntryRow } from "./EntryRow"
-import { useConfig } from "../BotStateContext.ts"
+import { useConfig } from "../BotStateHooks.tsx"
 
 export function EntriesList() {
   const entries = useConfig(c => c.entries)

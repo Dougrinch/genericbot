@@ -1,7 +1,7 @@
 import * as React from "react"
 import { memo, type Ref, useEffect, useRef, useState } from "react"
 import type { VariableConfig } from "../BotState.ts"
-import { dispatch, useVariableData, useVariableValue } from "../BotStateContext.ts"
+import { dispatch, useVariableData, useVariableValue } from "../BotStateHooks.tsx"
 
 interface VariableRowProps {
   variable: VariableConfig
