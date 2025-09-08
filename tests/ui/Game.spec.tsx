@@ -1,10 +1,10 @@
 import { describe, test } from "vitest"
 import { page } from "@vitest/browser/context"
-import { advanceBy } from "./helpers.ts"
+import { advanceBy, renderGame } from "./helpers.tsx"
 
 describe("Game", () => {
   test("simple Game test", async () => {
-    await import("../../src/main.tsx")
+    renderGame()
 
     await page.getByText("Gnome Gold Mine").expect().toBeInTheDocument()
 

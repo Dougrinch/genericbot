@@ -1,5 +1,29 @@
 import { vi } from "vitest"
 import { locators } from "@vitest/browser/context"
+import { render } from "vitest-browser-react"
+import Game from "../../src/game/Game.tsx"
+import Bot from "../../src/bot/Bot.tsx"
+
+export function renderGame() {
+  render(<Game />, {
+    container: document.getElementById("root")!
+  })
+}
+
+export function renderBot() {
+  const bot = document.createElement("div")
+  bot.id = "bot"
+  document.body.appendChild(bot)
+
+  const shadowRoot = bot.attachShadow({ mode: "open" })
+
+  const root = document.createElement("div")
+  shadowRoot.appendChild(root)
+
+  render(<Bot />, {
+    container: root
+  })
+}
 
 // eslint-disable-next-line
 export async function advanceBy(ms: number) {

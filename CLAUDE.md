@@ -30,13 +30,11 @@ src/
     └── injection.tsx  # Browser injection and DOM manipulation utilities
 
 tests/
-├── setup.shared.ts    # Shared test configuration
 ├── unit/              # Unit tests (jsdom environment)
 │   ├── setup.unit.ts  # Unit test specific setup
-│   └── test.spec.ts   # Core functionality tests
 └── ui/                # Browser UI tests (Playwright)
     ├── setup.ui.ts    # UI test specific setup
-    └── Game.spec.tsx  # Bot integration tests
+    └── Bot.spec.tsx   # Bot integration tests
 ```
 
 ## Testing Architecture
@@ -110,12 +108,10 @@ Uses flat config format (`eslint.config.js`) with:
 
 ## Test Setup Details
 
-### Shared Setup (`tests/setup.shared.ts`)
+### UI Test Features
 - Configures fake timers for consistent bot behavior testing
 - Resets DOM state between tests
 - Provides clean `<div id="root"></div>` for each test
-
-### UI Test Features
 - Real browser interactions via Playwright (simulates actual game environments)
 - Support for `expect.element()` assertions
 - Dynamic module importing for testing bot injection

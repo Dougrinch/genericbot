@@ -7,7 +7,7 @@ export default defineConfig({
       test: {
         name: "unit",
         environment: "jsdom",
-        setupFiles: ["tests/setup.shared.ts", "tests/unit/setup.unit.ts"],
+        setupFiles: ["tests/unit/setup.unit.ts"],
         include: ["tests/unit/**/*.spec.{ts,tsx}"]
       }
     }, {
@@ -27,7 +27,7 @@ export default defineConfig({
             height: 768
           }
         },
-        setupFiles: ["tests/setup.shared.ts", "tests/ui/setup.ui.ts"],
+        setupFiles: ["tests/ui/setup.ui.ts"],
         include: ["tests/ui/**/*.spec.{ts,tsx}"]
       },
       optimizeDeps: {

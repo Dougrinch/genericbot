@@ -218,7 +218,7 @@ export const stateUpdaters = {
       }
     }
 
-    // Replace the variables array with the reordered one
+    // Replace the variable array with the reordered one
     config.variables = reorderedVariables
   },
 

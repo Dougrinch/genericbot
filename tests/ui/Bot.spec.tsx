@@ -1,11 +1,11 @@
 import { describe, test } from "vitest"
 import { type Locator, page } from "@vitest/browser/context"
-import { render } from "vitest-browser-react"
-import Bot from "../../src/bot/Bot.tsx"
+import { renderBot, renderGame } from "./helpers.tsx"
 
 describe("Bot", () => {
   test("rename variable", async () => {
-    await import("../../src/main.tsx")
+    renderGame()
+    renderBot()
 
     const dig = page.getByRole("button", { name: /^Dig/ })
     await dig.clickN(15)
@@ -26,7 +26,8 @@ describe("Bot", () => {
   })
 
   test("reorder variables", async () => {
-    render(<Bot />)
+    renderGame()
+    renderBot()
 
     await page.getByText("⚙️").click()
 
@@ -49,7 +50,8 @@ describe("Bot", () => {
   })
 
   test("move back while reordering variables", async () => {
-    render(<Bot />)
+    renderGame()
+    renderBot()
 
     await page.getByText("⚙️").click()
     await expectVariables(["score", "lives", "name", "Gold"])

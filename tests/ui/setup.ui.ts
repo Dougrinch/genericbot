@@ -1,7 +1,7 @@
-import { configure } from "vitest-browser-react/pure"
-import { afterEach, beforeAll, beforeEach } from "vitest"
+import { cleanup, configure } from "vitest-browser-react/pure"
+import { afterEach, beforeAll, beforeEach, vi } from "vitest"
 import { enrichLocator } from "./locator.ts"
-import { installCustomLocators } from "./helpers.ts"
+import { installCustomLocators } from "./helpers.tsx"
 import { dispatch } from "../../src/bot/BotStateContext.ts"
 import { installCustomMatchers } from "./matchers.ts"
 import { page } from "@vitest/browser/context"
@@ -19,9 +19,18 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
+  cleanup()
+  vi.useFakeTimers()
+  vi.resetModules()
+  vi.resetAllMocks()
+
+  document.head.innerHTML = ""
+  document.body.innerHTML = "<div id=\"root\"></div>"
+
   dispatch({ type: "reset" })
 })
 
 afterEach(() => {
   page.getBySelector(".config-wrapper").query()?.scrollTo(0, 0)
+  vi.useRealTimers()
 })

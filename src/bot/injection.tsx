@@ -6,7 +6,11 @@ import Bot from "./Bot.tsx"
   const bot = document.createElement("div")
   bot.id = "bot"
   document.body.appendChild(bot)
-  const root = bot.attachShadow({ mode: "open" })
+
+  const shadowRoot = bot.attachShadow({ mode: "open" })
+
+  const root = document.createElement("div")
+  shadowRoot.appendChild(root)
 
   createRoot(root).render(
     <StrictMode>
