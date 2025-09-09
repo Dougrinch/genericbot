@@ -3,14 +3,15 @@ import { type BotState, type Config, initialBotState, stateUpdaters } from "./Bo
 
 import { createStore } from "../utils/Store.ts"
 import type { Draft } from "immer"
+import type { MarkImmutable } from "../utils/immutables.ts"
 
 const store = createStore(createMutableStateReducer(stateUpdaters), () => {
   return initialBotState() as Draft<BotState>
 })
 
-export function useConfig(): Config
-export function useConfig<T>(selector: (state: Config) => T): T
-export function useConfig<T>(selector?: (state: Config) => T): T | Config {
+export function useConfig(): MarkImmutable<Config>
+export function useConfig<T>(selector: (state: MarkImmutable<Config>) => T): T
+export function useConfig<T>(selector?: (state: MarkImmutable<Config>) => T): T | MarkImmutable<Config> {
   return store.useStoreState(bs => selector ? selector(bs.config) : bs.config)
 }
 

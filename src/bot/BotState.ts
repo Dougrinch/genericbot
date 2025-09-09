@@ -1,20 +1,21 @@
-import { type Draft, enableMapSet, type Immutable, type WritableDraft } from "immer"
+import { enableMapSet } from "immer"
 import { findElementByXPath } from "../utils/xpath.ts"
 import { dispatch } from "./BotStateHooks.tsx"
+import { markMutable, type MarkMutable } from "../utils/immutables.ts"
 
 enableMapSet()
 
-export type BotState = Immutable<{
+export type BotState = MarkMutable<{
   config: Config
   variables: Map<string, VariableData>
 }>
 
-export type Config = Immutable<{
-  entries: EntryConfig[]
-  variables: VariableConfig[]
+export type Config = MarkMutable<{
+  entries: Map<string, EntryConfig>
+  variables: Map<string, VariableConfig>
 }>
 
-export type EntryConfig = Immutable<{
+export type EntryConfig = MarkMutable<{
   id: string
   name: string
   xpath: string
@@ -24,7 +25,7 @@ export type EntryConfig = Immutable<{
   condition?: string
 }>
 
-export type VariableConfig = Immutable<{
+export type VariableConfig = MarkMutable<{
   id: string
   name: string
   xpath: string
@@ -32,7 +33,7 @@ export type VariableConfig = Immutable<{
   type: "number" | "string"
 }>
 
-export type VariableData = Immutable<{
+export type VariableData = MarkMutable<{
   value?: number | string
   statusLine?: string
   statusType?: "warn" | "ok" | "err"
@@ -41,16 +42,16 @@ export type VariableData = Immutable<{
 }>
 
 export function initialBotState(): BotState {
-  return {
+  return markMutable({
     config: initialBotConfig(),
     variables: new Map()
-  }
+  })
 }
 
 function initialBotConfig(): Config {
-  return {
-    entries: [
-      {
+  return markMutable({
+    entries: new Map([
+      ["entry_1", {
         id: "entry_1",
         name: "111",
         xpath: "//button[@id='click-me']",
@@ -58,8 +59,8 @@ function initialBotConfig(): Config {
         allowMultiple: false,
         updateEvery: 1000,
         condition: ""
-      },
-      {
+      }],
+      ["entry_2", {
         id: "entry_2",
         name: "222",
         xpath: "//div[@class='collectible']",
@@ -67,61 +68,61 @@ function initialBotConfig(): Config {
         allowMultiple: true,
         updateEvery: 1500,
         condition: "score > 100"
-      }
-    ],
-    variables: [
-      {
+      }]
+    ]),
+    variables: new Map([
+      ["var_1", {
         id: "var_1",
         name: "score",
         xpath: "//span[@id='score']",
         regex: "",
         type: "number"
-      },
-      {
+      }],
+      ["var_2", {
         id: "var_2",
         name: "lives",
         xpath: "//div[@class='lives']",
         regex: "(\\d+)",
         type: "number"
-      },
-      {
+      }],
+      ["var_3", {
         id: "var_3",
         name: "name",
         xpath: "//div[@id='name']",
         regex: "",
         type: "string"
-      },
-      {
+      }],
+      ["var_4", {
         id: "var_4",
         name: "Gold",
         xpath: "//div[starts-with(., 'Gold')][not(.//div[starts-with(., 'Gold')])]",
         regex: "Gold: (\\d+)",
         type: "number"
-      }
-    ]
-  }
+      }]
+    ])
+  })
 }
 
 export const stateUpdaters = {
-  reset(botState: Draft<BotState>): void {
+  reset(botState: BotState): void {
     Object.assign(botState, initialBotState())
     resetVariables(botState)
   },
 
-  init(botState: Draft<BotState>): void {
+  init(botState: BotState): void {
     resetVariables(botState)
   },
 
-  stop(botState: Draft<BotState>): void {
+  stop(botState: BotState): void {
     for (const data of botState.variables.values()) {
       clearObservers(data)
     }
   },
 
-  addEntry(botState: Draft<BotState>): void {
+  addEntry(botState: BotState): void {
     const config = botState.config
 
-    const oldIds = config.entries
+    const oldIds = Array.from(config.entries.values())
       .map(e => e.id.match(/^entry_(\d+)$/))
       .filter(m => m !== null)
       .map(m => Number(m[1]))
@@ -130,39 +131,34 @@ export const stateUpdaters = {
       ? `entry_${Math.max(...oldIds) + 1}`
       : "entry_1"
 
-    config.entries.push({
+    config.entries.set(newId, markMutable({
       id: newId,
       name: "",
       xpath: "",
       interval: 1000
-    })
+    }))
   },
 
-  updateEntry(botState: Draft<BotState>, action: { id: string, updates: Partial<EntryConfig> }): void {
+  updateEntry(botState: BotState, action: { id: string, updates: Partial<EntryConfig> }): void {
     const config = botState.config
-
-    const i = indexOf(config.entries, action.id)
-    if (i !== null) {
-      config.entries[i] = {
-        ...config.entries[i],
+    const currentEntry = config.entries.get(action.id)
+    if (currentEntry) {
+      config.entries.set(action.id, {
+        ...currentEntry,
         ...action.updates
-      }
+      })
     }
   },
 
-  removeEntry(botState: Draft<BotState>, action: { id: string }): void {
+  removeEntry(botState: BotState, action: { id: string }): void {
     const config = botState.config
-
-    const i = indexOf(config.entries, action.id)
-    if (i !== null) {
-      config.entries.splice(i, 1)
-    }
+    config.entries.delete(action.id)
   },
 
-  addVariable(botState: Draft<BotState>): void {
+  addVariable(botState: BotState): void {
     const config = botState.config
 
-    const oldIds = config.variables
+    const oldIds = Array.from(config.variables.values())
       .map(v => v.id.match(/^var_(\d+)$/))
       .filter(m => m !== null)
       .map(m => Number(m[1]))
@@ -171,56 +167,45 @@ export const stateUpdaters = {
       ? `var_${Math.max(...oldIds) + 1}`
       : "var_1"
 
-    config.variables.push({
+    config.variables.set(newId, markMutable({
       id: newId,
       name: "",
       xpath: "",
       regex: "",
       type: "number"
-    })
+    }))
 
     resetVariable(botState, newId)
   },
 
-  updateVariable(botState: Draft<BotState>, action: { id: string, updates: Partial<VariableConfig> }): void {
+  updateVariable(botState: BotState, action: { id: string, updates: Partial<VariableConfig> }): void {
     const config = botState.config
-
-    const i = indexOf(config.variables, action.id)
-    if (i !== null) {
-      config.variables[i] = {
-        ...config.variables[i],
+    const currentVariable = config.variables.get(action.id)
+    if (currentVariable) {
+      config.variables.set(action.id, {
+        ...currentVariable,
         ...action.updates
-      }
+      })
 
       resetVariable(botState, action.id)
     }
   },
 
-  removeVariable(botState: Draft<BotState>, action: { id: string }): void {
+  removeVariable(botState: BotState, action: { id: string }): void {
     const config = botState.config
-
-    const i = indexOf(config.variables, action.id)
-    if (i !== null) {
-      config.variables.splice(i, 1)
-      botState.variables.delete(action.id)
-    }
+    config.variables.delete(action.id)
+    botState.variables.delete(action.id)
   },
 
-  reorderVariables(botState: Draft<BotState>, action: { orderedIds: string[] }): void {
+  reorderVariables(botState: BotState, action: { orderedIds: string[] }): void {
     const config = botState.config
 
-    // Create a map of id to variable for fast lookup
-    const variableMap = new Map<string, VariableConfig>()
-    for (const variable of config.variables) {
-      variableMap.set(variable.id, variable)
-    }
-
     // Reorder variables according to the provided order
-    const reorderedVariables: VariableConfig[] = []
+    const reorderedVariables = new Map<string, VariableConfig>()
     for (const id of action.orderedIds) {
-      const variable = variableMap.get(id)
+      const variable = config.variables.get(id)
       if (variable) {
-        reorderedVariables.push(variable)
+        reorderedVariables.set(id, variable)
       }
     }
 
@@ -228,42 +213,37 @@ export const stateUpdaters = {
     config.variables = reorderedVariables
   },
 
-  reevaluateVariable(botState: Draft<BotState>, action: { id: string }): void {
-    const i = indexOf(botState.config.variables, action.id)
-    if (i === null) {
+  reevaluateVariable(botState: BotState, action: { id: string }): void {
+    const variable = botState.config.variables.get(action.id)
+    if (!variable) {
       throw Error(`Variable ${action.id} not found`)
     }
-
-    const variable = botState.config.variables[i]
     const data = getVariablesData(botState, variable.id)
 
     evaluateVariableValue(variable, data)
   },
 
-  resetVariable(botState: Draft<BotState>, action: { id: string }): void {
+  resetVariable(botState: BotState, action: { id: string }): void {
     resetVariable(botState, action.id)
   }
 }
 
-function resetVariables(botState: Draft<BotState>): void {
-  for (const variable of botState.config.variables) {
+function resetVariables(botState: BotState): void {
+  for (const variable of botState.config.variables.values()) {
     resetVariable(botState, variable.id)
   }
 }
 
-function resetVariable(botState: Draft<BotState>, id: string) {
-  const i = indexOf(botState.config.variables, id)
-  if (i === null) {
+function resetVariable(botState: BotState, id: string) {
+  const variable = botState.config.variables.get(id)
+  if (!variable) {
     throw Error(`Variable ${id} not found`)
   }
-
-  const variable = botState.config.variables[i]
   const data = getVariablesData(botState, variable.id)
 
   const xpathResult = findElementByXPath(variable.xpath)
   if (xpathResult.ok) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data.element = xpathResult.value as any as WritableDraft<HTMLElement>
+    data.element = markMutable(xpathResult.value)
     setupObservers(data, variable.id)
     evaluateVariableValue(variable, data)
   } else {
@@ -275,7 +255,7 @@ function resetVariable(botState: Draft<BotState>, id: string) {
   }
 }
 
-function evaluateVariableValue(variable: Draft<VariableConfig>, data: Draft<VariableData>) {
+function evaluateVariableValue(variable: VariableConfig, data: VariableData) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const element = data.element as any as HTMLElement
   let textValue = element.innerText
@@ -296,7 +276,7 @@ function evaluateVariableValue(variable: Draft<VariableConfig>, data: Draft<Vari
   }
 }
 
-function setupObservers(data: Draft<VariableData>, id: string) {
+function setupObservers(data: VariableData, id: string) {
   clearObservers(data)
 
   const observers = []
@@ -307,7 +287,7 @@ function setupObservers(data: Draft<VariableData>, id: string) {
   const observer = new MutationObserver(() => {
     dispatch({ type: "reevaluateVariable", id: id })
   })
-  observers.push(observer)
+  observers.push(markMutable(observer))
   observer.observe(element, {
     childList: true,
     characterData: true,
@@ -338,7 +318,7 @@ function setupObservers(data: Draft<VariableData>, id: string) {
         }
       }
     })
-    observers.push(observer)
+    observers.push(markMutable(observer))
     observer.observe(parent, {
       attributes: true,
       childList: true,
@@ -349,7 +329,7 @@ function setupObservers(data: Draft<VariableData>, id: string) {
   data.observers = observers
 }
 
-function clearObservers(data: Draft<VariableData>) {
+function clearObservers(data: VariableData) {
   if (data.observers) {
     for (const observer of data.observers) {
       observer.disconnect()
@@ -358,20 +338,12 @@ function clearObservers(data: Draft<VariableData>) {
   }
 }
 
-function getVariablesData(botState: Draft<BotState>, id: string): Draft<VariableData> {
+function getVariablesData(botState: BotState, id: string): VariableData {
   const result = botState.variables.get(id)
   if (result) {
     return result
   }
-  const newData = {}
+  const newData = markMutable({})
   botState.variables.set(id, newData)
   return newData
-}
-
-function indexOf(entries: readonly { id: string }[], id: string): number | null {
-  for (let i = 0; i < entries.length; i++) {
-    if (entries[i].id === id)
-      return i
-  }
-  return null
 }

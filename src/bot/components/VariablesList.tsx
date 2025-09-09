@@ -139,7 +139,7 @@ export function VariablesList() {
     }
 
     const handleMouseUp = () => {
-      // Check if position actually changed
+      // Check if the position actually changed
       const currentNextSibling = draggedRowElement.nextSibling
       if (currentNextSibling !== originalNextSibling) {
         // Position changed - save the new order
@@ -169,14 +169,14 @@ export function VariablesList() {
     e.stopPropagation()
   }, [])
 
-  if (variables.length === 0) {
+  if (variables.size === 0) {
     return null
   }
 
   return (
     <div className="variables">
       <div ref={containerRef} className="variables-container">
-        {variables.map((variable, index) => (
+        {Array.from(variables.values()).map((variable, index) => (
           <VariableRow
             key={variable.id}
             ref={getRowRef(variable.id)}

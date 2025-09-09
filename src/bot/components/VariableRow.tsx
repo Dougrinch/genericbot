@@ -2,9 +2,10 @@ import * as React from "react"
 import { memo, type Ref, useEffect, useRef, useState } from "react"
 import type { VariableConfig } from "../BotState.ts"
 import { dispatch, useVariableData, useVariableValue } from "../BotStateHooks.tsx"
+import type { MarkImmutable } from "../../utils/immutables.ts"
 
 interface VariableRowProps {
-  variable: VariableConfig
+  variable: MarkImmutable<VariableConfig>
   onDragStart: (e: React.MouseEvent) => void
   setOnDragStop: (callback: () => void) => void
   ref: Ref<HTMLDivElement>

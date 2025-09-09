@@ -6,7 +6,7 @@ export function EntriesList() {
 
   return (
     <div className="entries">
-      {entries.map(entry => (
+      {Array.from(entries.values()).map(entry => (
         <EntryRow key={entry.id} entry={entry} />
       ))}
     </div>

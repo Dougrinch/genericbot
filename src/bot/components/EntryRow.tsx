@@ -2,9 +2,10 @@ import * as React from "react"
 import { useState } from "react"
 import type { EntryConfig } from "../BotState.ts"
 import { dispatch } from "../BotStateHooks.tsx"
+import type { MarkImmutable } from "../../utils/immutables.ts"
 
 interface EntryRowProps {
-  entry: EntryConfig
+  entry: MarkImmutable<EntryConfig>
 }
 
 export function EntryRow({ entry }: EntryRowProps) {
