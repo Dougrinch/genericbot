@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { type Action, createMutableStateReducer } from "../../src/utils/mutableStateReducer.ts"
+import { type Action, createMutableStateReducer } from "../../src/utils/MutableStateReducer.ts"
 
 type State = { v: string }
 
@@ -15,7 +15,7 @@ const api = {
   }
 }
 
-describe("mutableStateReducer.spec.ts", () => {
+describe("MutableStateReducer.spec.ts", () => {
   test("events are dispatched to the right updater", () => {
     const reducer = createMutableStateReducer(api)
 

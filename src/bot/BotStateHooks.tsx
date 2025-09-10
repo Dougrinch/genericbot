@@ -1,11 +1,11 @@
-import { createMutableStateReducer } from "../utils/mutableStateReducer.ts"
+import { createMutableStateReducer } from "../utils/MutableStateReducer.ts"
 import { type BotState, type Config, initialBotState, stateUpdaters } from "./BotState.ts"
 
-import { createStore } from "../utils/Store.ts"
+import { createReducerStore } from "../utils/Store.ts"
 import type { Draft } from "immer"
 import type { MarkImmutable } from "../utils/immutables.ts"
 
-const store = createStore(createMutableStateReducer(stateUpdaters), () => {
+const store = createReducerStore(createMutableStateReducer(stateUpdaters), () => {
   return initialBotState() as Draft<BotState>
 })
 
