@@ -23,6 +23,7 @@ type VariableData = {
 export class VariablesManager {
   private readonly bot: BotManager
   private readonly variables: Map<string, VariableData>
+  private rootObserver?: MutationObserver
 
   constructor(botState: BotManager) {
     this.bot = botState
@@ -38,6 +39,28 @@ export class VariablesManager {
     }
   }
 
+  init(): void {
+    this.resetAll()
+
+    this.rootObserver = new MutationObserver(mutations => {
+      for (const mutation of mutations) {
+        if (mutation.addedNodes.length > 0) {
+          dispatch.variables.resetNotFound()
+          return
+        }
+      }
+    })
+    this.rootObserver.observe(document.body, {
+      childList: true,
+      subtree: true
+    })
+  }
+
+  close() {
+    this.clearAllObservers()
+    this.rootObserver?.disconnect()
+  }
+
   resetAll(): void {
     const uniqueIds = new Set<string>()
     for (const variable of this.bot.config.getConfig().variables.values()) {
@@ -49,6 +72,14 @@ export class VariablesManager {
 
     for (const id of uniqueIds) {
       this.reset(id)
+    }
+  }
+
+  resetNotFound() {
+    for (const [id, data] of this.variables) {
+      if (data.element === undefined) {
+        this.reset(id)
+      }
     }
   }
 
@@ -66,6 +97,7 @@ export class VariablesManager {
       const xpathResult = findElementByXPath(variable.xpath)
       if (xpathResult.ok) {
         data.element = xpathResult.value
+        data.isVisible = data.element.checkVisibility()
         this.setupObservers(data, variable.id)
         this.evaluateVariableValue(variable, data)
       } else {
@@ -76,6 +108,11 @@ export class VariablesManager {
         data.statusLine = xpathResult.error
       }
     }
+  }
+
+  updateVisibility(id: string): void {
+    const data = this.getOrCreateData(id)
+    data.isVisible = data.element?.checkVisibility()
   }
 
   reevaluateVariable(id: string): void {
@@ -89,6 +126,13 @@ export class VariablesManager {
   }
 
   private evaluateVariableValue(variable: VariableConfig, data: VariableData) {
+    if (data.isVisible !== true) {
+      data.value = undefined
+      data.statusType = "warn"
+      data.statusLine = `Element hidden`
+      return
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const element = data.element as any as HTMLElement
     let textValue = element.innerText
@@ -122,8 +166,14 @@ export class VariablesManager {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let element = data.element as any as HTMLElement
 
-    const observer = new MutationObserver(() => {
-      dispatch.variables.reevaluateVariable(id)
+    const observer = new MutationObserver(mutations => {
+      for (const mutation of mutations) {
+        if (mutation.type === "childList" || mutation.type === "characterData") {
+          dispatch.variables.reevaluateVariable(id)
+        } else if (mutation.type === "attributes") {
+          dispatch.variables.updateVisibility(id)
+        }
+      }
     })
     observers.push(observer)
     observer.observe(element, {
@@ -142,13 +192,10 @@ export class VariablesManager {
       const observer = new MutationObserver(mutations => {
         for (const mutation of mutations) {
           if (mutation.type === "attributes") {
-            //TODO don't need to revaluate xpath, just handle visibility change
-            dispatch.variables.reset(id)
-            return
+            dispatch.variables.updateVisibility(id)
           } else if (mutation.type === "childList") {
             for (const removedNode of mutation.removedNodes) {
               if (removedNode === child) {
-                //TODO what if the node comes back?
                 dispatch.variables.reset(id)
                 return
               }
@@ -167,7 +214,7 @@ export class VariablesManager {
     data.observers = observers
   }
 
-  clearAllObservers() {
+  private clearAllObservers() {
     for (const data of this.variables.values()) {
       this.clearObservers(data)
     }

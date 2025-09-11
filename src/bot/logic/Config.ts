@@ -72,7 +72,7 @@ export function initialBotConfig(): Config {
       ["var_4", {
         id: "var_4",
         name: "Gold",
-        xpath: "//div[starts-with(., 'Gold')][not(.//div[starts-with(., 'Gold')])]",
+        xpath: "//div[starts-with(., 'Gold:')][not(.//div[starts-with(., 'Gold:')])]",
         regex: "Gold: (\\d+)",
         type: "number"
       }]

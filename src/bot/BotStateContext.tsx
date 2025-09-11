@@ -6,7 +6,7 @@ export function BotStateContext(props: PropsWithChildren) {
     const fixedDispatch = dispatch
     fixedDispatch.init()
     return () => {
-      fixedDispatch.stop()
+      fixedDispatch.close()
     }
     // eslint-disable-next-line
   }, [dispatch])

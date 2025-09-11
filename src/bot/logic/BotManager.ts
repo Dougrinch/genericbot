@@ -26,11 +26,11 @@ export class BotManager {
   }
 
   init(): void {
-    this.variables.resetAll()
+    this.variables.init()
   }
 
-  stop(): void {
-    this.variables.clearAllObservers()
+  close(): void {
+    this.variables.close()
   }
 }
 

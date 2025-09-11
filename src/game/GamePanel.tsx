@@ -1,11 +1,21 @@
 import { getGnomePrice, getSnowWhitePrice } from "./GameState.ts"
 import { dispatch, useGame } from "./GameStateContext.ts"
+import { useState } from "react"
 
 export function GamePanel() {
+  const [isGoldVisible, setIsGoldVisible] = useState(true)
+  const [isGoldInTree, setIsGoldInTree] = useState(true)
+
+  const goldStatus = !isGoldInTree
+    ? "deleted"
+    : !isGoldVisible
+      ? "hidden"
+      : "visible"
+
   return (
     <div className="game-panel">
       <div className="game-header">
-        <GameTopPanel />
+        <GameTopPanel isGoldVisible={isGoldVisible} isGoldInTree={isGoldInTree} />
         <h1>Gnome Gold Mine</h1>
       </div>
       <div className="game-buttons">
@@ -13,11 +23,16 @@ export function GamePanel() {
         <BuyGnomeButton />
         <BuySnowWhiteButton />
       </div>
+      <div className="control-panel">
+        <div style={{ fontSize: "16px", fontWeight: "bold" }}>Gold Status: {goldStatus}</div>
+        <button onClick={() => setIsGoldVisible(!isGoldVisible)}>{isGoldVisible ? "Hide" : "Show"} Gold</button>
+        <button onClick={() => setIsGoldInTree(!isGoldInTree)}>{isGoldInTree ? "Delete" : "Add"} Gold</button>
+      </div>
     </div>
   )
 }
 
-function GameTopPanel() {
+function GameTopPanel(props: { isGoldVisible: boolean, isGoldInTree: boolean }) {
   const state = useGame()
   return (
     <div className="game-stats">
@@ -26,9 +41,11 @@ function GameTopPanel() {
         <div>Gnomes: {state.gnomes}</div>
         <div>Snow Whites: {state.snowWhites}</div>
       </div>
-      <div className="game-stats-center">
-        <div>Gold: {Math.floor(state.gold)}</div>
-      </div>
+      {props.isGoldInTree && (
+        <div className="game-stats-center">
+          <div hidden={!props.isGoldVisible}>Gold: {Math.floor(state.gold)}</div>
+        </div>
+      )}
     </div>
   )
 }
