@@ -149,15 +149,15 @@ export const VariableRow = memo((props: VariableRowProps) => {
           </div>
         </div>
 
-        <button className="edit-btn" onClick={() => setIsEditing(true)}>
-          Edit
-        </button>
-
         {statusLine !== undefined && (
           <div className={`statusline status-${statusType}`}>
             {statusLine}
           </div>
         )}
+
+        <button className="edit-btn" onClick={() => setIsEditing(true)}>
+          Edit
+        </button>
       </div>
     )
   }
