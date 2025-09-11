@@ -1,11 +1,10 @@
 import * as React from "react"
 import { useState } from "react"
-import type { EntryConfig } from "../BotState.ts"
-import { dispatch } from "../BotStateHooks.tsx"
-import type { MarkImmutable } from "../../utils/immutables.ts"
+import type { EntryConfig } from "../logic/Config.ts"
+import { dispatch } from "../logic/BotManager.ts"
 
 interface EntryRowProps {
-  entry: MarkImmutable<EntryConfig>
+  entry: EntryConfig
 }
 
 export function EntryRow({ entry }: EntryRowProps) {
@@ -20,7 +19,7 @@ export function EntryRow({ entry }: EntryRowProps) {
           ? Number(e.target.value) || 0
           : e.target.value
 
-      dispatch({ type: "updateEntry", id: entry.id, updates: { [field]: value } })
+      dispatch.config.updateEntry(entry.id, { [field]: value })
     }
   }
 
@@ -91,7 +90,7 @@ export function EntryRow({ entry }: EntryRowProps) {
       </div>
 
       <div className="row-full">
-        <button onClick={() => dispatch({ type: "removeEntry", id: entry.id })}>
+        <button onClick={() => dispatch.config.removeEntry(entry.id)}>
           Remove
         </button>
       </div>

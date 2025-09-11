@@ -1,8 +1,9 @@
 import { VariableRow } from "./VariableRow"
-import { dispatch, useConfig } from "../BotStateHooks.tsx"
 import * as React from "react"
 import { type DependencyList, useRef } from "react"
 import { type CompositeKey, CompositeMap } from "../../utils/CompositeMap.ts"
+import { useConfig } from "../logic/ConfigManager.ts"
+import { dispatch } from "../logic/BotManager.ts"
 
 function useCurryCallback<C extends CompositeKey, A extends unknown[], R>(
   f: (c: C, ...a: A) => R,
@@ -150,7 +151,7 @@ export function VariablesList() {
         })
         const orderedIds = allRows.map(rowEl => rowEl.id)
           .map(s => s.substring(4)) // id={`var-${variable.id}`}
-        dispatch({ type: "reorderVariables", orderedIds })
+        dispatch.config.reorderVariables(orderedIds)
       }
 
       const onDragStop = onDragStops.current.get(draggedVariableId)

@@ -1,12 +1,12 @@
 import { type PropsWithChildren, useEffect } from "react"
-import { dispatch } from "./BotStateHooks.tsx"
+import { dispatch } from "./logic/BotManager.ts"
 
 export function BotStateContext(props: PropsWithChildren) {
   useEffect(() => {
     const fixedDispatch = dispatch
-    fixedDispatch({ type: "init" })
+    fixedDispatch.init()
     return () => {
-      fixedDispatch({ type: "stop" })
+      fixedDispatch.stop()
     }
     // eslint-disable-next-line
   }, [dispatch])

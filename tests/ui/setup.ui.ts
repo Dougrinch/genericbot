@@ -2,9 +2,9 @@ import { cleanup, configure } from "vitest-browser-react/pure"
 import { afterEach, beforeAll, beforeEach, vi } from "vitest"
 import { enrichLocator } from "./locator.ts"
 import { installCustomLocators } from "./helpers.tsx"
-import { dispatch } from "../../src/bot/BotStateHooks.tsx"
 import { installCustomMatchers } from "./matchers.ts"
 import { page } from "@vitest/browser/context"
+import { dispatch } from "../../src/bot/logic/BotManager.ts"
 
 configure({
   reactStrictMode: true
@@ -27,7 +27,7 @@ beforeEach(() => {
   document.head.innerHTML = ""
   document.body.innerHTML = "<div id=\"root\"></div>"
 
-  dispatch({ type: "reset" })
+  dispatch.resetConfig()
 })
 
 afterEach(() => {

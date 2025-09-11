@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { createManagerStore } from "../../src/utils/ManagerStore.ts"
-import type { Config, VariableConfig } from "../../src/bot/BotState.ts"
+import type { Config, VariableConfig } from "../../src/bot/logic/Config.ts"
 
 class BotState {
   configManager: ConfigManager = new ConfigManager(this)

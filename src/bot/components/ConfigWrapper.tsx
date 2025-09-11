@@ -1,6 +1,6 @@
 import { EntriesList } from "./EntriesList"
 import { VariablesList } from "./VariablesList"
-import { dispatch } from "../BotStateHooks.tsx"
+import { dispatch } from "../logic/BotManager.ts"
 
 interface ConfigWrapperProps {
   isVisible: boolean
@@ -13,7 +13,7 @@ export function ConfigWrapper({ isVisible }: ConfigWrapperProps) {
         <div className="tab-header">Variables</div>
         <VariablesList />
         <div className="config-actions">
-          <button onClick={() => { dispatch({ type: "addVariable" }) }}>+ Add Variable</button>
+          <button onClick={() => { dispatch.config.addVariable() }}>+ Add Variable</button>
         </div>
       </div>
       <div className="config-tab">
@@ -22,7 +22,7 @@ export function ConfigWrapper({ isVisible }: ConfigWrapperProps) {
         <div className="config-actions">
           <button>Hot Reload</button>
           <button>Refresh</button>
-          <button onClick={() => { dispatch({ type: "addEntry" }) }}>+ Add Entry</button>
+          <button onClick={() => { dispatch.config.addEntry() }}>+ Add Entry</button>
           <button>✕ Close</button>
         </div>
       </div>

@@ -1,11 +1,11 @@
 import * as React from "react"
 import { memo, type Ref, useEffect, useRef, useState } from "react"
-import type { VariableConfig } from "../BotState.ts"
-import { dispatch, useVariableData, useVariableValue } from "../BotStateHooks.tsx"
-import type { MarkImmutable } from "../../utils/immutables.ts"
+import type { VariableConfig } from "../logic/Config.ts"
+import { useVariableValue } from "../logic/VariablesManager.ts"
+import { dispatch } from "../logic/BotManager.ts"
 
 interface VariableRowProps {
-  variable: MarkImmutable<VariableConfig>
+  variable: VariableConfig
   onDragStart: (e: React.MouseEvent) => void
   setOnDragStop: (callback: () => void) => void
   ref: Ref<HTMLDivElement>
@@ -36,8 +36,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
     }
   }, [isEditing, variable.name])
 
-  const value = useVariableValue(variable.id)
-  const [statusLine, statusType] = useVariableData(variable.id)
+  const [value, statusLine, statusType] = useVariableValue(variable.id)
 
   function handleInputChange(field: keyof VariableConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void {
     return e => {
@@ -47,7 +46,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
           ? Number(e.target.value) || 0
           : e.target.value
 
-      dispatch({ type: "updateVariable", id: variable.id, updates: { [field]: value } })
+      dispatch.config.updateVariable(variable.id, { [field]: value })
     }
   }
 
@@ -113,7 +112,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
           <button
             className="remove-btn"
             style={{ justifySelf: "end" }}
-            onClick={() => dispatch({ type: "removeVariable", id: variable.id })}
+            onClick={() => dispatch.config.removeVariable(variable.id)}
           >
             Remove
           </button>
