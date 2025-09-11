@@ -48,11 +48,19 @@ function createDispatch<T>(dispatcher: (event: DispatchEvent) => void): Dispatch
 }
 
 function createManagerStoreInternal<T>(initial: () => T): Store<T, ReactDispatch<DispatchEvent>> {
-  const state = initial()
+  let lazyState: T | undefined = undefined
+
+  function getState() {
+    if (lazyState === undefined) {
+      lazyState = initial()
+    }
+    return lazyState
+  }
+
   return createStore(
     (event: DispatchEvent) => {
       const steps = event.type.split(".")
-      let current = state as object
+      let current = getState() as object
       for (let i = 0; i < steps.length - 1; i++) {
         const step = steps[i] as keyof typeof current
         if (typeof current[step] !== "object") {
@@ -67,7 +75,7 @@ function createManagerStoreInternal<T>(initial: () => T): Store<T, ReactDispatch
       }
       Reflect.apply(func, current, event.args)
     },
-    selector => selector(state)
+    selector => selector(getState())
   )
 }
 

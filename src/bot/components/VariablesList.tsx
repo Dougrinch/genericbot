@@ -168,7 +168,7 @@ export function VariablesList() {
 
     e.preventDefault()
     e.stopPropagation()
-  }, [])
+  }, [dispatch])
 
   if (variables.size === 0) {
     return null
