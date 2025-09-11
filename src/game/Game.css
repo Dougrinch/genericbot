@@ -25,14 +25,16 @@ a:hover {
 body {
     margin: 0;
     display: flex;
-    place-items: center;
+    place-items: flex-start flex-start;
     min-width: 320px;
     min-height: 100vh;
 }
 
 h1 {
-    font-size: 3.2em;
+    font-size: 1.8em;
     line-height: 1.1;
+    margin: 0 1rem 0 0;
+    display: inline-block;
 }
 
 button {
@@ -68,10 +70,10 @@ button:focus-visible {
 }
 
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  margin: 0;
+  padding: 1rem;
+  text-align: left;
 }
 
 .logo {
@@ -102,8 +104,47 @@ button:focus-visible {
   }
 }
 
-.card {
-  padding: 2em;
+.game-panel {
+  padding: 1rem;
+}
+
+.game-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.game-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 16px;
+  font-weight: bold;
+  align-items: center;
+  flex: 1;
+}
+
+.game-stats-left {
+  display: flex;
+  gap: 1rem;
+}
+
+.game-stats-center {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+  min-width: 120px;
+  font-family: monospace;
+}
+
+.game-stats-right {
+  display: flex;
+  gap: 1rem;
+}
+
+
+.game-buttons {
+  display: flex;
+  gap: 1rem;
 }
 
 .read-the-docs {

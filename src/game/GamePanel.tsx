@@ -3,38 +3,33 @@ import { dispatch, useGame } from "./GameStateContext.ts"
 
 export function GamePanel() {
   return (
-    <>
-      <h1>Gnome Gold Mine</h1>
-      <div className="card">
-        <div style={{ marginBottom: "20px", fontSize: "18px" }}>
-          <GameTopPanel />
-        </div>
-
-        <div style={{ marginBottom: "10px" }}>
-          <DigButton />
-        </div>
-
-        <div style={{ marginBottom: "10px" }}>
-          <BuyGnomeButton />
-        </div>
-
-        <div>
-          <BuySnowWhiteButton />
-        </div>
+    <div className="game-panel">
+      <div className="game-header">
+        <GameTopPanel />
+        <h1>Gnome Gold Mine</h1>
       </div>
-    </>
+      <div className="game-buttons">
+        <DigButton />
+        <BuyGnomeButton />
+        <BuySnowWhiteButton />
+      </div>
+    </div>
   )
 }
 
 function GameTopPanel() {
   const state = useGame()
   return (
-    <>
-      <div>Gold: {Math.floor(state.gold)}</div>
-      <div>Income Rate: {state.gnomes + (state.snowWhites * 10)} gold/second</div>
-      <div>Gnomes: {state.gnomes}</div>
-      <div>Snow Whites: {state.snowWhites}</div>
-    </>
+    <div className="game-stats">
+      <div className="game-stats-left">
+        <div>Income: {state.gnomes + (state.snowWhites * 10)}/sec</div>
+        <div>Gnomes: {state.gnomes}</div>
+        <div>Snow Whites: {state.snowWhites}</div>
+      </div>
+      <div className="game-stats-center">
+        <div>Gold: {Math.floor(state.gold)}</div>
+      </div>
+    </div>
   )
 }
 

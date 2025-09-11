@@ -15,7 +15,8 @@ export function Game() {
     return () => {
       document.head.removeChild(style)
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [css])
 
   if (cssState === null) {
     return null
