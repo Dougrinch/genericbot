@@ -27,6 +27,7 @@ export function GamePanel() {
         <div style={{ fontSize: "16px", fontWeight: "bold" }}>Gold Status: {goldStatus}</div>
         <button onClick={() => setIsGoldVisible(!isGoldVisible)}>{isGoldVisible ? "Hide" : "Show"} Gold</button>
         <button onClick={() => setIsGoldInTree(!isGoldInTree)}>{isGoldInTree ? "Delete" : "Add"} Gold</button>
+        <button onClick={() => dispatch({ type: "resetGold" })}>Reset Gold</button>
       </div>
     </div>
   )
