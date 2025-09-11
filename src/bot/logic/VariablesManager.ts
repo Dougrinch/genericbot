@@ -16,6 +16,7 @@ type VariableData = {
   statusLine?: string
   statusType?: "warn" | "ok" | "err"
   element?: HTMLElement
+  isVisible?: boolean
   observers?: MutationObserver[]
 }
 
@@ -95,6 +96,11 @@ export class VariablesManager {
       const match = new RegExp(variable.regex).exec(textValue)
       if (match) {
         textValue = match[1] !== undefined ? match[1] : match[0]
+      } else {
+        data.value = undefined
+        data.statusType = "warn"
+        data.statusLine = `No match for regex ${variable.regex}`
+        return
       }
     }
 
