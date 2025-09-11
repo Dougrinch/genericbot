@@ -44,7 +44,7 @@ export function createStore<S, A>(
         if (Array.isArray(result)) {
           if (lastValueRef.current !== null
             && result.length === (lastValueRef.current as []).length
-            && result.every((v, i) => v === (lastValueRef.current as [])[i])
+            && result.every((v, i) => Object.is(v, (lastValueRef.current as [])[i]))
           ) {
             return lastValueRef.current
           } else {
