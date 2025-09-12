@@ -1,5 +1,5 @@
 import { vi } from "vitest"
-import { locators } from "@vitest/browser/context"
+import { locators, page } from "@vitest/browser/context"
 import { render } from "vitest-browser-react"
 import Game from "../../src/game/Game.tsx"
 import Bot from "../../src/bot/Bot.tsx"
@@ -23,6 +23,17 @@ export function renderBot() {
   render(<Bot />, {
     container: root
   })
+}
+
+export function renderBotAndGame() {
+  renderGame()
+  renderBot()
+}
+
+export async function openConfiguration() {
+  await page.getByText(/Add Variable/).expect().not.toBeVisible()
+  await page.getByText("⚙️").click()
+  await page.getByText(/Add Variable/).expect().toBeVisible()
 }
 
 // eslint-disable-next-line

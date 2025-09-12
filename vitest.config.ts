@@ -23,7 +23,7 @@ export default defineConfig({
           } as BrowserInstanceOption],
           headless: true,
           viewport: {
-            width: 1024,
+            width: 1496,
             height: 768
           }
         },

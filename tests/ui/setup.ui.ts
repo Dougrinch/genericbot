@@ -5,6 +5,7 @@ import { installCustomLocators } from "./helpers.tsx"
 import { installCustomMatchers } from "./matchers.ts"
 import { page } from "@vitest/browser/context"
 import { dispatch } from "../../src/bot/logic/BotManager.ts"
+import { dispatch as gameDispatch } from "../../src/game/GameStateContext.ts"
 
 configure({
   reactStrictMode: true
@@ -28,6 +29,7 @@ beforeEach(() => {
   document.body.innerHTML = "<div id=\"root\"></div>"
 
   dispatch.resetConfig()
+  gameDispatch({ type: "reset" })
 })
 
 afterEach(() => {

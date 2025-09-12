@@ -1,18 +1,46 @@
 import { describe, test } from "vitest"
 import { type Locator, page } from "@vitest/browser/context"
-import { renderBot, renderGame } from "./helpers.tsx"
+import { advanceBy, openConfiguration, renderBotAndGame } from "./helpers.tsx"
 
-describe("Bot", () => {
-  test("rename variable", async () => {
-    renderGame()
-    renderBot()
+describe("Variables", () => {
+  test("value changes are detected", async () => {
+    renderBotAndGame()
+    await openConfiguration()
 
-    const dig = page.getByRole("button", { name: /^Dig/ })
-    await dig.clickN(15)
+    await page.getVariableRow("Gold").getByText(/^0$/).expect().toBeVisible()
+    await page.getByRole("button", { name: /^Dig/ }).clickN(10)
+    await page.getVariableRow("Gold").getByText(/^10$/).expect().toBeVisible()
+    await page.getByRole("button", { name: /^Buy Gnome/ }).click()
+    await page.getVariableRow("Gold").getByText(/^0$/).expect().toBeVisible()
+    await advanceBy(5000)
+    await page.getVariableRow("Gold").getByText(/^5$/).expect().toBeVisible()
+  })
 
-    await page.getByText(/Add Variable/).expect().not.toBeVisible()
-    await page.getByText("⚙️").click()
-    await page.getByText(/Add Variable/).expect().toBeVisible()
+  test("synced with visibility", async () => {
+    renderBotAndGame()
+    await openConfiguration()
+
+    await page.getVariableRow("Gold").getByText(/^0$/).expect().toBeVisible()
+    await page.getByRole("button", { name: /^Hide Gold/ }).click()
+    await page.getVariableRow("Gold").getByText(/not evaluated/).expect().toBeVisible()
+    await page.getByRole("button", { name: /^Show Gold/ }).click()
+    await page.getVariableRow("Gold").getByText(/^0$/).expect().toBeVisible()
+  })
+
+  test("synced with dom", async () => {
+    renderBotAndGame()
+    await openConfiguration()
+
+    await page.getVariableRow("Gold").getByText(/^0$/).expect().toBeVisible()
+    await page.getByRole("button", { name: /^Delete Gold/ }).click()
+    await page.getVariableRow("Gold").getByText(/not evaluated/).expect().toBeVisible()
+    await page.getByRole("button", { name: /^Add Gold/ }).click()
+    await page.getVariableRow("Gold").getByText(/^0$/).expect().toBeVisible()
+  })
+
+  test("rename", async () => {
+    renderBotAndGame()
+    await openConfiguration()
 
     await expectVariables(["score", "lives", "name", "Gold"])
 
@@ -21,15 +49,11 @@ describe("Bot", () => {
     await page.getVariableRow("Money").getByText("Done").click()
 
     await expectVariables(["score", "lives", "name", "Money"])
-
-    await page.getByText("Money15(number)Edit").expect().toBeInTheDocument()
   })
 
   test("reorder variables", async () => {
-    renderGame()
-    renderBot()
-
-    await page.getByText("⚙️").click()
+    renderBotAndGame()
+    await openConfiguration()
 
     await expectVariables(["score", "lives", "name", "Gold"])
 
@@ -50,8 +74,7 @@ describe("Bot", () => {
   })
 
   test("move back while reordering variables", async () => {
-    renderGame()
-    renderBot()
+    renderBotAndGame()
 
     await page.getByText("⚙️").click()
     await expectVariables(["score", "lives", "name", "Gold"])

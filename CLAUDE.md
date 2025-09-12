@@ -34,7 +34,7 @@ tests/
 │   ├── setup.unit.ts  # Unit test specific setup
 └── ui/                # Browser UI tests (Playwright)
     ├── setup.ui.ts    # UI test specific setup
-    └── Bot.spec.tsx   # Bot integration tests
+    └── Variables.spec.tsx   # Bot integration tests
 ```
 
 ## Testing Architecture

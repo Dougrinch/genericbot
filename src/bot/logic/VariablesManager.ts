@@ -112,7 +112,12 @@ export class VariablesManager {
 
   updateVisibility(id: string): void {
     const data = this.getOrCreateData(id)
-    data.isVisible = data.element?.checkVisibility()
+
+    const oldIsVisible = data.isVisible!
+    data.isVisible = data.element!.checkVisibility()
+    if (oldIsVisible !== data.isVisible) {
+      this.reevaluateVariable(id)
+    }
   }
 
   reevaluateVariable(id: string): void {

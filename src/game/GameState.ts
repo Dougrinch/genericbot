@@ -15,6 +15,9 @@ export function initialGameState(): GameState {
 }
 
 export const gameUpdaters = {
+  reset(game: Draft<GameState>) {
+    Object.assign(game, initialGameState())
+  },
   resetGold(game: Draft<GameState>) {
     game.gold = 0
   },
