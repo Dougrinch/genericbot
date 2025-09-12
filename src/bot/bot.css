@@ -184,7 +184,7 @@ button {
     white-space: nowrap;
 }
 
-input[type="text"], input[type="number"], select {
+input[type="text"], input[type="number"], select, textarea {
     padding: 6px 8px;
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, .25);
@@ -196,6 +196,14 @@ input[type="text"], input[type="number"], select {
 
 select {
     cursor: pointer;
+}
+
+.auto-resize {
+    field-sizing: content;
+    min-height: auto;
+    height: auto;
+    resize: none;
+    white-space: pre-wrap;
 }
 
 .statusline {

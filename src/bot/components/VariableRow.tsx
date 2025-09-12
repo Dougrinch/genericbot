@@ -38,7 +38,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
 
   const [value, statusLine, statusType] = useVariableValue(variable.id)
 
-  function handleInputChange(field: keyof VariableConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void {
+  function handleInputChange(field: keyof VariableConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
     return e => {
       const value = e.target.type === "checkbox"
         ? (e.target as HTMLInputElement).checked
@@ -78,10 +78,9 @@ export const VariableRow = memo((props: VariableRowProps) => {
           />
 
           <label className="label" htmlFor={`var-xpath-${variable.id}`}>XPath</label>
-          <input
-            type="text"
+          <textarea
             id={`var-xpath-${variable.id}`}
-            className="var-xpath"
+            className="var-xpath auto-resize"
             placeholder="XPath — must match exactly one element"
             value={variable.xpath}
             onChange={handleInputChange("xpath")}
@@ -148,12 +147,6 @@ export const VariableRow = memo((props: VariableRowProps) => {
             <span className="variable-type">({variable.type})</span>
           </div>
         </div>
-
-        {statusLine !== undefined && (
-          <div className={`statusline status-${statusType}`}>
-            {statusLine}
-          </div>
-        )}
 
         <button className="edit-btn" onClick={() => setIsEditing(true)}>
           Edit
