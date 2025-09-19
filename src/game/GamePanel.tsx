@@ -6,9 +6,18 @@ export function GamePanel() {
   const [isGoldVisible, setIsGoldVisible] = useState(true)
   const [isGoldInTree, setIsGoldInTree] = useState(true)
 
+  const [isBuyGnomeVisible, setIsBuyGnomeVisible] = useState(true)
+  const [isBuyGnomeInTree, setIsBuyGnomeInTree] = useState(true)
+
   const goldStatus = !isGoldInTree
     ? "deleted"
     : !isGoldVisible
+      ? "hidden"
+      : "visible"
+
+  const buyGnomeStatus = !isBuyGnomeInTree
+    ? "deleted"
+    : !isBuyGnomeVisible
       ? "hidden"
       : "visible"
 
@@ -20,7 +29,11 @@ export function GamePanel() {
       </div>
       <div className="game-buttons">
         <DigButton />
-        <BuyGnomeButton />
+        {isBuyGnomeInTree && (
+          <div hidden={!isBuyGnomeVisible}>
+            <BuyGnomeButton />
+          </div>
+        )}
         <BuySnowWhiteButton />
       </div>
       <div className="control-panel">
@@ -28,6 +41,9 @@ export function GamePanel() {
         <button onClick={() => setIsGoldVisible(!isGoldVisible)}>{isGoldVisible ? "Hide" : "Show"} Gold</button>
         <button onClick={() => setIsGoldInTree(!isGoldInTree)}>{isGoldInTree ? "Delete" : "Add"} Gold</button>
         <button onClick={() => dispatch({ type: "resetGold" })}>Reset Gold</button>
+        <div style={{ fontSize: "16px", fontWeight: "bold" }}>Buy Gnome Status: {buyGnomeStatus}</div>
+        <button onClick={() => setIsBuyGnomeVisible(!isBuyGnomeVisible)}>{isBuyGnomeVisible ? "Hide" : "Show"} Buy Gnome</button>
+        <button onClick={() => setIsBuyGnomeInTree(!isBuyGnomeInTree)}>{isBuyGnomeInTree ? "Delete" : "Add"} Buy Gnome</button>
       </div>
     </div>
   )

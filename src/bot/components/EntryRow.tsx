@@ -8,8 +8,8 @@ interface EntryRowProps {
 }
 
 export function EntryRow({ entry }: EntryRowProps) {
-  const [statusLine] = useState("Provide an XPath to bind.")
-  const [statusType] = useState<"warn" | "ok" | "err">("warn")
+  const [statusLine] = useState("Stub status line")
+  const [statusType] = useState<"warn" | "ok" | "err">("ok")
 
   function handleInputChange(field: keyof EntryConfig): (e: React.ChangeEvent<HTMLInputElement>) => void {
     return e => {
@@ -59,31 +59,6 @@ export function EntryRow({ entry }: EntryRowProps) {
         value={entry.condition != null ? entry.condition : ""}
         onChange={handleInputChange("condition")}
       />
-
-      <label className="label" htmlFor={`entry-allowMultiple-${entry.id}`}>Allow multiple</label>
-      <div className="inline">
-        <input
-          type="checkbox"
-          id={`entry-allowMultiple-${entry.id}`}
-          checked={entry.allowMultiple === true}
-          onChange={handleInputChange("allowMultiple")}
-        />
-        <label
-          className="label"
-          htmlFor={`entry-updateEvery-${entry.id}`}
-          style={{ visibility: entry.allowMultiple === true ? "visible" : "hidden" }}
-        >
-          Update every (ms)
-        </label>
-        <input
-          type="number"
-          id={`entry-updateEvery-${entry.id}`}
-          min="100"
-          value={entry.updateEvery !== undefined ? entry.updateEvery : 1000}
-          onChange={handleInputChange("updateEvery")}
-          style={{ visibility: entry.allowMultiple === true ? "visible" : "hidden" }}
-        />
-      </div>
 
       <div className={`statusline status-${statusType}`}>
         {statusLine}

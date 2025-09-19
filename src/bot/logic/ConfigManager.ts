@@ -26,19 +26,20 @@ export class ConfigManager {
   reset(): void {
     this.config = initialBotConfig()
     this.bot.variables.resetAll()
+    this.bot.entries.resetAll()
   }
 
   addEntry(): void {
+    const oldIds = Array.from(this.config.entries.values())
+      .map(e => e.id.match(/^entry_(\d+)$/))
+      .filter(m => m !== null)
+      .map(m => Number(m[1]))
+
+    const newId = oldIds.length > 0
+      ? `entry_${Math.max(...oldIds) + 1}`
+      : "entry_1"
+
     this.config = produce(this.config, config => {
-      const oldIds = Array.from(config.entries.values())
-        .map(e => e.id.match(/^entry_(\d+)$/))
-        .filter(m => m !== null)
-        .map(m => Number(m[1]))
-
-      const newId = oldIds.length > 0
-        ? `entry_${Math.max(...oldIds) + 1}`
-        : "entry_1"
-
       config.entries.set(newId, {
         id: newId,
         name: "",
@@ -46,24 +47,28 @@ export class ConfigManager {
         interval: 1000
       })
     })
+
+    this.bot.entries.reset(newId)
   }
 
   updateEntry(id: string, updates: Partial<EntryConfig>): void {
-    this.config = produce(this.config, config => {
-      const currentEntry = config.entries.get(id)
-      if (currentEntry) {
+    const currentEntry = this.config.entries.get(id)
+    if (currentEntry) {
+      this.config = produce(this.config, config => {
         config.entries.set(id, {
           ...currentEntry,
           ...updates
         })
-      }
-    })
+      })
+      this.bot.entries.reset(id)
+    }
   }
 
   removeEntry(id: string): void {
     this.config = produce(this.config, config => {
       config.entries.delete(id)
     })
+    this.bot.entries.reset(id)
   }
 
   addVariable(): void {

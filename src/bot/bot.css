@@ -146,13 +146,21 @@ button {
     font-size: 12px;
 }
 
+.pill.running {
+    background: #1c7106;
+}
+
+.pill.autostopped {
+    background: #c33;
+}
+
 .pill.disabled {
     opacity: .5;
     cursor: not-allowed;
 }
 
-.running {
-    background: #c33;
+.pill.waiting {
+    background: #f39c12;
 }
 
 .icon {
