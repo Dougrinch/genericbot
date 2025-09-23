@@ -70,7 +70,7 @@ export class EntriesManager {
       this.entries.delete(id)
     }
 
-    const entry = this.bot.config.getConfig().entries.get(id)
+    const entry = this.bot.config.getEntry(id)
     if (entry) {
       const { unsubscribe, element } = this.bot.xPathSubscriptionManager.subscribeOnElement(entry.xpath, {
         onUpdate: element => dispatch.entries.handleUpdate(id, element)
@@ -105,7 +105,7 @@ export class EntriesManager {
     if (data.value.isRunning) {
       this.stop(data)
     } else {
-      const entry = this.bot.config.getConfig().entries.get(id)
+      const entry = this.bot.config.getEntry(id)
       if (!entry) {
         throw Error(`Entry ${id} not found`)
       }

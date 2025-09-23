@@ -30,10 +30,6 @@ export class BotManager {
     this.entries = new EntriesManager(this)
   }
 
-  resetConfig(): void {
-    this.config.reset()
-  }
-
   init(): void {
     this.xPathSubscriptionManager.init()
     this.variables.init()

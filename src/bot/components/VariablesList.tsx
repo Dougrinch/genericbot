@@ -170,14 +170,14 @@ export function VariablesList() {
     e.stopPropagation()
   }, [dispatch])
 
-  if (variables.size === 0) {
+  if (variables.length === 0) {
     return null
   }
 
   return (
     <div className="variables">
       <div ref={containerRef} className="variables-container">
-        {Array.from(variables.values()).map((variable, index) => (
+        {variables.map((variable, index) => (
           <VariableRow
             key={variable.id}
             ref={getRowRef(variable.id)}

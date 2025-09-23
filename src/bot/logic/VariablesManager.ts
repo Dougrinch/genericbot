@@ -68,7 +68,7 @@ export class VariablesManager {
       this.variables.delete(id)
     }
 
-    const variable = this.bot.config.getConfig().variables.get(id)
+    const variable = this.bot.config.getVariable(id)
     if (variable) {
       const { unsubscribe, innerText } = this.bot.xPathSubscriptionManager.subscribeOnInnerText(variable.xpath, {
         onUpdate: innerText => {
@@ -84,7 +84,7 @@ export class VariablesManager {
   }
 
   handleUpdate(id: string, innerText: Try<string>): void {
-    const variable = this.bot.config.getConfig().variables.get(id)
+    const variable = this.bot.config.getVariable(id)
     if (!variable) {
       throw Error(`Variable ${id} not found`)
     }

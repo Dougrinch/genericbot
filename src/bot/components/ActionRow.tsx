@@ -13,8 +13,7 @@ export function ActionRow({ onToggleConfig }: ActionRowProps) {
   return (
     <div className="actions">
       <div className="pill-row">
-        <button className="pill running" onClick={() => dispatch.resetConfig()}>Reset Config</button>
-        {Array.from(entries.values()).map(entry => (
+        {entries.map(entry => (
           <EntryPill key={entry.id} entry={entry} />
         ))}
       </div>

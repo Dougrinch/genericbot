@@ -1,6 +1,6 @@
-import { type Config, type EntryConfig, initialBotConfig, type VariableConfig } from "./Config.ts"
+import { type Config, type EntryConfig, type VariableConfig } from "./Config.ts"
 import { type BotManager, useConfigManager } from "./BotManager.ts"
-import { produce } from "immer"
+import { type Draft, produce } from "immer"
 
 
 export function useConfig(): Config
@@ -10,27 +10,104 @@ export function useConfig<T>(selector?: (state: Config) => T): T | Config {
 }
 
 
+class IdCache<T extends { readonly id: string }> {
+  private readonly elements: () => readonly T[]
+
+  constructor(elements: () => readonly T[]) {
+    this.elements = elements
+  }
+
+  private readonly cache = new Map<string, { e: T } | "empty">()
+
+  get(id: string): T | undefined {
+    const cached = this.cache.get(id)
+    if (cached === "empty") {
+      return undefined
+    }
+    if (cached !== undefined) {
+      return cached.e
+    }
+
+    const element = this.elements().find(e => e.id === id)
+    if (element) {
+      this.cache.set(id, { e: element })
+      return element
+    } else {
+      this.cache.set(id, "empty")
+      return undefined
+    }
+  }
+
+  reset() {
+    this.cache.clear()
+  }
+}
+
+
+export const CONFIG_STORAGE_KEY = "autoclick.config.v1"
+
 export class ConfigManager {
   private readonly bot: BotManager
   private config: Config
 
+  private readonly entriesCache = new IdCache(() => this.config.entries)
+  private readonly variablesCache = new IdCache(() => this.config.variables)
+
   constructor(botState: BotManager) {
     this.bot = botState
-    this.config = initialBotConfig()
+    this.config = this.loadConfig()
   }
 
   getConfig(): Config {
     return this.config
   }
 
-  reset(): void {
-    this.config = initialBotConfig()
-    this.bot.variables.resetAll()
-    this.bot.entries.resetAll()
+  getEntry(id: string): EntryConfig | undefined {
+    return this.entriesCache.get(id)
+  }
+
+  getVariable(id: string): VariableConfig | undefined {
+    return this.variablesCache.get(id)
+  }
+
+  reload() {
+    this.config = this.loadConfig()
+    this.entriesCache.reset()
+    this.variablesCache.reset()
+  }
+
+  private saveConfig(): void {
+    try {
+      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(this.config))
+    } catch (error) {
+      console.error("Failed to save config to localStorage:", error)
+    }
+  }
+
+  private loadConfig(): Config {
+    try {
+      const saved = localStorage.getItem(CONFIG_STORAGE_KEY)
+      if (saved !== null && saved.length > 0) {
+        return JSON.parse(saved) as Config
+      }
+    } catch (error) {
+      console.error("Failed to load config from localStorage:", error)
+    }
+    return {
+      entries: [],
+      variables: []
+    }
+  }
+
+  private updateConfig(updater: (config: Draft<Config>) => void): void {
+    this.config = produce(this.config, updater)
+    this.entriesCache.reset()
+    this.variablesCache.reset()
+    this.saveConfig()
   }
 
   addEntry(): void {
-    const oldIds = Array.from(this.config.entries.values())
+    const oldIds = this.config.entries
       .map(e => e.id.match(/^entry_(\d+)$/))
       .filter(m => m !== null)
       .map(m => Number(m[1]))
@@ -39,8 +116,8 @@ export class ConfigManager {
       ? `entry_${Math.max(...oldIds) + 1}`
       : "entry_1"
 
-    this.config = produce(this.config, config => {
-      config.entries.set(newId, {
+    this.updateConfig(config => {
+      config.entries.push({
         id: newId,
         name: "",
         xpath: "",
@@ -52,27 +129,30 @@ export class ConfigManager {
   }
 
   updateEntry(id: string, updates: Partial<EntryConfig>): void {
-    const currentEntry = this.config.entries.get(id)
-    if (currentEntry) {
-      this.config = produce(this.config, config => {
-        config.entries.set(id, {
-          ...currentEntry,
+    const entryIndex = this.indexOf(id, this.config.entries)
+    if (entryIndex !== undefined) {
+      this.updateConfig(config => {
+        config.entries[entryIndex] = {
+          ...config.entries[entryIndex],
           ...updates
-        })
+        }
       })
       this.bot.entries.reset(id)
     }
   }
 
   removeEntry(id: string): void {
-    this.config = produce(this.config, config => {
-      config.entries.delete(id)
-    })
-    this.bot.entries.reset(id)
+    const entryIndex = this.indexOf(id, this.config.entries)
+    if (entryIndex !== undefined) {
+      this.updateConfig(config => {
+        config.entries.splice(entryIndex, 1)
+      })
+      this.bot.entries.reset(id)
+    }
   }
 
   addVariable(): void {
-    const oldIds = Array.from(this.config.variables.values())
+    const oldIds = this.config.variables
       .map(v => v.id.match(/^var_(\d+)$/))
       .filter(m => m !== null)
       .map(m => Number(m[1]))
@@ -81,8 +161,8 @@ export class ConfigManager {
       ? `var_${Math.max(...oldIds) + 1}`
       : "var_1"
 
-    this.config = produce(this.config, config => {
-      config.variables.set(newId, {
+    this.updateConfig(config => {
+      config.variables.push({
         id: newId,
         name: "",
         xpath: "",
@@ -95,38 +175,43 @@ export class ConfigManager {
   }
 
   updateVariable(id: string, updates: Partial<VariableConfig>): void {
-    const currentVariable = this.config.variables.get(id)
-    if (currentVariable) {
-      this.config = produce(this.config, config => {
-        config.variables.set(id, {
-          ...currentVariable,
+    const variableIndex = this.indexOf(id, this.config.variables)
+    if (variableIndex !== undefined) {
+      this.updateConfig(config => {
+        config.variables[variableIndex] = {
+          ...config.variables[variableIndex],
           ...updates
-        })
+        }
       })
       this.bot.variables.reset(id)
     }
   }
 
   removeVariable(id: string): void {
-    this.config = produce(this.config, config => {
-      config.variables.delete(id)
-    })
-    this.bot.variables.reset(id)
+    const variableIndex = this.indexOf(id, this.config.variables)
+    if (variableIndex !== undefined) {
+      this.updateConfig(config => {
+        config.variables.splice(variableIndex, 1)
+      })
+      this.bot.variables.reset(id)
+    }
   }
 
   reorderVariables(orderedIds: string[]): void {
-    this.config = produce(this.config, config => {
-      // Reorder variables according to the provided order
-      const reorderedVariables = new Map<string, VariableConfig>()
-      for (const id of orderedIds) {
-        const variable = config.variables.get(id)
-        if (variable) {
-          reorderedVariables.set(id, variable)
-        }
-      }
-
-      // Replace the variable array with the reordered one
-      config.variables = reorderedVariables
+    this.updateConfig(config => {
+      config.variables.sort((a, b) => {
+        const aIndex = orderedIds.indexOf(a.id)
+        const bIndex = orderedIds.indexOf(b.id)
+        return aIndex - bIndex
+      })
     })
+  }
+
+  private indexOf(id: string, array: readonly { readonly id: string }[]): number | undefined {
+    const result = array.findIndex(e => e.id === id)
+    if (result === -1) {
+      return undefined
+    }
+    return result
   }
 }
