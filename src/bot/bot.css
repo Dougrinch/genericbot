@@ -89,7 +89,7 @@
     margin-bottom: 8px;
 }
 
-.entries, .variables {
+.entries, .reorderable-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -245,14 +245,14 @@ select {
     gap: 8px;
 }
 
-/* Variables container styles */
-.variables-container {
+/* Reorderable list container styles */
+.reorderable-list-container {
     border: 1px solid rgba(255, 255, 255, .2);
     border-radius: 4px;
     position: relative;
 }
 
-.variable-list-item {
+.reorderable-item {
     position: relative;
     border-bottom: 1px solid rgba(255, 255, 255, .1);
     padding: 4px 6px 4px 30px;
@@ -265,20 +265,20 @@ select {
     transition: all 0.2s ease-out;
 }
 
-.variable-list-item:last-child {
+.reorderable-item:last-child {
     border-bottom: none;
 }
 
-.variable-list-item:hover {
+.reorderable-item:hover {
     background-color: rgba(255, 255, 255, .05);
 }
 
-.variable-list-item.dragging {
+.reorderable-item.dragging {
     opacity: 0.6;
     background-color: rgba(255, 255, 255, .15);
 }
 
-.variable-drag-handle {
+.reorderable-item-drag-handle {
     position: absolute;
     left: 8px;
     top: 50%;
@@ -296,31 +296,31 @@ select {
     z-index: 10;
 }
 
-.variable-drag-handle:hover {
+.reorderable-item-drag-handle:hover {
     opacity: 1;
     background: rgba(255, 255, 255, 0.15);
     transform: translateY(-50%) scale(1.1);
 }
 
-.variable-drag-handle::before,
-.variable-drag-handle::after {
+.reorderable-item-drag-handle::before,
+.reorderable-item-drag-handle::after {
     content: '●';
     font-size: 4px;
     line-height: 1;
     color: rgba(255, 255, 255, 0.8);
 }
 
-.variable-drag-handle .dot {
+.reorderable-item-drag-handle .dot {
     font-size: 4px;
     line-height: 1;
     color: rgba(255, 255, 255, 0.8);
 }
 
-.variable-drag-handle .dot::before {
+.reorderable-item-drag-handle .dot::before {
     content: '●';
 }
 
-.variable-list-item .variable-info {
+.reorderable-item-info {
     flex: 1;
     min-width: 0;
     display: flex;
@@ -328,13 +328,13 @@ select {
     gap: 6px;
 }
 
-.variable-list-item .variable-name {
+.reorderable-item-name {
     font-weight: bold;
     font-size: 12px;
     min-width: 80px;
 }
 
-.variable-list-item .variable-value {
+.reorderable-item-value {
     font-size: 11px;
     opacity: .8;
     white-space: nowrap;
@@ -345,28 +345,28 @@ select {
     gap: 4px;
 }
 
-.variable-list-item .variable-current-value {
+.reorderable-item .variable-current-value {
     font-weight: 500;
 }
 
-.variable-list-item .variable-type {
+.reorderable-item .variable-type {
     opacity: 0.6;
     font-size: 10px;
 }
 
-.variable-list-item .edit-btn {
+.reorderable-item-edit-btn {
     padding: 4px 8px;
     font-size: 11px;
     white-space: nowrap;
 }
 
-.variable-list-item.editing {
+.reorderable-item.editing {
     flex-direction: column;
     align-items: stretch;
     padding: 8px;
 }
 
-.variable-list-item.editing .variable-summary {
+.reorderable-item-summary {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -374,7 +374,7 @@ select {
     gap: 8px;
 }
 
-.variable-list-item .variable-summary-info {
+.reorderable-item-summary-info {
     flex: 1;
     min-width: 0;
     white-space: nowrap;
@@ -382,17 +382,17 @@ select {
     text-overflow: ellipsis;
 }
 
-.variable-list-item .variable-summary-value {
+.reorderable-item-summary-value {
     opacity: 0.8;
     font-weight: normal;
 }
 
-.variable-list-item .remove-btn {
+.reorderable-item-remove-btn {
     padding: 4px 8px;
     font-size: 11px;
 }
 
-.variable-list-item.editing .variable-fields {
+.reorderable-item-fields {
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 6px;
