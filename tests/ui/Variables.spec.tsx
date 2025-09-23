@@ -90,13 +90,13 @@ describe("Variables", () => {
 })
 
 async function expectVariables(names: string[]): Promise<void> {
-  await page.getBySelector(".variable-list-item").expectMany()
-    .map(es => es.map(e => e.querySelector(".variable-name")?.textContent))
+  await page.getBySelector("#variables .reorderable-item").expectMany()
+    .map(es => es.map(e => e.querySelector(".reorderable-item-name")?.textContent))
     .toEqual(names)
 }
 
 async function dragAndDrop(variableRow: Locator, ...toYs: number[]) {
-  const dragHandle = variableRow.getBySelector(".variable-drag-handle")
+  const dragHandle = variableRow.getBySelector(".reorderable-item-drag-handle")
   await dragHandle.expect().toBeVisible()
 
   const dragHandleElement = dragHandle.element()

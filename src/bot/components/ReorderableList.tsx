@@ -5,7 +5,7 @@ import { ReorderableListContext } from "./ReorderableListContext.ts"
 
 export type ReorderableListProps = {
   rowIdPrefix: string
-  dispatchReorder: (orderedIds: string[]) => void
+  handleReorder: (orderedIds: string[]) => void
   children: React.ReactNode
 }
 
@@ -128,7 +128,7 @@ export function ReorderableList(props: ReorderableListProps) {
           })
           const orderedIds = allRows.map(rowEl => rowEl.id)
             .map(s => s.substring(props.rowIdPrefix.length + 1)) // id={`${props.rowIdPrefix}-${rowId}`}
-          props.dispatchReorder(orderedIds)
+          props.handleReorder(orderedIds)
         }
 
         const onDragStop = onDragStops.current.get(draggedRowId)

@@ -151,6 +151,16 @@ export class ConfigManager {
     }
   }
 
+  reorderEntries(orderedIds: string[]): void {
+    this.updateConfig(config => {
+      config.entries.sort((a, b) => {
+        const aIndex = orderedIds.indexOf(a.id)
+        const bIndex = orderedIds.indexOf(b.id)
+        return aIndex - bIndex
+      })
+    })
+  }
+
   addVariable(): void {
     const oldIds = this.config.variables
       .map(v => v.id.match(/^var_(\d+)$/))

@@ -5,9 +5,11 @@ import { useReorderableListContext } from "./ReorderableListContext.ts"
 export type ReorderableRowProps = {
   id: string
   index: number
-  isEditing: boolean
-  foldedRow: ReactNode
-  editableRow: ReactNode
+  name: string
+  value?: ReactNode
+  summaryValue?: ReactNode
+  handleRemove: (id: string) => void
+  fields: ReactNode
 }
 
 export function ReorderableRow(props: ReorderableRowProps) {
@@ -26,13 +28,9 @@ export function ReorderableRow(props: ReorderableRowProps) {
     })
   }, [onDragStop])
 
-  if (props.isEditing) {
-    return (
-      <div ref={ref} className="reorderable-item editing" id={`${rowIdPrefix}-${props.id}`}>
-        {props.editableRow}
-      </div>
-    )
-  } else {
+  const [isEditing, setIsEditing] = useState(!props.name)
+
+  if (!isEditing) {
     return (
       <div
         ref={ref}
@@ -50,7 +48,51 @@ export function ReorderableRow(props: ReorderableRowProps) {
           <div className="dot"></div>
         </div>
 
-        {props.foldedRow}
+        <div className="reorderable-item-info">
+          <span className="reorderable-item-name">
+            {props.name || "Unnamed"}
+          </span>
+          {props.value !== undefined && (
+            <div className="reorderable-item-value">
+              {props.value}
+            </div>
+          )}
+        </div>
+
+        <button className="reorderable-item-edit-btn" onClick={() => setIsEditing(true)}>
+          Edit
+        </button>
+      </div>
+    )
+  } else {
+    return (
+      <div ref={ref} className="reorderable-item editing" id={`${rowIdPrefix}-${props.id}`}>
+        <div className="reorderable-item-summary">
+          <span className="reorderable-item-summary-info">
+            <span style={{ fontWeight: "bold" }}>
+              {props.name || "Unnamed"}
+            </span>
+            {props.summaryValue !== undefined && (
+              <span className="reorderable-item-summary-value"> — {props.summaryValue}</span>
+            )}
+          </span>
+          <button className="reorderable-item-edit-btn" onClick={() => setIsEditing(false)}>
+            Done
+          </button>
+        </div>
+
+        <div className="reorderable-item-fields">
+          {props.fields}
+
+          <div></div>
+          <button
+            className="reorderable-item-remove-btn"
+            style={{ justifySelf: "end" }}
+            onClick={() => props.handleRemove(props.id)}
+          >
+            Remove
+          </button>
+        </div>
       </div>
     )
   }

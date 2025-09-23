@@ -1,14 +1,20 @@
 import { EntryRow } from "./EntryRow"
 import { useConfig } from "../logic/ConfigManager.ts"
+import { ReorderableList } from "./ReorderableList.tsx"
+import { dispatch } from "../logic/BotManager.ts"
 
 export function EntriesList() {
   const entries = useConfig(c => c.entries)
 
   return (
-    <div className="entries">
-      {entries.map(entry => (
-        <EntryRow key={entry.id} entry={entry} />
+    <ReorderableList rowIdPrefix="entry" handleReorder={dispatch.config.reorderEntries}>
+      {entries.map((entry, index) => (
+        <EntryRow
+          key={entry.id}
+          index={index}
+          entry={entry}
+        />
       ))}
-    </div>
+    </ReorderableList>
   )
 }

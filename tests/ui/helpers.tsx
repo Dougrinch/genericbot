@@ -45,7 +45,7 @@ export async function advanceBy(ms: number) {
 export function installCustomLocators() {
   locators.extend({
     getVariableRow(name: string): string {
-      return `div.variable-list-item:has(span:has-text("${name}"))`
+      return `div.reorderable-item:has(span:has-text("${name}"))`
     },
     getBySelector(selectors: string): string {
       return selectors
