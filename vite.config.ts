@@ -28,7 +28,8 @@ export default defineConfig(env => {
         }
       },
       outDir: "dist",
-      emptyOutDir: true
+      emptyOutDir: true,
+      sourcemap: "inline"
     }
   }
 })

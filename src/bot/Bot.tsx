@@ -4,6 +4,7 @@ import { BotHeader } from "./components/BotHeader"
 import { ConfigWrapper } from "./components/ConfigWrapper"
 import { ActionRow } from "./components/ActionRow"
 import { BotStateContext } from "./BotStateContext.tsx"
+import { dispatch } from "./logic/BotManager.ts"
 
 function useCss(): string | null {
   const [value, setValue] = useState<string | null>(null)
@@ -33,7 +34,7 @@ function useCss(): string | null {
   return value
 }
 
-function Bot() {
+function Bot({ root }: { root: HTMLElement }) {
   const [isConfigVisible, setIsConfigVisible] = useState(false)
 
   const css = useCss()
@@ -46,7 +47,13 @@ function Bot() {
       <BotPanel>
         <style>{css}</style>
         <BotHeader />
-        <ConfigWrapper isVisible={isConfigVisible} />
+        <ConfigWrapper
+          isVisible={isConfigVisible}
+          onClose={() => {
+            dispatch.close()
+            root.remove()
+          }}
+        />
         <ActionRow onToggleConfig={() => setIsConfigVisible(!isConfigVisible)} />
       </BotPanel>
     </BotStateContext>

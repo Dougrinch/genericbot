@@ -20,7 +20,7 @@ export function renderBot() {
   const root = document.createElement("div")
   shadowRoot.appendChild(root)
 
-  render(<Bot />, {
+  render(<Bot root={bot} />, {
     container: root
   })
 }

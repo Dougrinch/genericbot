@@ -14,7 +14,7 @@ import Bot from "./Bot.tsx"
 
   createRoot(root).render(
     <StrictMode>
-      <Bot />
+      <Bot root={bot} />
     </StrictMode>
   )
 })()
