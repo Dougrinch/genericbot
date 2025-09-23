@@ -3,10 +3,17 @@ import type { EntryConfig } from "./Config.ts"
 import type { Try } from "../../utils/xpath.ts"
 
 
-export function useEntryStatus(id: string): [boolean | undefined, "stopped" | "running" | "auto-stopped" | "waiting" | undefined] {
+export function usePillStatus(id: string): [boolean | undefined, "stopped" | "running" | "auto-stopped" | "waiting" | undefined] {
   return useEntriesManager(em => {
-    const value = em.getValue(id)
+    const value = em.getPillValue(id)
     return [value?.isRunning, value?.status]
+  })
+}
+
+export function useEntryValue(id: string): [string | undefined, "warn" | "ok" | "err" | undefined] {
+  return useEntriesManager(em => {
+    const value = em.getEntryValue(id)
+    return [value?.statusLine, value?.statusType]
   })
 }
 
@@ -15,12 +22,18 @@ type EntryData = {
   unsubscribe: () => void
   element?: HTMLElement
   timerId?: number
-  value: EntryValue
+  pillValue: PillValue
+  entryValue: EntryValue
+}
+
+type PillValue = {
+  isRunning: boolean
+  status: "stopped" | "running" | "auto-stopped" | "waiting"
 }
 
 type EntryValue = {
-  isRunning: boolean
-  status: "stopped" | "running" | "auto-stopped" | "waiting"
+  statusLine: string
+  statusType: "warn" | "ok" | "err"
 }
 
 
@@ -33,8 +46,12 @@ export class EntriesManager {
     this.entries = new Map()
   }
 
-  getValue(id: string) {
-    return this.entries.get(id)?.value
+  getPillValue(id: string) {
+    return this.entries.get(id)?.pillValue
+  }
+
+  getEntryValue(id: string) {
+    return this.entries.get(id)?.entryValue
   }
 
   init() {
@@ -79,10 +96,15 @@ export class EntriesManager {
       this.entries.set(id, {
         unsubscribe,
         element: element.ok ? element.value : undefined,
-        value: {
+        pillValue: {
           isRunning: false,
           status: "stopped"
-        }
+        },
+        entryValue: {
+          statusType: element.ok ? "ok" : element.severity,
+          statusLine: element.ok ? "" : element.error
+        },
+        timerId: undefined
       })
     }
   }
@@ -94,6 +116,10 @@ export class EntriesManager {
     }
 
     data.element = element.ok ? element.value : undefined
+    data.entryValue = {
+      statusType: element.ok ? "ok" : element.severity,
+      statusLine: element.ok ? "" : element.error
+    }
   }
 
   toggle(id: string) {
@@ -102,7 +128,7 @@ export class EntriesManager {
       throw Error(`EntryData ${id} not found`)
     }
 
-    if (data.value.isRunning) {
+    if (data.pillValue.isRunning) {
       this.stop(data)
     } else {
       const entry = this.bot.config.getEntry(id)
@@ -115,8 +141,8 @@ export class EntriesManager {
   }
 
   private start(entry: EntryConfig, data: EntryData) {
-    data.value.isRunning = true
-    data.value.status = "running"
+    data.pillValue.isRunning = true
+    data.pillValue.status = "running"
 
     data.timerId = setTimeout(() => {
       dispatch.entries.handleTick(entry.id, entry.interval)
@@ -131,9 +157,9 @@ export class EntriesManager {
 
     if (data.element) {
       data.element.click()
-      data.value.status = "running"
+      data.pillValue.status = "running"
     } else {
-      data.value.status = "waiting"
+      data.pillValue.status = "waiting"
     }
 
     data.timerId = setTimeout(() => {
@@ -146,7 +172,7 @@ export class EntriesManager {
       clearInterval(data.timerId)
       data.timerId = undefined
     }
-    data.value.isRunning = false
-    data.value.status = "stopped"
+    data.pillValue.isRunning = false
+    data.pillValue.status = "stopped"
   }
 }

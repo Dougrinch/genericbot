@@ -1,15 +1,14 @@
 import * as React from "react"
-import { useState } from "react"
 import type { EntryConfig } from "../logic/Config.ts"
 import { dispatch } from "../logic/BotManager.ts"
+import { useEntryValue } from "../logic/EntriesManager.ts"
 
 interface EntryRowProps {
   entry: EntryConfig
 }
 
 export function EntryRow({ entry }: EntryRowProps) {
-  const [statusLine] = useState("Stub status line")
-  const [statusType] = useState<"warn" | "ok" | "err">("ok")
+  const [statusLine, statusType] = useEntryValue(entry.id)
 
   function handleInputChange(field: keyof EntryConfig): (e: React.ChangeEvent<HTMLInputElement>) => void {
     return e => {
@@ -60,9 +59,11 @@ export function EntryRow({ entry }: EntryRowProps) {
         onChange={handleInputChange("condition")}
       />
 
-      <div className={`statusline status-${statusType}`}>
-        {statusLine}
-      </div>
+      {statusLine !== undefined && (
+        <div className={`statusline status-${statusType}`}>
+          {statusLine}
+        </div>
+      )}
 
       <div className="row-full">
         <button onClick={() => dispatch.config.removeEntry(entry.id)}>

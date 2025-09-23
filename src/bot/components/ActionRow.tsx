@@ -1,6 +1,6 @@
 import type { EntryConfig } from "../logic/Config.ts"
 import { dispatch } from "../logic/BotManager.ts"
-import { useEntryStatus } from "../logic/EntriesManager.ts"
+import { usePillStatus } from "../logic/EntriesManager.ts"
 import { useConfig } from "../logic/ConfigManager.ts"
 
 interface ActionRowProps {
@@ -31,7 +31,7 @@ export function ActionRow({ onToggleConfig }: ActionRowProps) {
 
 function EntryPill({ entry }: { entry: EntryConfig }) {
   const entryId = entry.id
-  const [isRunning, status] = useEntryStatus(entryId)
+  const [isRunning, status] = usePillStatus(entryId)
 
   const displayName = entry.name !== "" ? entry.name : "Unnamed"
   const canRun = true
