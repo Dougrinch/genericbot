@@ -7,6 +7,8 @@ export type ReorderableListProps = {
   rowIdPrefix: string
   handleReorder: (orderedIds: string[]) => void
   children: React.ReactNode
+  addButtonLabel: string
+  addButtonOnClick: () => void
 }
 
 export function ReorderableList(props: ReorderableListProps) {
@@ -154,6 +156,16 @@ export function ReorderableList(props: ReorderableListProps) {
         <ReorderableListContext value={context}>
           {props.children}
         </ReorderableListContext>
+
+        <div
+          className="reorderable-item reorderable-item-name reorderable-list-add-btn"
+          onClick={props.addButtonOnClick}
+        >
+          <span className="reorderable-item-row-icon">
+            +
+          </span>
+          {props.addButtonLabel}
+        </div>
       </div>
     </div>
   )

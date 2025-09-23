@@ -90,7 +90,7 @@ describe("Variables", () => {
 })
 
 async function expectVariables(names: string[]): Promise<void> {
-  await page.getBySelector("#variables .reorderable-item").expectMany()
+  await page.getBySelector("#variables .reorderable-item:not(.reorderable-list-add-btn)").expectMany()
     .map(es => es.map(e => e.querySelector(".reorderable-item-name")?.textContent))
     .toEqual(names)
 }

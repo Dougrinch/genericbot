@@ -248,6 +248,11 @@ select {
     transition: all 0.2s ease-out;
 }
 
+.reorderable-list-add-btn {
+    cursor: pointer;
+    opacity: 0.7;
+}
+
 .reorderable-item:last-child {
     border-bottom: none;
 }
@@ -261,14 +266,13 @@ select {
     background-color: rgba(255, 255, 255, .15);
 }
 
-.reorderable-item-drag-handle {
+.reorderable-item-row-icon {
     position: absolute;
     left: 8px;
     top: 50%;
     transform: translateY(-50%);
     width: 14px;
     height: 20px;
-    cursor: move;
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
@@ -277,6 +281,10 @@ select {
     transition: all 0.2s;
     border-radius: 3px;
     z-index: 10;
+}
+
+.reorderable-item-drag-handle {
+    cursor: move;
 }
 
 .reorderable-item-drag-handle:hover {

@@ -7,7 +7,12 @@ export function EntriesList() {
   const entries = useConfig(c => c.entries)
 
   return (
-    <ReorderableList rowIdPrefix="entry" handleReorder={dispatch.config.reorderEntries}>
+    <ReorderableList
+      rowIdPrefix="entry"
+      handleReorder={dispatch.config.reorderEntries}
+      addButtonLabel="Add Entry"
+      addButtonOnClick={() => dispatch.config.addEntry()}
+    >
       {entries.map((entry, index) => (
         <EntryRow
           key={entry.id}

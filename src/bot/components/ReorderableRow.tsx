@@ -38,7 +38,7 @@ export function ReorderableRow(props: ReorderableRowProps) {
         id={`${rowIdPrefix}-${props.id}`}
       >
         <div
-          className="reorderable-item-drag-handle"
+          className="reorderable-item-row-icon reorderable-item-drag-handle"
           draggable={false}
           onMouseDown={e => {
             setIsDragging(true)

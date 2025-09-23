@@ -8,7 +8,12 @@ export function VariablesList() {
 
   return (
     <div id="variables">
-      <ReorderableList rowIdPrefix="var" handleReorder={dispatch.config.reorderVariables}>
+      <ReorderableList
+        rowIdPrefix="var"
+        handleReorder={dispatch.config.reorderVariables}
+        addButtonLabel="Add Variable"
+        addButtonOnClick={() => dispatch.config.addVariable()}
+      >
         {variables.map((variable, index) => (
           <VariableRow
             key={variable.id}
