@@ -5,9 +5,10 @@ import { VariablesList } from "./VariablesList"
 interface ConfigWrapperProps {
   isVisible: boolean
   onClose: () => void
+  onHotReload: () => void
 }
 
-export function ConfigWrapper({ isVisible, onClose }: ConfigWrapperProps) {
+export function ConfigWrapper({ isVisible, onClose, onHotReload }: ConfigWrapperProps) {
   useEffect(() => {
     if (!isVisible) {
       return
@@ -43,7 +44,7 @@ export function ConfigWrapper({ isVisible, onClose }: ConfigWrapperProps) {
         <div className="tab-header">Automation Entries</div>
         <EntriesList />
         <div className="config-actions">
-          <button>Hot Reload</button>
+          <button onClick={onHotReload}>Hot Reload</button>
           <button>Refresh</button>
           <button onClick={onClose}>✕ Close</button>
         </div>

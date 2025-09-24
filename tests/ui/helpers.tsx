@@ -2,7 +2,8 @@ import { vi } from "vitest"
 import { locators, page } from "@vitest/browser/context"
 import { render } from "vitest-browser-react"
 import Game from "../../src/game/Game.tsx"
-import Bot from "../../src/bot/Bot.tsx"
+import { Bot } from "../../src/bot/Bot.tsx"
+import { readAndClearHotReloadInfo } from "../../src/bot/hotReload.ts"
 
 export function renderGame() {
   render(<Game />, {
@@ -20,7 +21,9 @@ export function renderBot() {
   const root = document.createElement("div")
   shadowRoot.appendChild(root)
 
-  render(<Bot root={bot} />, {
+  const hotReloadInfo = readAndClearHotReloadInfo()
+
+  render(<Bot root={bot} hotReloadInfo={hotReloadInfo} />, {
     container: root
   })
 }

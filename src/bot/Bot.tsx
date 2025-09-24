@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { BotPanel } from "./components/BotPanel"
 import { BotHeader } from "./components/BotHeader"
 import { ConfigWrapper } from "./components/ConfigWrapper"
 import { ActionRow } from "./components/ActionRow"
 import { BotStateContext } from "./BotStateContext.tsx"
 import { dispatch } from "./logic/BotManager.ts"
+import { hotReload, type HotReloadInfo } from "./hotReload.ts"
 
 function useCss(): string | null {
   const [value, setValue] = useState<string | null>(null)
@@ -34,8 +35,22 @@ function useCss(): string | null {
   return value
 }
 
-function Bot({ root }: { root: HTMLElement }) {
-  const [isConfigVisible, setIsConfigVisible] = useState(false)
+export type BotProps = {
+  root: HTMLElement
+  hotReloadInfo?: HotReloadInfo
+}
+
+export function Bot({ root, hotReloadInfo }: BotProps) {
+  const [isConfigVisible, setIsConfigVisible] = useState(!!hotReloadInfo)
+
+  const onClose = useCallback(() => {
+    dispatch.close()
+    root.remove()
+  }, [dispatch, root])
+
+  const onHotReload = useCallback(() => {
+    hotReload(root)
+  }, [dispatch, root])
 
   const css = useCss()
   if (css === null) {
@@ -49,15 +64,11 @@ function Bot({ root }: { root: HTMLElement }) {
         <BotHeader />
         <ConfigWrapper
           isVisible={isConfigVisible}
-          onClose={() => {
-            dispatch.close()
-            root.remove()
-          }}
+          onClose={onClose}
+          onHotReload={onHotReload}
         />
         <ActionRow onToggleConfig={() => setIsConfigVisible(!isConfigVisible)} />
       </BotPanel>
     </BotStateContext>
   )
 }
-
-export default Bot
