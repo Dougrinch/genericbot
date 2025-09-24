@@ -14,6 +14,7 @@ type ElementSubscription = {
 export type ElementSubscriptionCallback = { onRemove: () => void } & Partial<{
   onInnerTextChange: (innerText: string) => void
   onIsVisibleChange: (isVisible: boolean) => void
+  onAttributeChange: () => void
 }>
 
 type ElementSubscribeResult<T> = {
@@ -50,7 +51,7 @@ export class ElementSubscriptionManager {
     subscription.callbacks.push(callback)
 
     let resetObservers = false
-    if (callback.onIsVisibleChange && subscription.isVisible === undefined) {
+    if ((callback.onIsVisibleChange || callback.onAttributeChange) && subscription.isVisible === undefined) {
       subscription.isVisible = element.checkVisibility()
       resetObservers = true
     }
@@ -98,7 +99,7 @@ export class ElementSubscriptionManager {
           if (mutation.type === "childList" || mutation.type === "characterData") {
             this.handleInnerTextChange(subscription)
           } else if (mutation.type === "attributes") {
-            this.handleVisibilityChange(subscription)
+            this.handleAttributeChange(subscription)
           }
         }
       })
@@ -122,7 +123,7 @@ export class ElementSubscriptionManager {
       const observer = new MutationObserver(mutations => {
         for (const mutation of mutations) {
           if (mutation.type === "attributes") {
-            this.handleVisibilityChange(subscription)
+            this.handleAttributeChange(subscription)
           } else if (mutation.type === "childList") {
             for (const removedNode of mutation.removedNodes) {
               if (removedNode === child) {
@@ -159,11 +160,13 @@ export class ElementSubscriptionManager {
     }
   }
 
-  private handleVisibilityChange(subscription: ElementSubscription) {
+  private handleAttributeChange(subscription: ElementSubscription) {
     const isVisible = subscription.element.checkVisibility()
     if (isVisible !== subscription.isVisible) {
       subscription.isVisible = isVisible
       subscription.callbacks.forEach(c => c.onIsVisibleChange?.(isVisible))
+    } else {
+      subscription.callbacks.forEach(c => c.onAttributeChange?.())
     }
   }
 

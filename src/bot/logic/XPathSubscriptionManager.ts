@@ -76,7 +76,7 @@ export class XPathSubscriptionManager {
   private handleUnresolved() {
     for (const subscription of this.subscriptions.values()) {
       if (!subscription.element) {
-        this.startSubscription(subscription)
+        this.startNewSubscription(subscription)
         // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         if (subscription.element) {
           this.handleAdded(subscription)
@@ -122,7 +122,7 @@ export class XPathSubscriptionManager {
     subscription.callbacks.push(callback)
 
     if (!subscription.element) {
-      this.startSubscription(subscription)
+      this.startNewSubscription(subscription)
     }
 
     return {
@@ -145,8 +145,24 @@ export class XPathSubscriptionManager {
     }
   }
 
-  private startSubscription(subscription: XPathSubscription) {
+  private startNewSubscription(subscription: XPathSubscription) {
     const xpathResult = findElementByXPath(subscription.xpath)
+    this.startSubscription(subscription, xpathResult)
+  }
+
+  private revalidateSubscription(subscription: XPathSubscription): { updated: boolean } {
+    const xpathResult = findElementByXPath(subscription.xpath)
+    if ((!xpathResult.ok && subscription.element === undefined)
+      || (xpathResult.ok && xpathResult.value === subscription.element)) {
+      return { updated: false }
+    }
+
+    this.stopSubscription(subscription)
+    this.startSubscription(subscription, xpathResult)
+    return { updated: true }
+  }
+
+  private startSubscription(subscription: XPathSubscription, xpathResult: Try<HTMLElement>) {
     if (xpathResult.ok) {
       subscription.element = xpathResult.value
       subscription.error = undefined
@@ -154,7 +170,8 @@ export class XPathSubscriptionManager {
       const { unsubscribe, initial } = this.elementSubscriptionManager.subscribe(xpathResult.value, {
         onRemove: () => { this.handleRemove(subscription) },
         onInnerTextChange: innerText => { this.handleInnerTextChange(subscription, innerText) },
-        onIsVisibleChange: isVisible => { this.handleVisibilityChange(subscription, isVisible) }
+        onIsVisibleChange: isVisible => { this.handleVisibilityChange(subscription, isVisible) },
+        onAttributeChange: () => { this.handleAttributeChange(subscription) }
       })
       subscription.unsubscribeFromElement = unsubscribe
       subscription.innerText = initial.innerText
@@ -192,6 +209,13 @@ export class XPathSubscriptionManager {
   private handleVisibilityChange(subscription: XPathSubscription, isVisible: boolean) {
     subscription.isVisible = isVisible
     this.runCallbacks(subscription)
+  }
+
+  private handleAttributeChange(subscription: XPathSubscription) {
+    const { updated } = this.revalidateSubscription(subscription)
+    if (updated) {
+      this.runCallbacks(subscription)
+    }
   }
 
   private runCallbacks(subscription: XPathSubscription, onlyContent: boolean = false) {
