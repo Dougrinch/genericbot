@@ -13,6 +13,7 @@ export type EntryConfig = Immutable<{
   xpath: string
   interval: number
   condition?: string
+  allowMultiple: boolean
 }>
 
 export type VariableConfig = Immutable<{

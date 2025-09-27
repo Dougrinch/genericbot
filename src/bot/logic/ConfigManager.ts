@@ -88,7 +88,7 @@ export class ConfigManager {
     try {
       const saved = localStorage.getItem(CONFIG_STORAGE_KEY)
       if (saved !== null && saved.length > 0) {
-        return JSON.parse(saved) as Config
+        return this.fixCompatibility(JSON.parse(saved) as Config)
       }
     } catch (error) {
       console.error("Failed to load config from localStorage:", error)
@@ -97,6 +97,16 @@ export class ConfigManager {
       entries: [],
       variables: []
     }
+  }
+
+  private fixCompatibility(oldConfig: Config): Config {
+    return produce(oldConfig, config => {
+      for (const entry of config.entries) {
+        if (entry.allowMultiple === undefined) {
+          entry.allowMultiple = false
+        }
+      }
+    })
   }
 
   private updateConfig(updater: (config: Draft<Config>) => void): void {
@@ -121,7 +131,9 @@ export class ConfigManager {
         id: newId,
         name: "",
         xpath: "",
-        interval: 1000
+        interval: 1000,
+        condition: undefined,
+        allowMultiple: false
       })
     })
 

@@ -67,6 +67,14 @@ export function EntryRow({ entry, index }: EntryRowProps) {
             onChange={handleInputChange("condition")}
           />
 
+          <label className="label" htmlFor={`entry-allowMultiple-${entry.id}`}>Allow multiple</label>
+          <input
+            type="checkbox"
+            id={`entry-allowMultiple-${entry.id}`}
+            value={entry.allowMultiple != null ? "true" : "false"}
+            onChange={handleInputChange("allowMultiple")}
+          />
+
           {statusLine !== undefined && (
             <div className={`statusline status-${statusType}`}>
               {statusLine}
