@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Galaxy Click — Nested Iframe Runner
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  Run only inside nested iframes that were opened from https://galaxy.click/play/*
 // @match        *://*/*
 // @run-at       document-end
-// @grant        none
+// @grant        GM_xmlhttpRequest
+// @connect      dougrinch.com
 // ==/UserScript==
 
 (function () {
@@ -22,12 +23,29 @@
 
   if (!fromGalaxyPlay) return;
 
+  function loadBotScript() {
+    GM_xmlhttpRequest({
+      method: 'GET',
+      url: 'https://dougrinch.com/genericbot/bot.iife.js',
+      onload: function(response) {
+        if (response.status === 200) {
+          try {
+            new Function(response.responseText)();
+          } catch (error) {
+            alert('Failed to execute bot script: ' + error);
+          }
+        } else {
+          alert('Failed to load bot script. Status: ' + response.status);
+        }
+      },
+      onerror: function(error) {
+        alert('Network error loading bot script: ' + error);
+      }
+    });
+  }
+
   function init() {
-    //BEFORE
-
-    //COPY PASTE dist/bot.iife.js HERE
-
-    //AFTER
+    loadBotScript();
   }
 
   if (document.readyState === 'loading') {
