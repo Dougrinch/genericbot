@@ -389,3 +389,29 @@ select {
     gap: 6px;
     align-items: center;
 }
+
+.throttle-warning {
+    animation: throttleAlert 0.5s ease-in-out infinite alternate;
+    padding: 0 6px;
+    border-radius: 8px;
+    background: rgba(255, 140, 0, 0.3);
+    border: 1px solid rgba(255, 140, 0, 0.7);
+    color: #ffdd44;
+    font-size: 14px;
+    text-align: center;
+    font-weight: bold;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes throttleAlert {
+    0% {
+        background: rgba(255, 140, 0, 0.3);
+        border-color: rgba(255, 140, 0, 0.7);
+        color: #ffdd44;
+    }
+    100% {
+        background: rgba(255, 140, 0, 0.6);
+        border-color: rgba(255, 140, 0, 1);
+        color: #fff;
+    }
+}
