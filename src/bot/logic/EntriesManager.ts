@@ -116,6 +116,7 @@ export class EntriesManager {
     }
 
     data.element = element.ok ? element.value : undefined
+    data.pillValue = this.buildPillValue(data)
     data.entryValue = {
       statusType: element.ok ? "ok" : element.severity,
       statusLine: element.ok ? "" : element.error
@@ -141,12 +142,10 @@ export class EntriesManager {
   }
 
   private start(entry: EntryConfig, data: EntryData) {
-    data.pillValue.isRunning = true
-    data.pillValue.status = "running"
-
     data.timerId = setTimeout(() => {
       dispatch.entries.handleTick(entry.id, entry.interval)
     }, 0)
+    data.pillValue = this.buildPillValue(data)
   }
 
   handleTick(id: string, interval: number) {
@@ -172,7 +171,20 @@ export class EntriesManager {
       clearInterval(data.timerId)
       data.timerId = undefined
     }
-    data.pillValue.isRunning = false
-    data.pillValue.status = "stopped"
+    data.pillValue = this.buildPillValue(data)
+  }
+
+  private buildPillValue(data: EntryData): PillValue {
+    if (data.timerId === undefined) {
+      return {
+        isRunning: false,
+        status: "stopped"
+      }
+    } else {
+      return {
+        isRunning: true,
+        status: data.element ? "running" : "waiting"
+      }
+    }
   }
 }
