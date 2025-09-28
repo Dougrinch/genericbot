@@ -14,7 +14,7 @@ type ElementSubscription = {
 export type ElementSubscriptionCallback = { onRemove: () => void } & Partial<{
   onInnerTextChange: (innerText: string) => void
   onIsVisibleChange: (isVisible: boolean) => void
-  onAttributeChange: () => void
+  onStyleAttributeChange: () => void
 }>
 
 type ElementSubscribeResult<T> = {
@@ -51,7 +51,7 @@ export class ElementSubscriptionManager {
     subscription.callbacks.push(callback)
 
     let resetObservers = false
-    if ((callback.onIsVisibleChange || callback.onAttributeChange) && subscription.isVisible === undefined) {
+    if ((callback.onIsVisibleChange || callback.onStyleAttributeChange) && subscription.isVisible === undefined) {
       subscription.isVisible = element.checkVisibility()
       resetObservers = true
     }
@@ -166,7 +166,7 @@ export class ElementSubscriptionManager {
       subscription.isVisible = isVisible
       subscription.callbacks.forEach(c => c.onIsVisibleChange?.(isVisible))
     } else {
-      subscription.callbacks.forEach(c => c.onAttributeChange?.())
+      subscription.callbacks.forEach(c => c.onStyleAttributeChange?.())
     }
   }
 

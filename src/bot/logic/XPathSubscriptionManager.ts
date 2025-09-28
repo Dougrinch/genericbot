@@ -1,18 +1,21 @@
 import { ElementSubscriptionManager } from "./ElementSubscriptionManager.ts"
-import { findElementByXPath, type Try } from "../../utils/xpath.ts"
+import { findElementsByXPath, type Try } from "../../utils/xpath.ts"
 
 type XPathSubscription = {
   readonly xpath: string
+  readonly callbacks: Callback[]
 
   error?: string
   severity?: "warn" | "err"
-  element?: HTMLElement
-  unsubscribeFromElement?: () => void
+  elements: Map<HTMLElement, ResolvedElement>
+}
 
-  innerText?: string
-  isVisible?: boolean
+type ResolvedElement = {
+  element: HTMLElement
+  unsubscribeFromElement: () => void
 
-  readonly callbacks: Callback[]
+  innerText: string
+  isVisible: boolean
 }
 
 type Callback = {
@@ -21,24 +24,36 @@ type Callback = {
 } | {
   type: "element"
   onUpdate: (element: Try<HTMLElement>) => void
+} | {
+  type: "elements"
+  onUpdate: (element: Try<HTMLElement[]>) => void
 }
 
-type InnerTextChangeCallback = {
+export type InnerTextChangeCallback = {
   onUpdate: (innerText: Try<string>) => void
 }
 
-type ElementChangeCallback = {
+export type ElementChangeCallback = {
   onUpdate: (element: Try<HTMLElement>) => void
 }
 
-type InnerTextSubscribeResult = {
+export type ElementsChangeCallback = {
+  onUpdate: (elements: Try<HTMLElement[]>) => void
+}
+
+export type InnerTextSubscribeResult = {
   unsubscribe: () => void
   innerText: Try<string>
 }
 
-type ElementSubscribeResult = {
+export type ElementSubscribeResult = {
   unsubscribe: () => void
   element: Try<HTMLElement>
+}
+
+export type ElementsSubscribeResult = {
+  unsubscribe: () => void
+  elements: Try<HTMLElement[]>
 }
 
 export class XPathSubscriptionManager {
@@ -75,13 +90,7 @@ export class XPathSubscriptionManager {
 
   private handleUnresolved() {
     for (const subscription of this.subscriptions.values()) {
-      if (!subscription.element) {
-        this.startNewSubscription(subscription)
-        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-        if (subscription.element) {
-          this.handleAdded(subscription)
-        }
-      }
+      this.handleAdded(subscription)
     }
   }
 
@@ -94,6 +103,18 @@ export class XPathSubscriptionManager {
     return {
       unsubscribe,
       element: this.buildElement(subscription)
+    }
+  }
+
+  subscribeOnElements(xpath: string, callback: ElementsChangeCallback): ElementsSubscribeResult {
+    const { subscription, unsubscribe } = this.subscribe(xpath, {
+      type: "elements",
+      onUpdate: callback.onUpdate
+    })
+
+    return {
+      unsubscribe,
+      elements: this.buildElements(subscription)
     }
   }
 
@@ -111,18 +132,16 @@ export class XPathSubscriptionManager {
 
   private subscribe(xpath: string, callback: Callback): { subscription: XPathSubscription, unsubscribe: () => void } {
     let subscription = this.subscriptions.get(xpath)
-    if (!subscription) {
+    if (subscription) {
+      subscription.callbacks.push(callback)
+    } else {
       subscription = {
         xpath,
-        callbacks: []
+        callbacks: [callback],
+        elements: new Map()
       }
       this.subscriptions.set(xpath, subscription)
-    }
-
-    subscription.callbacks.push(callback)
-
-    if (!subscription.element) {
-      this.startNewSubscription(subscription)
+      this.revalidateSubscription(subscription)
     }
 
     return {
@@ -145,73 +164,98 @@ export class XPathSubscriptionManager {
     }
   }
 
-  private startNewSubscription(subscription: XPathSubscription) {
-    const xpathResult = findElementByXPath(subscription.xpath)
-    this.startSubscription(subscription, xpathResult)
-  }
-
-  private revalidateSubscription(subscription: XPathSubscription): { updated: boolean } {
-    const xpathResult = findElementByXPath(subscription.xpath)
-    if ((!xpathResult.ok && subscription.element === undefined)
-      || (xpathResult.ok && xpathResult.value === subscription.element)) {
+  private revalidateSubscription(subscription: XPathSubscription) {
+    const xpathResult = findElementsByXPath(subscription.xpath)
+    if (!this.isChanged(subscription, xpathResult)) {
       return { updated: false }
     }
 
-    this.stopSubscription(subscription)
-    this.startSubscription(subscription, xpathResult)
+    if (xpathResult.ok) {
+      subscription.error = undefined
+      subscription.severity = undefined
+
+      for (const oldElement of subscription.elements.keys()) {
+        if (!xpathResult.value.includes(oldElement)) {
+          this.stopSubscription(subscription, oldElement)
+        }
+      }
+
+      for (const newElement of xpathResult.value) {
+        if (!subscription.elements.has(newElement)) {
+          this.startSubscription(subscription, newElement)
+        }
+      }
+    } else {
+      subscription.error = xpathResult.error
+      subscription.severity = xpathResult.severity
+      this.stopSubscription(subscription)
+    }
+
     return { updated: true }
   }
 
-  private startSubscription(subscription: XPathSubscription, xpathResult: Try<HTMLElement>) {
-    if (xpathResult.ok) {
-      subscription.element = xpathResult.value
-      subscription.error = undefined
-      subscription.severity = undefined
-      const { unsubscribe, initial } = this.elementSubscriptionManager.subscribe(xpathResult.value, {
-        onRemove: () => { this.handleRemove(subscription) },
-        onInnerTextChange: innerText => { this.handleInnerTextChange(subscription, innerText) },
-        onIsVisibleChange: isVisible => { this.handleVisibilityChange(subscription, isVisible) },
-        onAttributeChange: () => { this.handleAttributeChange(subscription) }
-      })
-      subscription.unsubscribeFromElement = unsubscribe
-      subscription.innerText = initial.innerText
-      subscription.isVisible = initial.isVisible
+  private isChanged(subscription: XPathSubscription, xpathResult: Try<HTMLElement[]>): boolean {
+    if (!xpathResult.ok && xpathResult.error === subscription.error) {
+      return false
+    } else if (xpathResult.ok
+      && xpathResult.value.length === subscription.elements.size
+      && xpathResult.value.every(e => subscription.elements.has(e))) {
+      return false
+    }
+    return true
+  }
+
+  private startSubscription(subscription: XPathSubscription, element: HTMLElement) {
+    const { unsubscribe, initial } = this.elementSubscriptionManager.subscribe(element, {
+      onRemove: () => { this.handleRemove(subscription, element) },
+      onInnerTextChange: innerText => { this.handleInnerTextChange(subscription, element, innerText) },
+      onIsVisibleChange: isVisible => { this.handleVisibilityChange(subscription, element, isVisible) },
+      onStyleAttributeChange: () => { this.handleStyleAttributeChange(subscription) }
+    })
+
+    subscription.elements.set(element, {
+      element: element,
+      unsubscribeFromElement: unsubscribe,
+      innerText: initial.innerText,
+      isVisible: initial.isVisible
+    })
+  }
+
+  private stopSubscription(subscription: XPathSubscription, element?: HTMLElement) {
+    if (element) {
+      subscription.elements.get(element)?.unsubscribeFromElement()
+      subscription.elements.delete(element)
     } else {
-      subscription.element = undefined
-      subscription.unsubscribeFromElement = undefined
-      subscription.error = xpathResult.error
-      subscription.severity = xpathResult.severity
+      for (const element of subscription.elements.values()) {
+        element.unsubscribeFromElement()
+      }
+      subscription.elements.clear()
     }
   }
 
-  private stopSubscription(subscription: XPathSubscription) {
-    subscription.unsubscribeFromElement?.()
-    subscription.unsubscribeFromElement = undefined
-    subscription.element = undefined
-    subscription.error = undefined
-    subscription.severity = undefined
-  }
-
   private handleAdded(subscription: XPathSubscription) {
+    const { updated } = this.revalidateSubscription(subscription)
+    if (updated) {
+      this.runCallbacks(subscription)
+    }
+  }
+
+  private handleRemove(subscription: XPathSubscription, element: HTMLElement) {
+    subscription.elements.delete(element)
     this.runCallbacks(subscription)
   }
 
-  private handleRemove(subscription: XPathSubscription) {
-    subscription.element = undefined
-    this.runCallbacks(subscription)
-  }
-
-  private handleInnerTextChange(subscription: XPathSubscription, innerText: string) {
-    subscription.innerText = innerText
+  private handleInnerTextChange(subscription: XPathSubscription, element: HTMLElement, innerText: string) {
+    subscription.elements.get(element)!.innerText = innerText
     this.runCallbacks(subscription, true)
   }
 
-  private handleVisibilityChange(subscription: XPathSubscription, isVisible: boolean) {
-    subscription.isVisible = isVisible
+  private handleVisibilityChange(subscription: XPathSubscription, element: HTMLElement, isVisible: boolean) {
+    subscription.elements.get(element)!.isVisible = isVisible
     this.runCallbacks(subscription)
   }
 
-  private handleAttributeChange(subscription: XPathSubscription) {
+  private handleStyleAttributeChange(subscription: XPathSubscription) {
     const { updated } = this.revalidateSubscription(subscription)
     if (updated) {
       this.runCallbacks(subscription)
@@ -231,23 +275,48 @@ export class XPathSubscriptionManager {
   }
 
   private buildInnerText(subscription: XPathSubscription): Try<string> {
-    return this.buildValue(subscription, s => s.innerText!)
+    return this.buildSingleValue(subscription, e => e.innerText)
   }
 
   private buildElement(subscription: XPathSubscription): Try<HTMLElement> {
-    return this.buildValue(subscription, s => s.element!)
+    return this.buildSingleValue(subscription, e => e.element)
   }
 
-  private buildValue<T>(subscription: XPathSubscription, value: (s: XPathSubscription) => T): Try<T> {
-    if (!subscription.element) {
+  private buildElements(subscription: XPathSubscription): Try<HTMLElement[]> {
+    if (subscription.error !== undefined) {
       return {
         ok: false,
-        error: subscription.error ?? "Element not resolved",
+        error: subscription.error,
         severity: subscription.severity ?? "warn"
       }
     }
 
-    if (subscription.isVisible !== true) {
+    return {
+      ok: true,
+      value: Array.from(subscription.elements.values())
+        .filter(e => e.isVisible)
+        .map(e => e.element)
+    }
+  }
+
+  private buildSingleValue<T>(subscription: XPathSubscription, value: (element: ResolvedElement) => T): Try<T> {
+    if (subscription.elements.size === 0) {
+      return {
+        ok: false,
+        error: subscription.error ?? "XPath matched 0 elements.",
+        severity: subscription.severity ?? "warn"
+      }
+    } else if (subscription.elements.size > 1) {
+      return {
+        ok: false,
+        error: subscription.error ?? `XPath matched ${subscription.elements.size} elements (need exactly 1).`,
+        severity: subscription.severity ?? "warn"
+      }
+    }
+
+    const element = subscription.elements.values().next().value!
+
+    if (!element.isVisible) {
       return {
         ok: false,
         error: "Element hidden",
@@ -257,7 +326,7 @@ export class XPathSubscriptionManager {
 
     return {
       ok: true,
-      value: value(subscription)
+      value: value(element)
     }
   }
 }

@@ -1,6 +1,7 @@
 import { type BotManager, dispatch, useEntriesManager } from "./BotManager.ts"
 import type { EntryConfig } from "./Config.ts"
 import type { Try } from "../../utils/xpath.ts"
+import type { ElementsSubscribeResult } from "./XPathSubscriptionManager.ts"
 
 
 export function usePillStatus(id: string): [boolean | undefined, "stopped" | "running" | "auto-stopped" | "waiting" | undefined] {
@@ -20,7 +21,7 @@ export function useEntryValue(id: string): [string | undefined, "warn" | "ok" | 
 
 type EntryData = {
   unsubscribe: () => void
-  element?: HTMLElement
+  elements?: HTMLElement[]
   timerId?: number
   pillValue: PillValue
   entryValue: EntryValue
@@ -89,33 +90,58 @@ export class EntriesManager {
 
     const entry = this.bot.config.getEntry(id)
     if (entry) {
-      const { unsubscribe, element } = this.bot.xPathSubscriptionManager.subscribeOnElement(entry.xpath, {
-        onUpdate: element => dispatch.entries.handleUpdate(id, element)
-      })
+      const { unsubscribe, elements } = this.subscribeOnElements(entry)
 
       this.entries.set(id, {
         unsubscribe,
-        element: element.ok ? element.value : undefined,
+        elements: elements.ok ? elements.value : undefined,
         pillValue: {
           isRunning: false,
           status: "stopped"
         },
         entryValue: {
-          statusType: element.ok ? "ok" : element.severity,
-          statusLine: element.ok ? "" : element.error
+          statusType: elements.ok ? "ok" : elements.severity,
+          statusLine: elements.ok ? "" : elements.error
         },
         timerId: undefined
       })
     }
   }
 
-  handleUpdate(id: string, element: Try<HTMLElement>): void {
+  private subscribeOnElements(entry: EntryConfig): ElementsSubscribeResult {
+    if (entry.allowMultiple) {
+      return this.bot.xPathSubscriptionManager.subscribeOnElements(entry.xpath, {
+        onUpdate: element => dispatch.entries.handleUpdate(entry.id, element)
+      })
+    } else {
+      function asArray(t: Try<HTMLElement>): Try<HTMLElement[]> {
+        if (!t.ok) {
+          return t
+        } else {
+          return {
+            ok: true,
+            value: [t.value]
+          }
+        }
+      }
+
+      const { unsubscribe, element } = this.bot.xPathSubscriptionManager.subscribeOnElement(entry.xpath, {
+        onUpdate: element => dispatch.entries.handleUpdate(entry.id, asArray(element))
+      })
+      return {
+        unsubscribe,
+        elements: asArray(element)
+      }
+    }
+  }
+
+  handleUpdate(id: string, element: Try<HTMLElement[]>): void {
     const data = this.entries.get(id)
     if (!data) {
       throw Error(`EntryData ${id} not found`)
     }
 
-    data.element = element.ok ? element.value : undefined
+    data.elements = element.ok ? element.value : undefined
     data.pillValue = this.buildPillValue(data)
     data.entryValue = {
       statusType: element.ok ? "ok" : element.severity,
@@ -154,8 +180,10 @@ export class EntriesManager {
       throw Error(`EntryData ${id} not found`)
     }
 
-    if (data.element) {
-      data.element.click()
+    if (data.elements) {
+      for (const element of data.elements) {
+        element.click()
+      }
       data.pillValue.status = "running"
     } else {
       data.pillValue.status = "waiting"
@@ -183,7 +211,7 @@ export class EntriesManager {
     } else {
       return {
         isRunning: true,
-        status: data.element ? "running" : "waiting"
+        status: data.elements ? "running" : "waiting"
       }
     }
   }
