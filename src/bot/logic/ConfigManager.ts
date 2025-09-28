@@ -1,4 +1,4 @@
-import { type Config, type EntryConfig, type VariableConfig } from "./Config.ts"
+import { type Config, type EntryConfig, type VariableConfig, type ButtonConfig } from "./Config.ts"
 import { type BotManager, useConfigManager } from "./BotManager.ts"
 import { type Draft, produce } from "immer"
 
@@ -52,6 +52,7 @@ export class ConfigManager {
 
   private readonly entriesCache = new IdCache(() => this.config.entries)
   private readonly variablesCache = new IdCache(() => this.config.variables)
+  private readonly buttonsCache = new IdCache(() => this.config.buttons)
 
   constructor(botState: BotManager) {
     this.bot = botState
@@ -70,10 +71,15 @@ export class ConfigManager {
     return this.variablesCache.get(id)
   }
 
+  getButton(id: string): ButtonConfig | undefined {
+    return this.buttonsCache.get(id)
+  }
+
   reload() {
     this.config = this.loadConfig()
     this.entriesCache.reset()
     this.variablesCache.reset()
+    this.buttonsCache.reset()
   }
 
   private saveConfig(): void {
@@ -95,7 +101,8 @@ export class ConfigManager {
     }
     return {
       entries: [],
-      variables: []
+      variables: [],
+      buttons: []
     }
   }
 
@@ -106,6 +113,9 @@ export class ConfigManager {
           entry.allowMultiple = false
         }
       }
+      if (config.buttons === undefined) {
+        config.buttons = []
+      }
     })
   }
 
@@ -113,6 +123,7 @@ export class ConfigManager {
     this.config = produce(this.config, updater)
     this.entriesCache.reset()
     this.variablesCache.reset()
+    this.buttonsCache.reset()
     this.saveConfig()
   }
 
@@ -222,6 +233,61 @@ export class ConfigManager {
   reorderVariables(orderedIds: string[]): void {
     this.updateConfig(config => {
       config.variables.sort((a, b) => {
+        const aIndex = orderedIds.indexOf(a.id)
+        const bIndex = orderedIds.indexOf(b.id)
+        return aIndex - bIndex
+      })
+    })
+  }
+
+  addButton(): void {
+    const oldIds = this.config.buttons
+      .map(b => b.id.match(/^btn_(\d+)$/))
+      .filter(m => m !== null)
+      .map(m => Number(m[1]))
+
+    const newId = oldIds.length > 0
+      ? `btn_${Math.max(...oldIds) + 1}`
+      : "btn_1"
+
+    this.updateConfig(config => {
+      config.buttons.push({
+        id: newId,
+        name: "",
+        xpath: "",
+        allowMultiple: false
+      })
+    })
+
+    this.bot.buttons.reset(newId)
+  }
+
+  updateButton(id: string, updates: Partial<ButtonConfig>): void {
+    const buttonIndex = this.indexOf(id, this.config.buttons)
+    if (buttonIndex !== undefined) {
+      this.updateConfig(config => {
+        config.buttons[buttonIndex] = {
+          ...config.buttons[buttonIndex],
+          ...updates
+        }
+      })
+      this.bot.buttons.reset(id)
+    }
+  }
+
+  removeButton(id: string): void {
+    const buttonIndex = this.indexOf(id, this.config.buttons)
+    if (buttonIndex !== undefined) {
+      this.updateConfig(config => {
+        config.buttons.splice(buttonIndex, 1)
+      })
+      this.bot.buttons.reset(id)
+    }
+  }
+
+  reorderButtons(orderedIds: string[]): void {
+    this.updateConfig(config => {
+      config.buttons.sort((a, b) => {
         const aIndex = orderedIds.indexOf(a.id)
         const bIndex = orderedIds.indexOf(b.id)
         return aIndex - bIndex

@@ -1,7 +1,6 @@
 import { type BotManager, dispatch, useEntriesManager } from "./BotManager.ts"
 import type { EntryConfig } from "./Config.ts"
 import type { Try } from "../../utils/xpath.ts"
-import type { ElementsSubscribeResult } from "./XPathSubscriptionManager.ts"
 
 
 export function usePillStatus(id: string): [boolean | undefined, "stopped" | "running" | "auto-stopped" | "waiting" | undefined] {
@@ -61,6 +60,7 @@ export class EntriesManager {
 
   close() {
     for (const entry of this.entries.values()) {
+      entry.unsubscribe()
       this.stop(entry)
     }
     this.entries.clear()
@@ -90,7 +90,9 @@ export class EntriesManager {
 
     const entry = this.bot.config.getEntry(id)
     if (entry) {
-      const { unsubscribe, elements } = this.subscribeOnElements(entry)
+      const { unsubscribe, elements } = this.bot.xPathSubscriptionManager.subscribeOnElements(entry.xpath, {
+        onUpdate: element => dispatch.entries.handleUpdate(entry.id, element)
+      }, entry.allowMultiple)
 
       this.entries.set(id, {
         unsubscribe,
@@ -105,33 +107,6 @@ export class EntriesManager {
         },
         timerId: undefined
       })
-    }
-  }
-
-  private subscribeOnElements(entry: EntryConfig): ElementsSubscribeResult {
-    if (entry.allowMultiple) {
-      return this.bot.xPathSubscriptionManager.subscribeOnElements(entry.xpath, {
-        onUpdate: element => dispatch.entries.handleUpdate(entry.id, element)
-      })
-    } else {
-      function asArray(t: Try<HTMLElement>): Try<HTMLElement[]> {
-        if (!t.ok) {
-          return t
-        } else {
-          return {
-            ok: true,
-            value: [t.value]
-          }
-        }
-      }
-
-      const { unsubscribe, element } = this.bot.xPathSubscriptionManager.subscribeOnElement(entry.xpath, {
-        onUpdate: element => dispatch.entries.handleUpdate(entry.id, asArray(element))
-      })
-      return {
-        unsubscribe,
-        elements: asArray(element)
-      }
     }
   }
 

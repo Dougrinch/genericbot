@@ -1,5 +1,5 @@
 import { type Assertion, expect } from "vitest"
-import { type Promisify, safeWaitFor, waitForPromisify } from "./waits.ts"
+import { type Promisify, waitForPromisify } from "./waits.ts"
 import { type Locator, page } from "@vitest/browser/context"
 
 export function element(
@@ -8,7 +8,13 @@ export function element(
   if (sel) {
     return waitForPromisify(() => expect(sel(locator.elements())))
   } else {
-    return waitForPromisify(() => expect(locator.element()))
+    return waitForPromisify(chain => {
+      if (chain.length === 2 && chain[0].key === "not" && chain[1].key === "toBeInTheDocument") {
+        return expect(locator.query()) as Assertion<Element>
+      } else {
+        return expect(locator.element())
+      }
+    })
   }
 }
 
@@ -57,7 +63,7 @@ export function enrichLocator() {
     configurable: false,
     writable: false,
     async value(this: Locator): Promise<void> {
-      await safeWaitFor(() => expect(this.element()).toBeVisible())
+      await this.expect().toBeVisible()
       return originalClick.apply(this)
     }
   })
@@ -67,7 +73,7 @@ export function enrichLocator() {
     configurable: false,
     writable: false,
     async value(this: Locator, text: string): Promise<void> {
-      await safeWaitFor(() => expect(this.element()).toBeVisible())
+      await this.expect().toBeVisible()
       return originalFill.apply(this, [text])
     }
   })

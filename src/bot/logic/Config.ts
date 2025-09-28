@@ -5,6 +5,7 @@ enableMapSet()
 export type Config = Immutable<{
   entries: EntryConfig[]
   variables: VariableConfig[]
+  buttons: ButtonConfig[]
 }>
 
 export type EntryConfig = Immutable<{
@@ -22,4 +23,11 @@ export type VariableConfig = Immutable<{
   xpath: string
   regex: string
   type: "number" | "string"
+}>
+
+export type ButtonConfig = Immutable<{
+  id: string
+  name: string
+  xpath: string
+  allowMultiple: boolean
 }>

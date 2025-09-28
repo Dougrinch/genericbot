@@ -6,7 +6,7 @@ export type WaitForOpts = Parameters<typeof vi.waitFor>[1]
 export async function safeWaitFor<T>(
   callback: () => T | Promise<T>,
   opts: WaitForOpts = { timeout: 1000, interval: 0 }
-): Promise<Awaited<T>> {
+): Promise<T> {
   return await vi.waitFor(callback, opts)
 }
 
@@ -20,16 +20,12 @@ export type Promisify<O> = {
     : O[K];
 }
 
-export function waitForPromisify<T>(callback: () => T | Promise<T>): Promisify<Awaited<T>> {
-  return promisify(safeWaitFor(callback))
+export type Step = {
+  key: any
+  args?: any[]
 }
 
-export function promisify<T>(promise: Promise<T>): Promisify<T> {
-  type Step = {
-    key: any
-    args?: any[]
-  }
-
+export function waitForPromisify<T>(callback: (chain: Step[]) => T | Promise<T>): Promisify<T> {
   function build(chain: Step[] = []) {
     return new Proxy(function () {} as any as Promisify<T>, {
       get(_target, prop) {
@@ -44,32 +40,33 @@ export function promisify<T>(promise: Promise<T>): Promisify<T> {
           return build([...chain.slice(0, -1), { key: "map", args: args }])
         }
 
-        return promise.then(initial => {
-          function call(thisArgument: any, key: any, args: any[]) {
-            const func = thisArgument[key] as (...args: any[]) => any
-            if (typeof func !== "function") {
-              throw new TypeError(`Tried to call non-function property "${String(key)}"`)
-            }
-            return Reflect.apply(func, thisArgument, args)
-          }
+        return safeWaitFor(async () => {
+          const initial = callback(chain)
 
-          let object = initial as any
+          let object = (initial instanceof Promise ? await initial : initial) as any
 
           for (let i = 0; i < chain.length - 1; i++) {
-            const { key, args } = chain[i]
-            if (key === "map") {
-              object = call(object, key, args!)
+            const { key: key_1, args: args_3 } = chain[i]
+            if (key_1 === "map") {
+              object = call(object, key_1, args_3!)
             } else {
-              object = object[key]
+              object = object[key_1]
             }
           }
-
-          const key = chain[chain.length - 1].key
-          return call(object, key, args)
+          const key_2 = chain[chain.length - 1].key
+          return call(object, key_2, args)
         })
       }
     })
   }
 
   return build()
+}
+
+function call(thisArgument: any, key: any, args: any[]) {
+  const func = thisArgument[key] as (...args: any[]) => any
+  if (typeof func !== "function") {
+    throw new TypeError(`Tried to call non-function property "${String(key)}"`)
+  }
+  return Reflect.apply(func, thisArgument, args)
 }

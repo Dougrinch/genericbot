@@ -48,7 +48,10 @@ export async function advanceBy(ms: number) {
 export function installCustomLocators() {
   locators.extend({
     getVariableRow(name: string): string {
-      return `div.reorderable-item:has(span:has-text("${name}"))`
+      return `#variables div.reorderable-item:has(span:has-text("${name}"))`
+    },
+    getButtonRow(name: string): string {
+      return `#buttons div.reorderable-item:has(span:has-text("${name}"))`
     },
     getBySelector(selectors: string): string {
       return selectors
@@ -59,6 +62,7 @@ export function installCustomLocators() {
 declare module "@vitest/browser/context" {
   interface LocatorSelectors {
     getVariableRow(name: string): Locator
+    getButtonRow(name: string): Locator
     getBySelector(selectors: string): Locator
   }
 }

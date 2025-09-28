@@ -106,15 +106,26 @@ export class XPathSubscriptionManager {
     }
   }
 
-  subscribeOnElements(xpath: string, callback: ElementsChangeCallback): ElementsSubscribeResult {
-    const { subscription, unsubscribe } = this.subscribe(xpath, {
-      type: "elements",
-      onUpdate: callback.onUpdate
-    })
+  subscribeOnElements(xpath: string, callback: ElementsChangeCallback, allowMultiple: boolean = true): ElementsSubscribeResult {
+    if (allowMultiple) {
+      const { subscription, unsubscribe } = this.subscribe(xpath, {
+        type: "elements",
+        onUpdate: callback.onUpdate
+      })
 
-    return {
-      unsubscribe,
-      elements: this.buildElements(subscription)
+      return {
+        unsubscribe,
+        elements: this.buildElements(subscription)
+      }
+    } else {
+      const { unsubscribe, element } = this.subscribeOnElement(xpath, {
+        onUpdate: e => callback.onUpdate(asArray(e))
+      })
+
+      return {
+        unsubscribe,
+        elements: asArray(element)
+      }
     }
   }
 
@@ -327,6 +338,17 @@ export class XPathSubscriptionManager {
     return {
       ok: true,
       value: value(element)
+    }
+  }
+}
+
+function asArray(t: Try<HTMLElement>): Try<HTMLElement[]> {
+  if (!t.ok) {
+    return t
+  } else {
+    return {
+      ok: true,
+      value: [t.value]
     }
   }
 }

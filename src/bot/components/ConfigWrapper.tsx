@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { EntriesList } from "./EntriesList"
 import { VariablesList } from "./VariablesList"
+import { ButtonsList } from "./ButtonsList"
 
 interface ConfigWrapperProps {
   isVisible: boolean
@@ -37,16 +38,24 @@ export function ConfigWrapper({ isVisible, onClose, onHotReload }: ConfigWrapper
   return (
     <div className="config-wrapper" hidden={!isVisible}>
       <div className="config-tab">
-        <div className="tab-header">Variables</div>
-        <VariablesList />
-      </div>
-      <div className="config-tab">
-        <div className="tab-header">Automation Entries</div>
-        <EntriesList />
-        <div className="config-actions">
-          <button onClick={onHotReload}>Hot Reload</button>
-          <button>Refresh</button>
-          <button onClick={onClose}>✕ Close</button>
+        <div className="config-section">
+          <div className="tab-header">Buttons</div>
+          <ButtonsList />
+        </div>
+        <div className="config-section">
+          <div className="tab-header">Variables</div>
+          <VariablesList />
+        </div>
+        <div className="config-section">
+          <div className="tab-header">Automation Entries</div>
+          <EntriesList />
+        </div>
+        <div className="config-section">
+          <div className="config-actions">
+            <button onClick={onHotReload}>Hot Reload</button>
+            <button>Refresh</button>
+            <button onClick={onClose}>✕ Close</button>
+          </div>
         </div>
       </div>
     </div>

@@ -36,7 +36,7 @@
     position: absolute;
     right: 0;
     bottom: calc(100% + 8px);
-    width: 1280px;
+    width: 700px;
     max-width: 95vw;
     max-height: 70vh;
     overflow: auto;
@@ -81,12 +81,20 @@
     min-width: 0;
 }
 
+.config-section {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.config-section:last-child {
+    margin-bottom: 0;
+}
+
 .tab-header {
     font-weight: bold;
     font-size: 14px;
     padding: 6px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, .2);
-    margin-bottom: 8px;
 }
 
 .reorderable-list {
