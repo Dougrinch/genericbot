@@ -1,12 +1,9 @@
 import { type BotManager, dispatch, useButtonsManager } from "./BotManager.ts"
-import type { Try } from "../../utils/xpath.ts"
+import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
 
 
-export function useButtonValue(id: string): [HTMLElement[] | undefined, string | undefined, "warn" | "ok" | "err" | undefined] {
-  return useButtonsManager(bm => {
-    const value = bm.getValue(id)
-    return [value?.value, value?.statusLine, value?.statusType]
-  })
+export function useButtonValue(id: string): ButtonValue | undefined {
+  return useButtonsManager(bm => bm.getValue(id))
 }
 
 
@@ -15,10 +12,11 @@ type ButtonData = {
   value: ButtonValue
 }
 
-type ButtonValue = {
+export type ButtonValue = {
   value: HTMLElement[] | undefined
   statusLine: string
   statusType: "warn" | "ok" | "err"
+  elementsInfo: ElementInfo[]
 }
 
 
@@ -80,7 +78,7 @@ export class ButtonsManager {
     }
   }
 
-  handleUpdate(id: string, elements: Try<HTMLElement[]>): void {
+  handleUpdate(id: string, elements: Result<HTMLElement[]>): void {
     const button = this.bot.config.getButton(id)
     if (!button) {
       throw Error(`Button ${id} not found`)
@@ -94,18 +92,20 @@ export class ButtonsManager {
     data.value = this.buildButtonValue(elements)
   }
 
-  private buildButtonValue(elements: Try<HTMLElement[]>): ButtonValue {
+  private buildButtonValue(elements: Result<HTMLElement[]>): ButtonValue {
     if (elements.ok) {
       return {
         value: elements.value,
         statusType: "ok",
-        statusLine: ""
+        statusLine: "",
+        elementsInfo: elements.elementsInfo
       }
     } else {
       return {
         value: undefined,
         statusType: elements.severity,
-        statusLine: elements.error
+        statusLine: elements.error,
+        elementsInfo: elements.elementsInfo
       }
     }
   }

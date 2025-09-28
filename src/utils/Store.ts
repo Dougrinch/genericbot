@@ -40,21 +40,34 @@ export function createStore<S, A>(
       const lastValueRef = useRef<T | null>(null)
 
       return useSyncExternalStore(subscribe, () => {
-        const result = select(selector)
-        if (Array.isArray(result)) {
-          if (lastValueRef.current !== null
-            && result.length === (lastValueRef.current as []).length
-            && result.every((v, i) => Object.is(v, (lastValueRef.current as [])[i]))
+        const oldValue = lastValueRef.current
+        const newValue = select(selector)
+
+        if (Array.isArray(newValue) && Array.isArray(oldValue)) {
+          if (newValue.length === oldValue.length
+            && newValue.every((v, i) => Object.is(v, oldValue[i]))
           ) {
-            return lastValueRef.current
-          } else {
-            lastValueRef.current = result
-            return result
+            return oldValue
           }
-        } else {
-          return result
         }
+
+        if (isRecord(newValue) && isRecord(oldValue)) {
+          const newKeys = Object.keys(newValue)
+          const oldKeys = Object.keys(oldValue)
+          if (newKeys.length === oldKeys.length
+            && newKeys.every(key => Object.is(newValue[key], oldValue[key]))
+          ) {
+            return oldValue
+          }
+        }
+
+        lastValueRef.current = newValue
+        return newValue
       })
     }
   }
+}
+
+function isRecord(x: unknown): x is Record<string, unknown> {
+  return x !== null && typeof x === "object" && !Array.isArray(x)
 }

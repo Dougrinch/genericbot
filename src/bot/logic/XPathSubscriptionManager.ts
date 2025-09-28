@@ -20,40 +20,56 @@ type ResolvedElement = {
 
 type Callback = {
   type: "innerText"
-  onUpdate: (innerText: Try<string>) => void
+  onUpdate: (innerText: Result<string>) => void
 } | {
   type: "element"
-  onUpdate: (element: Try<HTMLElement>) => void
+  onUpdate: (element: Result<HTMLElement>) => void
 } | {
   type: "elements"
-  onUpdate: (element: Try<HTMLElement[]>) => void
+  onUpdate: (element: Result<HTMLElement[]>) => void
 }
 
 export type InnerTextChangeCallback = {
-  onUpdate: (innerText: Try<string>) => void
+  onUpdate: (innerText: Result<string>) => void
 }
 
 export type ElementChangeCallback = {
-  onUpdate: (element: Try<HTMLElement>) => void
+  onUpdate: (element: Result<HTMLElement>) => void
 }
 
 export type ElementsChangeCallback = {
-  onUpdate: (elements: Try<HTMLElement[]>) => void
+  onUpdate: (elements: Result<HTMLElement[]>) => void
 }
 
 export type InnerTextSubscribeResult = {
   unsubscribe: () => void
-  innerText: Try<string>
+  innerText: Result<string>
 }
 
 export type ElementSubscribeResult = {
   unsubscribe: () => void
-  element: Try<HTMLElement>
+  element: Result<HTMLElement>
 }
 
 export type ElementsSubscribeResult = {
   unsubscribe: () => void
-  elements: Try<HTMLElement[]>
+  elements: Result<HTMLElement[]>
+}
+
+export type Result<T> = {
+  ok: true
+  value: T
+  elementsInfo: ElementInfo[]
+} | {
+  ok: false
+  error: string
+  severity: "warn" | "err"
+  elementsInfo: ElementInfo[]
+}
+
+export type ElementInfo = {
+  element: HTMLElement
+  isVisible: boolean
 }
 
 export class XPathSubscriptionManager {
@@ -276,29 +292,33 @@ export class XPathSubscriptionManager {
   private runCallbacks(subscription: XPathSubscription, onlyContent: boolean = false) {
     const innerText = this.buildInnerText(subscription)
     const element = this.buildElement(subscription)
+    const elements = this.buildElements(subscription)
     subscription.callbacks.forEach(c => {
       if (c.type === "innerText") {
         c.onUpdate(innerText)
       } else if (c.type === "element" && !onlyContent) {
         c.onUpdate(element)
+      } else if (c.type === "elements" && !onlyContent) {
+        c.onUpdate(elements)
       }
     })
   }
 
-  private buildInnerText(subscription: XPathSubscription): Try<string> {
+  private buildInnerText(subscription: XPathSubscription): Result<string> {
     return this.buildSingleValue(subscription, e => e.innerText)
   }
 
-  private buildElement(subscription: XPathSubscription): Try<HTMLElement> {
+  private buildElement(subscription: XPathSubscription): Result<HTMLElement> {
     return this.buildSingleValue(subscription, e => e.element)
   }
 
-  private buildElements(subscription: XPathSubscription): Try<HTMLElement[]> {
+  private buildElements(subscription: XPathSubscription): Result<HTMLElement[]> {
     if (subscription.error !== undefined) {
       return {
         ok: false,
         error: subscription.error,
-        severity: subscription.severity ?? "warn"
+        severity: subscription.severity ?? "warn",
+        elementsInfo: this.buildElementsInfo(subscription)
       }
     }
 
@@ -306,22 +326,25 @@ export class XPathSubscriptionManager {
       ok: true,
       value: Array.from(subscription.elements.values())
         .filter(e => e.isVisible)
-        .map(e => e.element)
+        .map(e => e.element),
+      elementsInfo: this.buildElementsInfo(subscription)
     }
   }
 
-  private buildSingleValue<T>(subscription: XPathSubscription, value: (element: ResolvedElement) => T): Try<T> {
+  private buildSingleValue<T>(subscription: XPathSubscription, value: (element: ResolvedElement) => T): Result<T> {
     if (subscription.elements.size === 0) {
       return {
         ok: false,
         error: subscription.error ?? "XPath matched 0 elements.",
-        severity: subscription.severity ?? "warn"
+        severity: subscription.severity ?? "warn",
+        elementsInfo: this.buildElementsInfo(subscription)
       }
     } else if (subscription.elements.size > 1) {
       return {
         ok: false,
         error: subscription.error ?? `XPath matched ${subscription.elements.size} elements (need exactly 1).`,
-        severity: subscription.severity ?? "warn"
+        severity: subscription.severity ?? "warn",
+        elementsInfo: this.buildElementsInfo(subscription)
       }
     }
 
@@ -331,24 +354,35 @@ export class XPathSubscriptionManager {
       return {
         ok: false,
         error: "Element hidden",
-        severity: "warn"
+        severity: "warn",
+        elementsInfo: this.buildElementsInfo(subscription)
       }
     }
 
     return {
       ok: true,
-      value: value(element)
+      value: value(element),
+      elementsInfo: this.buildElementsInfo(subscription)
     }
+  }
+
+  buildElementsInfo(subscription: XPathSubscription) {
+    return Array.from(subscription.elements.values())
+      .map(e => ({
+        element: e.element,
+        isVisible: e.isVisible
+      }))
   }
 }
 
-function asArray(t: Try<HTMLElement>): Try<HTMLElement[]> {
+function asArray(t: Result<HTMLElement>): Result<HTMLElement[]> {
   if (!t.ok) {
     return t
   } else {
     return {
       ok: true,
-      value: [t.value]
+      value: [t.value],
+      elementsInfo: t.elementsInfo
     }
   }
 }

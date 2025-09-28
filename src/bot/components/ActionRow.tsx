@@ -31,7 +31,9 @@ export function ActionRow({ onToggleConfig }: ActionRowProps) {
 
 function EntryPill({ entry }: { entry: EntryConfig }) {
   const entryId = entry.id
-  const [isRunning, status] = usePillStatus(entryId)
+  const pillStatus = usePillStatus(entryId)
+  const isRunning = pillStatus?.isRunning
+  const status = pillStatus?.status
 
   const displayName = entry.name !== "" ? entry.name : "Unnamed"
   const canRun = true

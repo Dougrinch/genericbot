@@ -4,6 +4,7 @@ import type { ButtonConfig } from "../logic/Config.ts"
 import { useButtonValue } from "../logic/ButtonsManager.ts"
 import { dispatch } from "../logic/BotManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
+import { ElementsList } from "./ElementsList.tsx"
 
 interface ButtonRowProps {
   button: ButtonConfig
@@ -13,7 +14,10 @@ interface ButtonRowProps {
 export const ButtonRow = memo((props: ButtonRowProps) => {
   const button = props.button
 
-  const [elements, statusLine, statusType] = useButtonValue(button.id)
+  const buttonValue = useButtonValue(button.id)
+  const elements = buttonValue?.value
+  const statusLine = buttonValue?.statusLine
+  const statusType = buttonValue?.statusType
 
   function handleInputChange(field: keyof ButtonConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
     return e => {
@@ -80,6 +84,8 @@ export const ButtonRow = memo((props: ButtonRowProps) => {
               {statusLine}
             </div>
           )}
+
+          <ElementsList elements={buttonValue?.elementsInfo ?? []} />
         </>
       )}
     />

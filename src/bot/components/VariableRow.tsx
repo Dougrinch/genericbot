@@ -4,6 +4,7 @@ import type { VariableConfig } from "../logic/Config.ts"
 import { useVariableValue } from "../logic/VariablesManager.ts"
 import { dispatch } from "../logic/BotManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
+import { ElementsList } from "./ElementsList.tsx"
 
 interface VariableRowProps {
   variable: VariableConfig
@@ -13,7 +14,10 @@ interface VariableRowProps {
 export const VariableRow = memo((props: VariableRowProps) => {
   const variable = props.variable
 
-  const [value, statusLine, statusType] = useVariableValue(variable.id)
+  const variableValue = useVariableValue(variable.id)
+  const value = variableValue?.value
+  const statusLine = variableValue?.statusLine
+  const statusType = variableValue?.statusType
 
   function handleInputChange(field: keyof VariableConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
     return e => {
@@ -84,6 +88,8 @@ export const VariableRow = memo((props: VariableRowProps) => {
               {statusLine}
             </div>
           )}
+
+          <ElementsList elements={variableValue?.elementsInfo ?? []} />
         </>
       )}
     />

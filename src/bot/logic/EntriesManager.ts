@@ -1,20 +1,14 @@
 import { type BotManager, dispatch, useEntriesManager } from "./BotManager.ts"
 import type { EntryConfig } from "./Config.ts"
-import type { Try } from "../../utils/xpath.ts"
+import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
 
 
-export function usePillStatus(id: string): [boolean | undefined, "stopped" | "running" | "auto-stopped" | "waiting" | undefined] {
-  return useEntriesManager(em => {
-    const value = em.getPillValue(id)
-    return [value?.isRunning, value?.status]
-  })
+export function usePillStatus(id: string): PillValue | undefined {
+  return useEntriesManager(em => em.getPillValue(id))
 }
 
-export function useEntryValue(id: string): [string | undefined, "warn" | "ok" | "err" | undefined] {
-  return useEntriesManager(em => {
-    const value = em.getEntryValue(id)
-    return [value?.statusLine, value?.statusType]
-  })
+export function useEntryValue(id: string): EntryValue | undefined {
+  return useEntriesManager(em => em.getEntryValue(id))
 }
 
 
@@ -34,6 +28,7 @@ type PillValue = {
 type EntryValue = {
   statusLine: string
   statusType: "warn" | "ok" | "err"
+  elementsInfo: ElementInfo[]
 }
 
 
@@ -103,24 +98,26 @@ export class EntriesManager {
         },
         entryValue: {
           statusType: elements.ok ? "ok" : elements.severity,
-          statusLine: elements.ok ? "" : elements.error
+          statusLine: elements.ok ? "" : elements.error,
+          elementsInfo: elements.elementsInfo
         },
         timerId: undefined
       })
     }
   }
 
-  handleUpdate(id: string, element: Try<HTMLElement[]>): void {
+  handleUpdate(id: string, elements: Result<HTMLElement[]>): void {
     const data = this.entries.get(id)
     if (!data) {
       throw Error(`EntryData ${id} not found`)
     }
 
-    data.elements = element.ok ? element.value : undefined
+    data.elements = elements.ok ? elements.value : undefined
     data.pillValue = this.buildPillValue(data)
     data.entryValue = {
-      statusType: element.ok ? "ok" : element.severity,
-      statusLine: element.ok ? "" : element.error
+      statusType: elements.ok ? "ok" : elements.severity,
+      statusLine: elements.ok ? "" : elements.error,
+      elementsInfo: elements.elementsInfo
     }
   }
 

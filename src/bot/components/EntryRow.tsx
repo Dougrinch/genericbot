@@ -1,16 +1,20 @@
 import * as React from "react"
+import { memo } from "react"
 import type { EntryConfig } from "../logic/Config.ts"
 import { dispatch } from "../logic/BotManager.ts"
 import { useEntryValue } from "../logic/EntriesManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
+import { ElementsList } from "./ElementsList.tsx"
 
 interface EntryRowProps {
   entry: EntryConfig
   index: number
 }
 
-export function EntryRow({ entry, index }: EntryRowProps) {
-  const [statusLine, statusType] = useEntryValue(entry.id)
+export const EntryRow = memo(({ entry, index }: EntryRowProps) => {
+  const entryValue = useEntryValue(entry.id)
+  const statusLine = entryValue?.statusLine
+  const statusType = entryValue?.statusType
 
   function handleInputChange(field: keyof EntryConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void {
     return e => {
@@ -71,7 +75,7 @@ export function EntryRow({ entry, index }: EntryRowProps) {
           <input
             type="checkbox"
             id={`entry-allowMultiple-${entry.id}`}
-            value={entry.allowMultiple != null ? "true" : "false"}
+            checked={entry.allowMultiple}
             onChange={handleInputChange("allowMultiple")}
           />
 
@@ -80,8 +84,10 @@ export function EntryRow({ entry, index }: EntryRowProps) {
               {statusLine}
             </div>
           )}
+
+          <ElementsList elements={entryValue?.elementsInfo ?? []} />
         </>
       )}
     />
   )
-}
+})

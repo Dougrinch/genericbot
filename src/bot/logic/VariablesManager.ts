@@ -1,13 +1,10 @@
 import type { VariableConfig } from "./Config.ts"
 import { type BotManager, dispatch, useVariablesManager } from "./BotManager.ts"
-import type { Try } from "../../utils/xpath.ts"
+import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
 
 
-export function useVariableValue(id: string): [number | string | undefined, string | undefined, "warn" | "ok" | "err" | undefined] {
-  return useVariablesManager(vm => {
-    const value = vm.getValue(id)
-    return [value?.value, value?.statusLine, value?.statusType]
-  })
+export function useVariableValue(id: string): VariableValue | undefined {
+  return useVariablesManager(vm => vm.getValue(id))
 }
 
 
@@ -20,6 +17,7 @@ type VariableValue = {
   value: number | string | undefined
   statusLine: string
   statusType: "warn" | "ok" | "err"
+  elementsInfo: ElementInfo[]
 }
 
 
@@ -83,7 +81,7 @@ export class VariablesManager {
     }
   }
 
-  handleUpdate(id: string, innerText: Try<string>): void {
+  handleUpdate(id: string, innerText: Result<string>): void {
     const variable = this.bot.config.getVariable(id)
     if (!variable) {
       throw Error(`Variable ${id} not found`)
@@ -97,19 +95,20 @@ export class VariablesManager {
     data.value = this.tryEvaluateVariableValue(variable, innerText)
   }
 
-  private tryEvaluateVariableValue(variable: VariableConfig, innerText: Try<string>): VariableValue {
+  private tryEvaluateVariableValue(variable: VariableConfig, innerText: Result<string>): VariableValue {
     if (innerText.ok) {
-      return this.evaluateVariableValue(variable, innerText.value)
+      return this.evaluateVariableValue(variable, innerText.value, innerText.elementsInfo)
     } else {
       return {
         value: undefined,
         statusType: innerText.severity,
-        statusLine: innerText.error
+        statusLine: innerText.error,
+        elementsInfo: innerText.elementsInfo
       }
     }
   }
 
-  private evaluateVariableValue(variable: VariableConfig, innerText: string): VariableValue {
+  private evaluateVariableValue(variable: VariableConfig, innerText: string, elementsInfo: ElementInfo[]): VariableValue {
     let textValue = innerText
     if (variable.regex) {
       const match = new RegExp(variable.regex).exec(textValue)
@@ -119,7 +118,8 @@ export class VariablesManager {
         return {
           value: undefined,
           statusType: "warn",
-          statusLine: `No match for regex ${variable.regex}`
+          statusLine: `No match for regex ${variable.regex}`,
+          elementsInfo: elementsInfo
         }
       }
     }
@@ -127,7 +127,8 @@ export class VariablesManager {
     return {
       value: variable.type === "number" ? Number(textValue) : textValue,
       statusType: "ok",
-      statusLine: ""
+      statusLine: "",
+      elementsInfo: elementsInfo
     }
   }
 }
