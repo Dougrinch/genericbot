@@ -9,6 +9,11 @@ export function FoundElementsList({ elements }: ElementsListProps) {
   const overlayRef = useRef<HTMLDivElement | null>(null)
 
   const handleMouseEnter = (element: HTMLElement) => {
+    if (overlayRef.current) {
+      overlayRef.current.remove()
+      overlayRef.current = null
+    }
+
     const overlay = document.createElement("div")
     overlay.style.position = "fixed"
     overlay.style.pointerEvents = "none"
