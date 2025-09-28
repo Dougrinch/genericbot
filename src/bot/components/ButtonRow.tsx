@@ -4,7 +4,7 @@ import type { ButtonConfig } from "../logic/Config.ts"
 import { useButtonValue } from "../logic/ButtonsManager.ts"
 import { dispatch } from "../logic/BotManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
-import { ElementsList } from "./ElementsList.tsx"
+import { FoundElementsList } from "./FoundElementsList.tsx"
 
 interface ButtonRowProps {
   button: ButtonConfig
@@ -51,6 +51,7 @@ export const ButtonRow = memo((props: ButtonRowProps) => {
       )}
       summaryValue={value}
       handleRemove={dispatch.config.removeButton}
+      askOnRemove={button.xpath.length > 0}
       fields={(
         <>
           <label className="label" htmlFor={`btn-name-${button.id}`}>Name</label>
@@ -88,7 +89,7 @@ export const ButtonRow = memo((props: ButtonRowProps) => {
             </div>
           )}
 
-          <ElementsList elements={buttonValue?.elementsInfo ?? []} />
+          <FoundElementsList elements={buttonValue?.elementsInfo ?? []} />
         </>
       )}
     />

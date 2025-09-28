@@ -9,6 +9,7 @@ export type ReorderableRowProps = {
   value?: ReactNode
   summaryValue?: ReactNode
   handleRemove: (id: string) => void
+  askOnRemove: boolean
   fields: ReactNode
   additionalContent?: ReactNode
 }
@@ -77,7 +78,18 @@ export function ReorderableRow(props: ReorderableRowProps) {
               <span className="reorderable-item-summary-value"> — {props.summaryValue}</span>
             )}
           </span>
-          <button className="reorderable-item-remove-btn" onClick={() => props.handleRemove(props.id)}>
+          <button
+            className="reorderable-item-remove-btn"
+            onClick={() => {
+              if (props.askOnRemove) {
+                if (confirm(`Remove "${props.name}"`)) {
+                  props.handleRemove(props.id)
+                }
+              } else {
+                props.handleRemove(props.id)
+              }
+            }}
+          >
             Remove
           </button>
           <button className="reorderable-item-edit-btn" onClick={() => setIsEditing(false)}>

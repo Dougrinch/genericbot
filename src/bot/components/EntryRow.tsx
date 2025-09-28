@@ -4,7 +4,7 @@ import type { EntryConfig } from "../logic/Config.ts"
 import { dispatch } from "../logic/BotManager.ts"
 import { useEntryValue } from "../logic/EntriesManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
-import { ElementsList } from "./ElementsList.tsx"
+import { FoundElementsList } from "./FoundElementsList.tsx"
 
 interface EntryRowProps {
   entry: EntryConfig
@@ -34,6 +34,7 @@ export const EntryRow = memo(({ entry, index }: EntryRowProps) => {
       index={index}
       name={entry.name}
       handleRemove={dispatch.config.removeEntry}
+      askOnRemove={entry.xpath.length > 0 || (entry.condition?.length ?? 0) > 0}
       fields={(
         <>
           <label className="label" htmlFor={`entry-name-${entry.id}`}>Name</label>
@@ -88,7 +89,7 @@ export const EntryRow = memo(({ entry, index }: EntryRowProps) => {
             </div>
           )}
 
-          <ElementsList elements={entryValue?.elementsInfo ?? []} />
+          <FoundElementsList elements={entryValue?.elementsInfo ?? []} />
         </>
       )}
     />

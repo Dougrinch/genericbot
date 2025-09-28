@@ -4,7 +4,7 @@ import type { VariableConfig } from "../logic/Config.ts"
 import { useVariableValue } from "../logic/VariablesManager.ts"
 import { dispatch } from "../logic/BotManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
-import { ElementsList } from "./ElementsList.tsx"
+import { FoundElementsList } from "./FoundElementsList.tsx"
 
 interface VariableRowProps {
   variable: VariableConfig
@@ -44,6 +44,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
       )}
       summaryValue={value !== undefined ? value : "(not evaluated)"}
       handleRemove={dispatch.config.removeVariable}
+      askOnRemove={variable.xpath.length > 0 || variable.regex.length > 0}
       fields={(
         <>
           <label className="label" htmlFor={`var-name-${variable.id}`}>Name</label>
@@ -92,7 +93,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
             </div>
           )}
 
-          <ElementsList elements={variableValue?.elementsInfo ?? []} />
+          <FoundElementsList elements={variableValue?.elementsInfo ?? []} />
         </>
       )}
     />
