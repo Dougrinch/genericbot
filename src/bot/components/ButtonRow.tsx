@@ -78,7 +78,10 @@ export const ButtonRow = memo((props: ButtonRowProps) => {
             checked={button.allowMultiple}
             onChange={handleInputChange("allowMultiple")}
           />
-
+        </>
+      )}
+      additionalContent={(
+        <>
           {statusLine !== undefined && (
             <div className={`statusline status-${statusType}`}>
               {statusLine}

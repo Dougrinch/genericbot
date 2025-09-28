@@ -111,14 +111,23 @@ export class VariablesManager {
   private evaluateVariableValue(variable: VariableConfig, innerText: string, elementsInfo: ElementInfo[]): VariableValue {
     let textValue = innerText
     if (variable.regex) {
-      const match = new RegExp(variable.regex).exec(textValue)
-      if (match) {
-        textValue = match[1] !== undefined ? match[1] : match[0]
-      } else {
+      try {
+        const match = new RegExp(variable.regex).exec(textValue)
+        if (match) {
+          textValue = match[1] !== undefined ? match[1] : match[0]
+        } else {
+          return {
+            value: undefined,
+            statusType: "warn",
+            statusLine: `No match for regex ${variable.regex}`,
+            elementsInfo: elementsInfo
+          }
+        }
+      } catch (error) {
         return {
           value: undefined,
-          statusType: "warn",
-          statusLine: `No match for regex ${variable.regex}`,
+          statusType: "err",
+          statusLine: error instanceof Error ? error.message : String(error),
           elementsInfo: elementsInfo
         }
       }

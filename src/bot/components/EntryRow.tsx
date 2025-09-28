@@ -78,7 +78,10 @@ export const EntryRow = memo(({ entry, index }: EntryRowProps) => {
             checked={entry.allowMultiple}
             onChange={handleInputChange("allowMultiple")}
           />
-
+        </>
+      )}
+      additionalContent={(
+        <>
           {statusLine !== undefined && (
             <div className={`statusline status-${statusType}`}>
               {statusLine}

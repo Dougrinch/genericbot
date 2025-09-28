@@ -82,7 +82,10 @@ export const VariableRow = memo((props: VariableRowProps) => {
             <option value="number">Number</option>
             <option value="string">String</option>
           </select>
-
+        </>
+      )}
+      additionalContent={(
+        <>
           {statusLine !== undefined && (
             <div className={`statusline status-${statusType}`}>
               {statusLine}
