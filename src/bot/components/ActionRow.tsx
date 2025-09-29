@@ -65,7 +65,7 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
         </HoverableElementHighlighter>
       )}
       handleRemove={dispatch.config.removeAction}
-      askOnRemove={action.xpath.length > 0}
+      askOnRemove={action.xpath.length > 0 || action.script.length > 0}
       fields={(
         <>
           <label className="label" htmlFor={`action-name-${action.id}`}>Name</label>
