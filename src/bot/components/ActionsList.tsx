@@ -1,9 +1,11 @@
 import { ActionRow } from "./ActionRow.tsx"
 import { useConfig } from "../logic/ConfigManager.ts"
 import { ReorderableList } from "./ReorderableList.tsx"
-import { dispatch } from "../logic/BotManager.ts"
+import { useDispatch } from "../BotManagerContext.tsx"
 
 export function ActionsList() {
+  const dispatch = useDispatch()
+
   const actions = useConfig(c => c.actions)
 
   return (

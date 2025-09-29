@@ -1,6 +1,7 @@
-import { type BotManager, dispatch, useActionsManager } from "./BotManager.ts"
+import { type BotManager } from "./BotManager.ts"
 import type { ActionConfig } from "./Config.ts"
 import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
+import { useActionsManager } from "../BotManagerContext.tsx"
 
 
 export function usePillStatus(id: string): PillValue | undefined {
@@ -86,7 +87,10 @@ export class ActionsManager {
     const action = this.bot.config.getAction(id)
     if (action) {
       const { unsubscribe, elements } = this.bot.xPathSubscriptionManager.subscribeOnElements(action.xpath, true, {
-        onUpdate: element => dispatch.actions.handleUpdate(action.id, element)
+        onUpdate: element => {
+          this.handleUpdate(action.id, element)
+          this.bot.notifyListeners()
+        }
       }, action.allowMultiple)
 
       this.actions.set(id, {
@@ -141,7 +145,8 @@ export class ActionsManager {
 
   private start(action: ActionConfig, data: ActionData) {
     data.timerId = setTimeout(() => {
-      dispatch.actions.handleTick(action.id, action.interval)
+      this.handleTick(action.id, action.interval)
+      this.bot.notifyListeners()
     }, 0)
     data.pillValue = this.buildPillValue(data)
   }
@@ -162,7 +167,8 @@ export class ActionsManager {
     }
 
     data.timerId = setTimeout(() => {
-      dispatch.actions.handleTick(id, interval)
+      this.handleTick(id, interval)
+      this.bot.notifyListeners()
     }, interval)
   }
 

@@ -1,6 +1,7 @@
 import type { VariableConfig } from "./Config.ts"
-import { type BotManager, dispatch, useVariablesManager } from "./BotManager.ts"
+import { type BotManager } from "./BotManager.ts"
 import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
+import { useVariablesManager } from "../BotManagerContext.tsx"
 
 
 export function useVariableValue(id: string): VariableValue | undefined {
@@ -70,7 +71,8 @@ export class VariablesManager {
     if (variable) {
       const { unsubscribe, innerText } = this.bot.xPathSubscriptionManager.subscribeOnInnerText(variable.xpath, false, {
         onUpdate: innerText => {
-          dispatch.variables.handleUpdate(id, innerText)
+          this.handleUpdate(id, innerText)
+          this.bot.notifyListeners()
         }
       })
 

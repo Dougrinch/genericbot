@@ -1,5 +1,3 @@
-import { dispatch } from "./logic/BotManager.ts"
-
 export type HotReloadInfo = {
   activePills: string[]
 }
@@ -20,11 +18,11 @@ function saveHotReloadInfo(info: HotReloadInfo): void {
   localStorage.setItem(CONFIG_HOT_RELOAD_KEY, JSON.stringify(info))
 }
 
-export function hotReload(root: HTMLElement) {
-  void asyncHotReload(root)
+export function hotReload(terminate: () => void) {
+  void asyncHotReload(terminate)
 }
 
-async function asyncHotReload(root: HTMLElement) {
+async function asyncHotReload(terminate: () => void) {
   const response = await fetch("https://dougrinch.com/genericbot/bot.iife.js")
   const code = await response.text()
 
@@ -47,8 +45,7 @@ async function asyncHotReload(root: HTMLElement) {
     activePills: []
   })
 
-  dispatch.close()
-  root.remove()
+  terminate()
 
   setTimeout(() => {
     try {

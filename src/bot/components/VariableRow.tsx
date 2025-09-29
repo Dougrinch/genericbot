@@ -2,7 +2,7 @@ import * as React from "react"
 import { memo, useMemo } from "react"
 import type { VariableConfig } from "../logic/Config.ts"
 import { useVariableValue } from "../logic/VariablesManager.ts"
-import { dispatch } from "../logic/BotManager.ts"
+import { useDispatch } from "../BotManagerContext.tsx"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
@@ -13,6 +13,8 @@ interface VariableRowProps {
 }
 
 export const VariableRow = memo((props: VariableRowProps) => {
+  const dispatch = useDispatch()
+
   const variable = props.variable
 
   const variableValue = useVariableValue(variable.id)

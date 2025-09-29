@@ -1,5 +1,6 @@
-import { type BotManager, dispatch, useElementsManager } from "./BotManager.ts"
+import { type BotManager } from "./BotManager.ts"
 import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
+import { useElementsManager } from "../BotManagerContext.tsx"
 
 
 export function useElementValue(id: string): ElementValue | undefined {
@@ -68,7 +69,10 @@ export class ElementsManager {
     const element = this.bot.config.getElement(id)
     if (element) {
       const { unsubscribe, elements } = this.bot.xPathSubscriptionManager.subscribeOnElements(element.xpath, true, {
-        onUpdate: elements => dispatch.elements.handleUpdate(id, elements)
+        onUpdate: elements => {
+          this.handleUpdate(id, elements)
+          this.bot.notifyListeners()
+        }
       }, element.allowMultiple)
 
       this.elements.set(id, {

@@ -1,9 +1,11 @@
 import { VariableRow } from "./VariableRow"
 import { useConfig } from "../logic/ConfigManager.ts"
 import { ReorderableList } from "./ReorderableList.tsx"
-import { dispatch } from "../logic/BotManager.ts"
+import { useDispatch } from "../BotManagerContext.tsx"
 
 export function VariablesList() {
+  const dispatch = useDispatch()
+
   const variables = useConfig(c => c.variables)
 
   return (

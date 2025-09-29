@@ -1,5 +1,5 @@
 import type { ActionConfig } from "../logic/Config.ts"
-import { dispatch } from "../logic/BotManager.ts"
+import { useDispatch } from "../BotManagerContext.tsx"
 import { usePillStatus } from "../logic/ActionsManager.ts"
 import { useConfig } from "../logic/ConfigManager.ts"
 
@@ -30,6 +30,8 @@ export function ActionsRow({ onToggleConfig }: ActionRowProps) {
 }
 
 function ActionPill({ action }: { action: ActionConfig }) {
+  const dispatch = useDispatch()
+
   const actionId = action.id
   const pillStatus = usePillStatus(actionId)
   const isRunning = pillStatus?.isRunning

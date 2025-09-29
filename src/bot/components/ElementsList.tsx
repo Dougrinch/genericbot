@@ -1,9 +1,11 @@
 import { ElementRow } from "./ElementRow"
 import { useConfig } from "../logic/ConfigManager.ts"
 import { ReorderableList } from "./ReorderableList.tsx"
-import { dispatch } from "../logic/BotManager.ts"
+import { useDispatch } from "../BotManagerContext.tsx"
 
 export function ElementsList() {
+  const dispatch = useDispatch()
+
   const elements = useConfig(c => c.elements)
 
   return (

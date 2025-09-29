@@ -2,7 +2,7 @@ import * as React from "react"
 import { memo } from "react"
 import type { ElementConfig } from "../logic/Config.ts"
 import { useElementValue } from "../logic/ElementsManager.ts"
-import { dispatch } from "../logic/BotManager.ts"
+import { useDispatch } from "../BotManagerContext.tsx"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
@@ -13,6 +13,8 @@ interface ElementRowProps {
 }
 
 export const ElementRow = memo((props: ElementRowProps) => {
+  const dispatch = useDispatch()
+
   const element = props.element
 
   const elementValue = useElementValue(element.id)

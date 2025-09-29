@@ -2,27 +2,12 @@ import { ConfigManager } from "./ConfigManager.ts"
 import { VariablesManager } from "./VariablesManager.ts"
 import { ActionsManager } from "./ActionsManager.ts"
 import { ElementsManager } from "./ElementsManager.ts"
-import { createManagerStore } from "../../utils/ManagerStore.ts"
 import { XPathSubscriptionManager } from "./XPathSubscriptionManager.ts"
-
-export function useConfigManager<T>(selector: (cm: ConfigManager) => T): T {
-  return store.useStoreState(bm => selector(bm.config))
-}
-
-export function useVariablesManager<T>(selector: (vm: VariablesManager) => T): T {
-  return store.useStoreState(bm => selector(bm.variables))
-}
-
-export function useActionsManager<T>(selector: (am: ActionsManager) => T): T {
-  return store.useStoreState(bm => selector(bm.actions))
-}
-
-export function useElementsManager<T>(selector: (em: ElementsManager) => T): T {
-  return store.useStoreState(bm => selector(bm.elements))
-}
 
 
 export class BotManager {
+  readonly listeners = new Set<() => void>([])
+
   readonly config: ConfigManager
   readonly xPathSubscriptionManager: XPathSubscriptionManager
   readonly variables: VariablesManager
@@ -50,8 +35,15 @@ export class BotManager {
     this.elements.close()
     this.xPathSubscriptionManager.close()
   }
+
+  subscribe(onChange: () => void): () => void {
+    this.listeners.add(onChange)
+    return () => {
+      this.listeners.delete(onChange)
+    }
+  }
+
+  notifyListeners(): void {
+    this.listeners.forEach(onChange => onChange())
+  }
 }
-
-
-const store = createManagerStore(() => new BotManager())
-export const dispatch = store.dispatch

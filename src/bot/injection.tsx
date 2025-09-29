@@ -4,20 +4,28 @@ import { Bot } from "./Bot.tsx"
 import { readAndClearHotReloadInfo } from "./hotReload.ts";
 
 (function () {
-  const bot = document.createElement("div")
-  bot.id = "bot"
-  document.body.appendChild(bot)
+  const botDiv = document.createElement("div")
+  botDiv.id = "bot"
+  document.body.appendChild(botDiv)
 
-  const shadowRoot = bot.attachShadow({ mode: "open" })
+  const shadowRoot = botDiv.attachShadow({ mode: "open" })
 
-  const root = document.createElement("div")
-  shadowRoot.appendChild(root)
+  const rootDiv = document.createElement("div")
+  shadowRoot.appendChild(rootDiv)
 
   const hotReloadInfo = readAndClearHotReloadInfo()
 
-  createRoot(root).render(
+  const root = createRoot(rootDiv)
+  root.render(
     <StrictMode>
-      <Bot root={bot} hotReloadInfo={hotReloadInfo} />
+      <Bot
+        root={botDiv}
+        terminate={() => {
+          root.unmount()
+          botDiv.remove()
+        }}
+        hotReloadInfo={hotReloadInfo}
+      />
     </StrictMode>
   )
 })()

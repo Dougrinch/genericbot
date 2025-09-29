@@ -1,6 +1,7 @@
 import { type ActionConfig, type Config, type ElementConfig, type VariableConfig } from "./Config.ts"
-import { type BotManager, useConfigManager } from "./BotManager.ts"
+import { type BotManager } from "./BotManager.ts"
 import { type Draft, produce } from "immer"
+import { useConfigManager } from "../BotManagerContext.tsx"
 
 
 export function useConfig(): Config

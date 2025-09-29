@@ -7,7 +7,6 @@ import { page } from "@vitest/browser/context"
 import { dispatch as gameDispatch } from "../../src/game/GameStateContext.ts"
 import type { Config } from "../../src/bot/logic/Config.ts"
 import { CONFIG_STORAGE_KEY } from "../../src/bot/logic/ConfigManager.ts"
-import { dispatch } from "../../src/bot/logic/BotManager.ts"
 
 configure({
   reactStrictMode: true
@@ -40,7 +39,6 @@ afterEach(() => {
 function resetConfig(): void {
   const config = initialBotConfig()
   localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config))
-  dispatch.config.reload()
 }
 
 function initialBotConfig(): Config {

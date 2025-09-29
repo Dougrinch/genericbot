@@ -1,7 +1,7 @@
 import * as React from "react"
 import { memo, useCallback, useMemo } from "react"
 import type { ActionConfig } from "../logic/Config.ts"
-import { dispatch } from "../logic/BotManager.ts"
+import { useDispatch } from "../BotManagerContext.tsx"
 import { useActionValue } from "../logic/ActionsManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
@@ -14,6 +14,8 @@ interface ActionConfigRowProps {
 }
 
 export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
+  const dispatch = useDispatch()
+
   const actionValue = useActionValue(action.id)
   const statusLine = actionValue?.statusLine
   const statusType = actionValue?.statusType
@@ -34,7 +36,7 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
 
   const onScriptChange = useCallback((value: string) => {
     dispatch.config.updateAction(action.id, { script: value })
-  }, [action.id])
+  }, [action.id, dispatch.config])
 
   const elements = useMemo(() => {
     if (statusType === "ok") {

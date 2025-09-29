@@ -1,6 +1,6 @@
 import { vi } from "vitest"
 import { locators, page } from "@vitest/browser/context"
-import { render } from "vitest-browser-react"
+import { render, type RenderResult } from "vitest-browser-react"
 import Game from "../../src/game/Game.tsx"
 import { Bot } from "../../src/bot/Bot.tsx"
 import { readAndClearHotReloadInfo } from "../../src/bot/hotReload.ts"
@@ -23,9 +23,18 @@ export function renderBot() {
 
   const hotReloadInfo = readAndClearHotReloadInfo()
 
-  render(<Bot root={bot} hotReloadInfo={hotReloadInfo} />, {
-    container: root
-  })
+  const renderResultRef = { current: null as RenderResult | null }
+  renderResultRef.current = render(
+    <Bot
+      root={bot}
+      terminate={() => {
+        renderResultRef.current?.unmount()
+        bot.remove()
+      }}
+      hotReloadInfo={hotReloadInfo}
+    />, {
+      container: root
+    })
 }
 
 export function renderBotAndGame() {

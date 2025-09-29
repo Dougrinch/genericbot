@@ -37,34 +37,37 @@ export function createStore<S, A>(
     },
 
     useStoreState: function <T>(selector: (state: S) => T): T {
-      const lastValueRef = useRef<T | null>(null)
-
-      return useSyncExternalStore(subscribe, () => {
-        const oldValue = lastValueRef.current
-        const newValue = select(selector)
-
-        if (Array.isArray(newValue) && Array.isArray(oldValue)) {
-          if (newValue.length === oldValue.length
-            && newValue.every((v, i) => Object.is(v, oldValue[i]))
-          ) {
-            return oldValue
-          }
-        }
-
-        if (isRecord(newValue) && isRecord(oldValue)) {
-          const newKeys = Object.keys(newValue)
-          const oldKeys = Object.keys(oldValue)
-          if (newKeys.length === oldKeys.length
-            && newKeys.every(key => Object.is(newValue[key], oldValue[key]))
-          ) {
-            return oldValue
-          }
-        }
-
-        lastValueRef.current = newValue
-        return newValue
-      })
+      return useSyncExternalStore(subscribe, useGetSnapshot(() => select(selector)))
     }
+  }
+}
+
+export function useGetSnapshot<T>(getValue: () => T): () => T {
+  const lastValueRef = useRef<T | null>(null)
+  return () => {
+    const oldValue = lastValueRef.current
+    const newValue = getValue()
+
+    if (Array.isArray(newValue) && Array.isArray(oldValue)) {
+      if (newValue.length === oldValue.length
+        && newValue.every((v, i) => Object.is(v, oldValue[i]))
+      ) {
+        return oldValue
+      }
+    }
+
+    if (isRecord(newValue) && isRecord(oldValue)) {
+      const newKeys = Object.keys(newValue)
+      const oldKeys = Object.keys(oldValue)
+      if (newKeys.length === oldKeys.length
+        && newKeys.every(key => Object.is(newValue[key], oldValue[key]))
+      ) {
+        return oldValue
+      }
+    }
+
+    lastValueRef.current = newValue
+    return newValue
   }
 }
 
