@@ -4,12 +4,13 @@ import { VariablesList } from "./VariablesList"
 import { ElementsList } from "./ElementsList"
 
 interface ConfigWrapperProps {
+  root: HTMLElement
   isVisible: boolean
   onClose: () => void
   onHotReload: () => void
 }
 
-export function ConfigWrapper({ isVisible, onClose, onHotReload }: ConfigWrapperProps) {
+export function ConfigWrapper({ root, isVisible, onClose, onHotReload }: ConfigWrapperProps) {
   useEffect(() => {
     if (!isVisible) {
       return
@@ -23,17 +24,17 @@ export function ConfigWrapper({ isVisible, onClose, onHotReload }: ConfigWrapper
       }
     }
 
-    document.addEventListener("keydown", handleKeyEvent, { capture: true })
-    document.addEventListener("keyup", handleKeyEvent, { capture: true })
-    document.addEventListener("keypress", handleKeyEvent, { capture: true })
+    root.addEventListener("keydown", handleKeyEvent)
+    root.addEventListener("keyup", handleKeyEvent)
+    root.addEventListener("keypress", handleKeyEvent)
 
     return () => {
       active = false
-      document.removeEventListener("keydown", handleKeyEvent, { capture: true })
-      document.removeEventListener("keyup", handleKeyEvent, { capture: true })
-      document.removeEventListener("keypress", handleKeyEvent, { capture: true })
+      root.removeEventListener("keydown", handleKeyEvent)
+      root.removeEventListener("keyup", handleKeyEvent)
+      root.removeEventListener("keypress", handleKeyEvent)
     }
-  }, [isVisible])
+  }, [isVisible, root])
 
   return (
     <div className="config-wrapper" hidden={!isVisible}>

@@ -1,8 +1,27 @@
 import { getGnomePrice, getSnowWhitePrice } from "./GameState.ts"
 import { dispatch, useGame } from "./GameStateContext.ts"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 export function GamePanel() {
+  useEffect(() => {
+    let active = true
+
+    const handleKeyEvent = (e: KeyboardEvent) => {
+      if (active) {
+        if (e.key === "d") {
+          dispatch({ type: "dig" })
+        }
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyEvent)
+
+    return () => {
+      active = false
+      document.removeEventListener("keydown", handleKeyEvent)
+    }
+  }, [])
+
   const [isGoldVisible, setIsGoldVisible] = useState(true)
   const [isGoldInTree, setIsGoldInTree] = useState(true)
 
@@ -42,8 +61,11 @@ export function GamePanel() {
         <button onClick={() => setIsGoldInTree(!isGoldInTree)}>{isGoldInTree ? "Delete" : "Add"} Gold</button>
         <button onClick={() => dispatch({ type: "resetGold" })}>Reset Gold</button>
         <div style={{ fontSize: "16px", fontWeight: "bold" }}>Buy Gnome Status: {buyGnomeStatus}</div>
-        <button onClick={() => setIsBuyGnomeVisible(!isBuyGnomeVisible)}>{isBuyGnomeVisible ? "Hide" : "Show"} Buy Gnome</button>
-        <button onClick={() => setIsBuyGnomeInTree(!isBuyGnomeInTree)}>{isBuyGnomeInTree ? "Delete" : "Add"} Buy Gnome</button>
+        <button onClick={() => setIsBuyGnomeVisible(!isBuyGnomeVisible)}>{isBuyGnomeVisible ? "Hide" : "Show"} Buy
+          Gnome
+        </button>
+        <button onClick={() => setIsBuyGnomeInTree(!isBuyGnomeInTree)}>{isBuyGnomeInTree ? "Delete" : "Add"} Buy Gnome
+        </button>
       </div>
     </div>
   )

@@ -337,7 +337,6 @@ select {
     justify-content: space-between;
     gap: 6px;
     min-height: 24px;
-    cursor: default;
     transition: all 0.2s ease-out;
 }
 

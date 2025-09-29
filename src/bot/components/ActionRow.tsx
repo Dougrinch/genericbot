@@ -1,11 +1,12 @@
 import * as React from "react"
-import { memo, useMemo } from "react"
+import { memo, useCallback, useMemo } from "react"
 import type { ActionConfig } from "../logic/Config.ts"
 import { dispatch } from "../logic/BotManager.ts"
 import { useActionValue } from "../logic/ActionsManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
+import { ScriptInput } from "./ScriptInput.tsx"
 
 interface ActionConfigRowProps {
   action: ActionConfig
@@ -17,17 +18,23 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
   const statusLine = actionValue?.statusLine
   const statusType = actionValue?.statusType
 
-  function handleInputChange(field: keyof ActionConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void {
+  function handleInputChange(field: keyof ActionConfig): (e: string | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void {
     return e => {
-      const value = e.target.type === "checkbox"
-        ? (e.target as HTMLInputElement).checked
-        : e.target.type === "number"
-          ? Number(e.target.value) || 0
-          : e.target.value
+      const value = typeof e === "string"
+        ? e
+        : e.target.type === "checkbox"
+          ? (e.target as HTMLInputElement).checked
+          : e.target.type === "number"
+            ? Number(e.target.value) || 0
+            : e.target.value
 
       dispatch.config.updateAction(action.id, { [field]: value })
     }
   }
+
+  const onScriptChange = useCallback((value: string) => {
+    dispatch.config.updateAction(action.id, { script: value })
+  }, [action.id])
 
   const elements = useMemo(() => {
     if (statusType === "ok") {
@@ -58,7 +65,7 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
         </HoverableElementHighlighter>
       )}
       handleRemove={dispatch.config.removeAction}
-      askOnRemove={action.xpath.length > 0 || (action.condition?.length ?? 0) > 0}
+      askOnRemove={action.xpath.length > 0}
       fields={(
         <>
           <label className="label" htmlFor={`action-name-${action.id}`}>Name</label>
@@ -70,14 +77,41 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
             onChange={handleInputChange("name")}
           />
 
-          <label className="label" htmlFor={`action-xpath-${action.id}`}>XPath</label>
-          <textarea
-            id={`action-xpath-${action.id}`}
-            className="auto-resize"
-            placeholder="//button[@id='dig']"
-            value={action.xpath}
-            onChange={handleInputChange("xpath")}
-          />
+          <label className="label" htmlFor={`action-type-${action.id}`}>Type</label>
+          <select
+            id={`action-type-${action.id}`}
+            value={action.type}
+            onChange={handleInputChange("type")}
+          >
+            <option value="xpath">XPath</option>
+            <option value="script">Script</option>
+          </select>
+
+          {action.type === "xpath"
+            ? (
+              <>
+                <label className="label" htmlFor={`action-xpath-${action.id}`}>XPath</label>
+                <textarea
+                  id={`action-xpath-${action.id}`}
+                  className="auto-resize"
+                  placeholder="//button[@id='dig']"
+                  value={action.xpath}
+                  onChange={handleInputChange("xpath")}
+                />
+              </>
+            )
+            : action.type === "script"
+              ? (
+                <>
+                  <label className="label" htmlFor={`action-script-${action.id}`}>Script</label>
+                  <ScriptInput
+                    id={`action-script-${action.id}`}
+                    value={action.script}
+                    onChange={onScriptChange}
+                  />
+                </>
+              )
+              : null}
 
           <label className="label" htmlFor={`action-interval-${action.id}`}>Interval (ms)</label>
           <input
@@ -85,15 +119,6 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
             id={`action-interval-${action.id}`}
             value={action.interval}
             onChange={handleInputChange("interval")}
-          />
-
-          <label className="label" htmlFor={`action-condition-${action.id}`}>Condition</label>
-          <input
-            type="text"
-            id={`action-condition-${action.id}`}
-            placeholder="score > 100 && lives >= 3"
-            value={action.condition != null ? action.condition : ""}
-            onChange={handleInputChange("condition")}
           />
 
           <label className="label" htmlFor={`action-allowMultiple-${action.id}`}>Allow multiple</label>

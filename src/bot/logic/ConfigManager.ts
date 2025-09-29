@@ -122,6 +122,15 @@ export class ConfigManager {
         }
       }
 
+      for (const action of config.actions) {
+        if (action.type === undefined) {
+          action.type = "xpath"
+        }
+        if (action.script === undefined) {
+          action.script = ""
+        }
+      }
+
       if (config.elements === undefined) {
         config.elements = []
 
@@ -160,9 +169,10 @@ export class ConfigManager {
       config.actions.push({
         id: newId,
         name: "",
+        type: "xpath",
         xpath: "",
+        script: "",
         interval: 1000,
-        condition: undefined,
         allowMultiple: false
       })
     })

@@ -49,25 +49,28 @@ function initialBotConfig(): Config {
       {
         id: "action_1",
         name: "Dig",
+        type: "xpath",
         xpath: "//button[starts-with(., 'Dig for')]",
+        script: "",
         interval: 100,
-        condition: "",
         allowMultiple: false
       },
       {
         id: "action_2",
         name: "Buy Gnome",
+        type: "xpath",
         xpath: "//button[starts-with(., 'Buy Gnome')]",
+        script: "",
         interval: 100,
-        condition: "",
         allowMultiple: false
       },
       {
         id: "action_3",
         name: "Buy Snow White",
+        type: "xpath",
         xpath: "//button[starts-with(., 'Buy Snow White')]",
+        script: "",
         interval: 100,
-        condition: "",
         allowMultiple: false
       }
     ],

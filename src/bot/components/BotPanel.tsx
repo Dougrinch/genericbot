@@ -16,7 +16,8 @@ export function BotPanel({ children }: PropsWithChildren) {
       || target.tagName.toLowerCase() === "input"
       || target.tagName.toLowerCase() === "select"
       || target.tagName.toLowerCase() === "textarea"
-      || target.closest("button, input, select, textarea") != null
+      || (target.tagName.toLowerCase() === "div" && target.classList.contains("cm-editor"))
+      || target.closest("button, input, select, textarea, div.cm-editor") != null
 
     if (isInteractiveElement) return
 

@@ -63,6 +63,7 @@ export function Bot({ root, hotReloadInfo }: BotProps) {
         <style>{css}</style>
         <BotHeader />
         <ConfigWrapper
+          root={root}
           isVisible={isConfigVisible}
           onClose={onClose}
           onHotReload={onHotReload}
