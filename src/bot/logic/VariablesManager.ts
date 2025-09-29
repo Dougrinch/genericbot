@@ -68,7 +68,7 @@ export class VariablesManager {
 
     const variable = this.bot.config.getVariable(id)
     if (variable) {
-      const { unsubscribe, innerText } = this.bot.xPathSubscriptionManager.subscribeOnInnerText(variable.xpath, {
+      const { unsubscribe, innerText } = this.bot.xPathSubscriptionManager.subscribeOnInnerText(variable.xpath, false, {
         onUpdate: innerText => {
           dispatch.variables.handleUpdate(id, innerText)
         }

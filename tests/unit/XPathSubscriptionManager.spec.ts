@@ -1,5 +1,5 @@
 import { XPathSubscriptionManager } from "../../src/bot/logic/XPathSubscriptionManager.ts"
-import { describe, it, expect, beforeEach, afterEach } from "vitest"
+import { afterEach, beforeEach, describe, expect, it } from "vitest"
 
 describe("XPathSubscriptionManager", () => {
   let manager: XPathSubscriptionManager
@@ -29,7 +29,7 @@ describe("XPathSubscriptionManager", () => {
   })
 
   it("should subscribe to multiple elements", () => {
-    const { elements } = manager.subscribeOnElements("//button[@class='test-btn']", {
+    const { elements } = manager.subscribeOnElements("//button[@class='test-btn']", false, {
       onUpdate: () => {}
     })
 
@@ -43,7 +43,7 @@ describe("XPathSubscriptionManager", () => {
   })
 
   it("should handle empty results", () => {
-    const { elements } = manager.subscribeOnElements("//button[@class='nonexistent']", {
+    const { elements } = manager.subscribeOnElements("//button[@class='nonexistent']", false, {
       onUpdate: () => {}
     })
 
@@ -54,7 +54,7 @@ describe("XPathSubscriptionManager", () => {
   })
 
   it("should handle invalid xpath", () => {
-    const { elements } = manager.subscribeOnElements("//[", {
+    const { elements } = manager.subscribeOnElements("//[", false, {
       onUpdate: () => {}
     })
 

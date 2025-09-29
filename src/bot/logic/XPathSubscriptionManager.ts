@@ -20,12 +20,15 @@ type ResolvedElement = {
 
 type Callback = {
   type: "innerText"
+  includeInvisible: boolean
   onUpdate: (innerText: Result<string>) => void
 } | {
   type: "element"
+  includeInvisible: boolean
   onUpdate: (element: Result<HTMLElement>) => void
 } | {
   type: "elements"
+  includeInvisible: boolean
   onUpdate: (element: Result<HTMLElement[]>) => void
 }
 
@@ -110,31 +113,33 @@ export class XPathSubscriptionManager {
     }
   }
 
-  subscribeOnElement(xpath: string, callback: ElementChangeCallback): ElementSubscribeResult {
+  subscribeOnElement(xpath: string, includeInvisible: boolean, callback: ElementChangeCallback): ElementSubscribeResult {
     const { subscription, unsubscribe } = this.subscribe(xpath, {
       type: "element",
+      includeInvisible,
       onUpdate: callback.onUpdate
     })
 
     return {
       unsubscribe,
-      element: this.buildElement(subscription)
+      element: this.buildElement(subscription, includeInvisible)
     }
   }
 
-  subscribeOnElements(xpath: string, callback: ElementsChangeCallback, allowMultiple: boolean = true): ElementsSubscribeResult {
+  subscribeOnElements(xpath: string, includeInvisible: boolean, callback: ElementsChangeCallback, allowMultiple: boolean = true): ElementsSubscribeResult {
     if (allowMultiple) {
       const { subscription, unsubscribe } = this.subscribe(xpath, {
         type: "elements",
+        includeInvisible,
         onUpdate: callback.onUpdate
       })
 
       return {
         unsubscribe,
-        elements: this.buildElements(subscription)
+        elements: this.buildElements(subscription, includeInvisible)
       }
     } else {
-      const { unsubscribe, element } = this.subscribeOnElement(xpath, {
+      const { unsubscribe, element } = this.subscribeOnElement(xpath, includeInvisible, {
         onUpdate: e => callback.onUpdate(asArray(e))
       })
 
@@ -145,15 +150,16 @@ export class XPathSubscriptionManager {
     }
   }
 
-  subscribeOnInnerText(xpath: string, callback: InnerTextChangeCallback): InnerTextSubscribeResult {
+  subscribeOnInnerText(xpath: string, includeInvisible: boolean, callback: InnerTextChangeCallback): InnerTextSubscribeResult {
     const { subscription, unsubscribe } = this.subscribe(xpath, {
       type: "innerText",
+      includeInvisible,
       onUpdate: callback.onUpdate
     })
 
     return {
       unsubscribe,
-      innerText: this.buildInnerText(subscription)
+      innerText: this.buildInnerText(subscription, includeInvisible)
     }
   }
 
@@ -290,29 +296,46 @@ export class XPathSubscriptionManager {
   }
 
   private runCallbacks(subscription: XPathSubscription, onlyContent: boolean = false) {
-    const innerText = this.buildInnerText(subscription)
-    const element = this.buildElement(subscription)
-    const elements = this.buildElements(subscription)
+    const innerText = lazy(() => this.buildInnerText(subscription, false))
+    const element = lazy(() => this.buildElement(subscription, false))
+    const elements = lazy(() => this.buildElements(subscription, false))
+
+    const invisibleInnerText = lazy(() => this.buildInnerText(subscription, true))
+    const invisibleElement = lazy(() => this.buildElement(subscription, true))
+    const invisibleElements = lazy(() => this.buildElements(subscription, true))
+
     subscription.callbacks.forEach(c => {
       if (c.type === "innerText") {
-        c.onUpdate(innerText)
+        if (c.includeInvisible) {
+          c.onUpdate(invisibleInnerText.value)
+        } else {
+          c.onUpdate(innerText.value)
+        }
       } else if (c.type === "element" && !onlyContent) {
-        c.onUpdate(element)
+        if (c.includeInvisible) {
+          c.onUpdate(invisibleElement.value)
+        } else {
+          c.onUpdate(element.value)
+        }
       } else if (c.type === "elements" && !onlyContent) {
-        c.onUpdate(elements)
+        if (c.includeInvisible) {
+          c.onUpdate(invisibleElements.value)
+        } else {
+          c.onUpdate(elements.value)
+        }
       }
     })
   }
 
-  private buildInnerText(subscription: XPathSubscription): Result<string> {
-    return this.buildSingleValue(subscription, e => e.innerText)
+  private buildInnerText(subscription: XPathSubscription, includeInvisible: boolean): Result<string> {
+    return this.buildSingleValue(subscription, includeInvisible, e => e.innerText)
   }
 
-  private buildElement(subscription: XPathSubscription): Result<HTMLElement> {
-    return this.buildSingleValue(subscription, e => e.element)
+  private buildElement(subscription: XPathSubscription, includeInvisible: boolean): Result<HTMLElement> {
+    return this.buildSingleValue(subscription, includeInvisible, e => e.element)
   }
 
-  private buildElements(subscription: XPathSubscription): Result<HTMLElement[]> {
+  private buildElements(subscription: XPathSubscription, includeInvisible: boolean): Result<HTMLElement[]> {
     if (subscription.error !== undefined) {
       return {
         ok: false,
@@ -325,13 +348,13 @@ export class XPathSubscriptionManager {
     return {
       ok: true,
       value: Array.from(subscription.elements.values())
-        .filter(e => e.isVisible)
+        .filter(e => e.isVisible || includeInvisible)
         .map(e => e.element),
       elementsInfo: this.buildElementsInfo(subscription)
     }
   }
 
-  private buildSingleValue<T>(subscription: XPathSubscription, value: (element: ResolvedElement) => T): Result<T> {
+  private buildSingleValue<T>(subscription: XPathSubscription, includeInvisible: boolean, value: (element: ResolvedElement) => T): Result<T> {
     if (subscription.elements.size === 0) {
       return {
         ok: false,
@@ -350,7 +373,7 @@ export class XPathSubscriptionManager {
 
     const element = subscription.elements.values().next().value!
 
-    if (!element.isVisible) {
+    if (!element.isVisible && !includeInvisible) {
       return {
         ok: false,
         error: "Element hidden",
@@ -383,6 +406,18 @@ function asArray(t: Result<HTMLElement>): Result<HTMLElement[]> {
       ok: true,
       value: [t.value],
       elementsInfo: t.elementsInfo
+    }
+  }
+}
+
+function lazy<T>(f: () => T): { value: T } {
+  let value: T | null = null
+  return {
+    get value() {
+      if (value === null) {
+        value = f()
+      }
+      return value
     }
   }
 }

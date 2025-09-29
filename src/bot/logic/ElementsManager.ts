@@ -67,7 +67,7 @@ export class ElementsManager {
 
     const element = this.bot.config.getElement(id)
     if (element) {
-      const { unsubscribe, elements } = this.bot.xPathSubscriptionManager.subscribeOnElements(element.xpath, {
+      const { unsubscribe, elements } = this.bot.xPathSubscriptionManager.subscribeOnElements(element.xpath, true, {
         onUpdate: elements => dispatch.elements.handleUpdate(id, elements)
       }, element.allowMultiple)
 
