@@ -3,12 +3,12 @@ import { enableMapSet, type Immutable } from "immer"
 enableMapSet()
 
 export type Config = Immutable<{
-  entries: EntryConfig[]
+  actions: ActionConfig[]
   variables: VariableConfig[]
   elements: ElementConfig[]
 }>
 
-export type EntryConfig = Immutable<{
+export type ActionConfig = Immutable<{
   id: string
   name: string
   xpath: string

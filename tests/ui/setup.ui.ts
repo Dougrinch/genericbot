@@ -45,9 +45,9 @@ function resetConfig(): void {
 
 function initialBotConfig(): Config {
   return {
-    entries: [
+    actions: [
       {
-        id: "entry_1",
+        id: "action_1",
         name: "Dig",
         xpath: "//button[starts-with(., 'Dig for')]",
         interval: 100,
@@ -55,7 +55,7 @@ function initialBotConfig(): Config {
         allowMultiple: false
       },
       {
-        id: "entry_2",
+        id: "action_2",
         name: "Buy Gnome",
         xpath: "//button[starts-with(., 'Buy Gnome')]",
         interval: 100,
@@ -63,7 +63,7 @@ function initialBotConfig(): Config {
         allowMultiple: false
       },
       {
-        id: "entry_3",
+        id: "action_3",
         name: "Buy Snow White",
         xpath: "//button[starts-with(., 'Buy Snow White')]",
         interval: 100,

@@ -1,23 +1,23 @@
-import { type BotManager, dispatch, useEntriesManager } from "./BotManager.ts"
-import type { EntryConfig } from "./Config.ts"
+import { type BotManager, dispatch, useActionsManager } from "./BotManager.ts"
+import type { ActionConfig } from "./Config.ts"
 import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
 
 
 export function usePillStatus(id: string): PillValue | undefined {
-  return useEntriesManager(em => em.getPillValue(id))
+  return useActionsManager(am => am.getPillValue(id))
 }
 
-export function useEntryValue(id: string): EntryValue | undefined {
-  return useEntriesManager(em => em.getEntryValue(id))
+export function useActionValue(id: string): ActionValue | undefined {
+  return useActionsManager(am => am.getActionValue(id))
 }
 
 
-type EntryData = {
+type ActionData = {
   unsubscribe: () => void
   elements?: HTMLElement[]
   timerId?: number
   pillValue: PillValue
-  entryValue: EntryValue
+  actionValue: ActionValue
 }
 
 type PillValue = {
@@ -25,28 +25,28 @@ type PillValue = {
   status: "stopped" | "running" | "auto-stopped" | "waiting"
 }
 
-type EntryValue = {
+type ActionValue = {
   statusLine: string
   statusType: "warn" | "ok" | "err"
   elementsInfo: ElementInfo[]
 }
 
 
-export class EntriesManager {
+export class ActionsManager {
   private readonly bot: BotManager
-  private readonly entries: Map<string, EntryData>
+  private readonly actions: Map<string, ActionData>
 
   constructor(botState: BotManager) {
     this.bot = botState
-    this.entries = new Map()
+    this.actions = new Map()
   }
 
   getPillValue(id: string) {
-    return this.entries.get(id)?.pillValue
+    return this.actions.get(id)?.pillValue
   }
 
-  getEntryValue(id: string) {
-    return this.entries.get(id)?.entryValue
+  getActionValue(id: string) {
+    return this.actions.get(id)?.actionValue
   }
 
   init() {
@@ -54,19 +54,19 @@ export class EntriesManager {
   }
 
   close() {
-    for (const entry of this.entries.values()) {
-      entry.unsubscribe()
-      this.stop(entry)
+    for (const action of this.actions.values()) {
+      action.unsubscribe()
+      this.stop(action)
     }
-    this.entries.clear()
+    this.actions.clear()
   }
 
   resetAll() {
     const uniqueIds = new Set<string>()
-    for (const entry of this.bot.config.getConfig().entries.values()) {
-      uniqueIds.add(entry.id)
+    for (const action of this.bot.config.getConfig().actions.values()) {
+      uniqueIds.add(action.id)
     }
-    for (const id of this.entries.keys()) {
+    for (const id of this.actions.keys()) {
       uniqueIds.add(id)
     }
 
@@ -76,27 +76,27 @@ export class EntriesManager {
   }
 
   reset(id: string) {
-    const data = this.entries.get(id)
+    const data = this.actions.get(id)
     if (data) {
       data.unsubscribe()
       this.stop(data)
-      this.entries.delete(id)
+      this.actions.delete(id)
     }
 
-    const entry = this.bot.config.getEntry(id)
-    if (entry) {
-      const { unsubscribe, elements } = this.bot.xPathSubscriptionManager.subscribeOnElements(entry.xpath, {
-        onUpdate: element => dispatch.entries.handleUpdate(entry.id, element)
-      }, entry.allowMultiple)
+    const action = this.bot.config.getAction(id)
+    if (action) {
+      const { unsubscribe, elements } = this.bot.xPathSubscriptionManager.subscribeOnElements(action.xpath, {
+        onUpdate: element => dispatch.actions.handleUpdate(action.id, element)
+      }, action.allowMultiple)
 
-      this.entries.set(id, {
+      this.actions.set(id, {
         unsubscribe,
         elements: elements.ok ? elements.value : undefined,
         pillValue: {
           isRunning: false,
           status: "stopped"
         },
-        entryValue: {
+        actionValue: {
           statusType: elements.ok ? "ok" : elements.severity,
           statusLine: elements.ok ? "" : elements.error,
           elementsInfo: elements.elementsInfo
@@ -107,14 +107,14 @@ export class EntriesManager {
   }
 
   handleUpdate(id: string, elements: Result<HTMLElement[]>): void {
-    const data = this.entries.get(id)
+    const data = this.actions.get(id)
     if (!data) {
-      throw Error(`EntryData ${id} not found`)
+      throw Error(`ActionData ${id} not found`)
     }
 
     data.elements = elements.ok ? elements.value : undefined
     data.pillValue = this.buildPillValue(data)
-    data.entryValue = {
+    data.actionValue = {
       statusType: elements.ok ? "ok" : elements.severity,
       statusLine: elements.ok ? "" : elements.error,
       elementsInfo: elements.elementsInfo
@@ -122,34 +122,34 @@ export class EntriesManager {
   }
 
   toggle(id: string) {
-    const data = this.entries.get(id)
+    const data = this.actions.get(id)
     if (!data) {
-      throw Error(`EntryData ${id} not found`)
+      throw Error(`ActionData ${id} not found`)
     }
 
     if (data.pillValue.isRunning) {
       this.stop(data)
     } else {
-      const entry = this.bot.config.getEntry(id)
-      if (!entry) {
-        throw Error(`Entry ${id} not found`)
+      const action = this.bot.config.getAction(id)
+      if (!action) {
+        throw Error(`Action ${id} not found`)
       }
 
-      this.start(entry, data)
+      this.start(action, data)
     }
   }
 
-  private start(entry: EntryConfig, data: EntryData) {
+  private start(action: ActionConfig, data: ActionData) {
     data.timerId = setTimeout(() => {
-      dispatch.entries.handleTick(entry.id, entry.interval)
+      dispatch.actions.handleTick(action.id, action.interval)
     }, 0)
     data.pillValue = this.buildPillValue(data)
   }
 
   handleTick(id: string, interval: number) {
-    const data = this.entries.get(id)
+    const data = this.actions.get(id)
     if (!data) {
-      throw Error(`EntryData ${id} not found`)
+      throw Error(`ActionData ${id} not found`)
     }
 
     if (data.elements) {
@@ -162,11 +162,11 @@ export class EntriesManager {
     }
 
     data.timerId = setTimeout(() => {
-      dispatch.entries.handleTick(id, interval)
+      dispatch.actions.handleTick(id, interval)
     }, interval)
   }
 
-  private stop(data: EntryData) {
+  private stop(data: ActionData) {
     if (data.timerId !== undefined) {
       clearInterval(data.timerId)
       data.timerId = undefined
@@ -174,7 +174,7 @@ export class EntriesManager {
     data.pillValue = this.buildPillValue(data)
   }
 
-  private buildPillValue(data: EntryData): PillValue {
+  private buildPillValue(data: ActionData): PillValue {
     if (data.timerId === undefined) {
       return {
         isRunning: false,

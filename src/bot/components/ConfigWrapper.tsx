@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { EntriesList } from "./EntriesList"
+import { ActionsList } from "./ActionsList"
 import { VariablesList } from "./VariablesList"
 import { ElementsList } from "./ElementsList"
 
@@ -47,8 +47,8 @@ export function ConfigWrapper({ isVisible, onClose, onHotReload }: ConfigWrapper
           <VariablesList />
         </div>
         <div className="config-section">
-          <div className="tab-header">Automation Entries</div>
-          <EntriesList />
+          <div className="tab-header">Actions</div>
+          <ActionsList />
         </div>
         <div className="config-section">
           <div className="config-actions">

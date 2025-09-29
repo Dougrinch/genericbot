@@ -1,4 +1,4 @@
-import { type Config, type ElementConfig, type EntryConfig, type VariableConfig } from "./Config.ts"
+import { type ActionConfig, type Config, type ElementConfig, type VariableConfig } from "./Config.ts"
 import { type BotManager, useConfigManager } from "./BotManager.ts"
 import { type Draft, produce } from "immer"
 
@@ -50,7 +50,7 @@ export class ConfigManager {
   private readonly bot: BotManager
   private config: Config
 
-  private readonly entriesCache = new IdCache(() => this.config.entries)
+  private readonly actionsCache = new IdCache(() => this.config.actions)
   private readonly variablesCache = new IdCache(() => this.config.variables)
   private readonly elementsCache = new IdCache(() => this.config.elements)
 
@@ -63,8 +63,8 @@ export class ConfigManager {
     return this.config
   }
 
-  getEntry(id: string): EntryConfig | undefined {
-    return this.entriesCache.get(id)
+  getAction(id: string): ActionConfig | undefined {
+    return this.actionsCache.get(id)
   }
 
   getVariable(id: string): VariableConfig | undefined {
@@ -77,7 +77,7 @@ export class ConfigManager {
 
   reload() {
     this.config = this.loadConfig()
-    this.entriesCache.reset()
+    this.actionsCache.reset()
     this.variablesCache.reset()
     this.elementsCache.reset()
   }
@@ -100,7 +100,7 @@ export class ConfigManager {
       console.error("Failed to load config from localStorage:", error)
     }
     return {
-      entries: [],
+      actions: [],
       variables: [],
       elements: []
     }
@@ -108,23 +108,29 @@ export class ConfigManager {
 
   private fixCompatibility(oldConfig: Config): Config {
     return produce(oldConfig, config => {
-      for (const entry of config.entries) {
-        if (entry.allowMultiple === undefined) {
-          entry.allowMultiple = false
+      if (config.actions === undefined) {
+        config.actions = []
+
+        const configWithOldEntries = config as Partial<{ entries: ActionConfig[] }>
+        if (configWithOldEntries.entries) {
+          for (const entry of configWithOldEntries.entries) {
+            config.actions.push({
+              ...entry,
+              id: "action_" + entry.id.slice(5)
+            })
+          }
         }
       }
+
       if (config.elements === undefined) {
         config.elements = []
 
         const configWithOldButtons = config as Partial<{ buttons: ElementConfig[] }>
-        if (configWithOldButtons.buttons !== undefined) {
-          const buttons = configWithOldButtons.buttons
-          for (const button of buttons) {
+        if (configWithOldButtons.buttons) {
+          for (const button of configWithOldButtons.buttons) {
             config.elements.push({
-              id: "elem" + button.id.slice(3),
-              name: button.name,
-              xpath: button.xpath,
-              allowMultiple: button.allowMultiple
+              ...button,
+              id: "elem" + button.id.slice(3)
             })
           }
         }
@@ -134,24 +140,24 @@ export class ConfigManager {
 
   private updateConfig(updater: (config: Draft<Config>) => void): void {
     this.config = produce(this.config, updater)
-    this.entriesCache.reset()
+    this.actionsCache.reset()
     this.variablesCache.reset()
     this.elementsCache.reset()
     this.saveConfig()
   }
 
-  addEntry(): void {
-    const oldIds = this.config.entries
-      .map(e => e.id.match(/^entry_(\d+)$/))
+  addAction(): void {
+    const oldIds = this.config.actions
+      .map(a => a.id.match(/^action_(\d+)$/))
       .filter(m => m !== null)
       .map(m => Number(m[1]))
 
     const newId = oldIds.length > 0
-      ? `entry_${Math.max(...oldIds) + 1}`
-      : "entry_1"
+      ? `action_${Math.max(...oldIds) + 1}`
+      : "action_1"
 
     this.updateConfig(config => {
-      config.entries.push({
+      config.actions.push({
         id: newId,
         name: "",
         xpath: "",
@@ -161,35 +167,35 @@ export class ConfigManager {
       })
     })
 
-    this.bot.entries.reset(newId)
+    this.bot.actions.reset(newId)
   }
 
-  updateEntry(id: string, updates: Partial<EntryConfig>): void {
-    const entryIndex = this.indexOf(id, this.config.entries)
-    if (entryIndex !== undefined) {
+  updateAction(id: string, updates: Partial<ActionConfig>): void {
+    const actionIndex = this.indexOf(id, this.config.actions)
+    if (actionIndex !== undefined) {
       this.updateConfig(config => {
-        config.entries[entryIndex] = {
-          ...config.entries[entryIndex],
+        config.actions[actionIndex] = {
+          ...config.actions[actionIndex],
           ...updates
         }
       })
-      this.bot.entries.reset(id)
+      this.bot.actions.reset(id)
     }
   }
 
-  removeEntry(id: string): void {
-    const entryIndex = this.indexOf(id, this.config.entries)
-    if (entryIndex !== undefined) {
+  removeAction(id: string): void {
+    const actionIndex = this.indexOf(id, this.config.actions)
+    if (actionIndex !== undefined) {
       this.updateConfig(config => {
-        config.entries.splice(entryIndex, 1)
+        config.actions.splice(actionIndex, 1)
       })
-      this.bot.entries.reset(id)
+      this.bot.actions.reset(id)
     }
   }
 
-  reorderEntries(orderedIds: string[]): void {
+  reorderActions(orderedIds: string[]): void {
     this.updateConfig(config => {
-      config.entries.sort((a, b) => {
+      config.actions.sort((a, b) => {
         const aIndex = orderedIds.indexOf(a.id)
         const bIndex = orderedIds.indexOf(b.id)
         return aIndex - bIndex

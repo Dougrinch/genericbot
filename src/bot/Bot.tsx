@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { BotPanel } from "./components/BotPanel"
 import { BotHeader } from "./components/BotHeader"
 import { ConfigWrapper } from "./components/ConfigWrapper"
-import { ActionRow } from "./components/ActionRow"
+import { ActionsRow } from "./components/ActionsRow.tsx"
 import { BotStateContext } from "./BotStateContext.tsx"
 import { dispatch } from "./logic/BotManager.ts"
 import { hotReload, type HotReloadInfo } from "./hotReload.ts"
@@ -67,7 +67,7 @@ export function Bot({ root, hotReloadInfo }: BotProps) {
           onClose={onClose}
           onHotReload={onHotReload}
         />
-        <ActionRow onToggleConfig={() => setIsConfigVisible(!isConfigVisible)} />
+        <ActionsRow onToggleConfig={() => setIsConfigVisible(!isConfigVisible)} />
       </BotPanel>
     </BotStateContext>
   )
