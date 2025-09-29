@@ -25,7 +25,8 @@ export function hotReload(root: HTMLElement) {
 }
 
 async function asyncHotReload(root: HTMLElement) {
-  const code = await navigator.clipboard.readText()
+  const response = await fetch("https://dougrinch.com/genericbot/bot.iife.js")
+  const code = await response.text()
 
   if (!code || !code.trim()) {
     console.warn("Clipboard is empty or blocked. Copy the updated AutoClick script first.")

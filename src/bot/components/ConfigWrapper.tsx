@@ -54,7 +54,6 @@ export function ConfigWrapper({ root, isVisible, onClose, onHotReload }: ConfigW
         <div className="config-section">
           <div className="config-actions">
             <button onClick={onHotReload}>Hot Reload</button>
-            <button>Refresh</button>
             <button onClick={onClose}>✕ Close</button>
           </div>
         </div>
