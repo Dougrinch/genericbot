@@ -415,7 +415,7 @@ select {
 .reorderable-item-name {
     font-weight: bold;
     font-size: 12px;
-    min-width: 80px;
+    min-width: 100px;
 }
 
 .reorderable-item-value {
@@ -436,6 +436,7 @@ select {
 .reorderable-item .variable-type {
     opacity: 0.6;
     font-size: 10px;
+    padding-left: 4px;
 }
 
 .reorderable-item-edit-btn {
@@ -461,14 +462,25 @@ select {
 .reorderable-item-summary-info {
     flex: 1;
     min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.reorderable-item-summary-name {
+    font-weight: bold;
+    font-size: 12px;
+    min-width: 100px;
 }
 
 .reorderable-item-summary-value {
-    opacity: 0.8;
-    font-weight: normal;
+    opacity: .8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .reorderable-item-remove-btn {

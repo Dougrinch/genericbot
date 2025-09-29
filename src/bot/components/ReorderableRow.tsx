@@ -7,7 +7,6 @@ export type ReorderableRowProps = {
   index: number
   name: string
   value?: ReactNode
-  summaryValue?: ReactNode
   handleRemove: (id: string) => void
   askOnRemove: boolean
   fields: ReactNode
@@ -70,14 +69,14 @@ export function ReorderableRow(props: ReorderableRowProps) {
     return (
       <div ref={ref} className="reorderable-item editing" id={`${rowIdPrefix}-${props.id}`}>
         <div className="reorderable-item-summary">
-          <span className="reorderable-item-summary-info">
-            <span style={{ fontWeight: "bold" }}>
+          <div className="reorderable-item-summary-info">
+            <span className="reorderable-item-summary-name">
               {props.name || "Unnamed"}
             </span>
-            {props.summaryValue !== undefined && (
-              <span className="reorderable-item-summary-value"> — {props.summaryValue}</span>
+            {props.value !== undefined && (
+              <div className="reorderable-item-summary-value">{props.value}</div>
             )}
-          </span>
+          </div>
           <button
             className="reorderable-item-remove-btn"
             onClick={() => {

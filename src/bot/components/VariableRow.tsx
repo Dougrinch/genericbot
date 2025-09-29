@@ -1,10 +1,11 @@
 import * as React from "react"
-import { memo } from "react"
+import { memo, useMemo } from "react"
 import type { VariableConfig } from "../logic/Config.ts"
 import { useVariableValue } from "../logic/VariablesManager.ts"
 import { dispatch } from "../logic/BotManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
+import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
 
 interface VariableRowProps {
   variable: VariableConfig
@@ -31,18 +32,27 @@ export const VariableRow = memo((props: VariableRowProps) => {
     }
   }
 
+  const elements = useMemo(() => {
+    if (statusType === "ok") {
+      return (variableValue?.elementsInfo ?? [])
+        .filter(e => e.isVisible)
+        .map(e => e.element)
+    } else {
+      return null
+    }
+  }, [variableValue?.elementsInfo, statusType])
+
   return (
     <ReorderableRow
       id={variable.id}
       index={props.index}
       name={variable.name}
       value={(
-        <>
+        <HoverableElementHighlighter elements={elements ?? []}>
           <span className="variable-current-value">{value !== undefined ? value : "(not evaluated)"}</span>
           <span className="variable-type">({variable.type})</span>
-        </>
+        </HoverableElementHighlighter>
       )}
-      summaryValue={value !== undefined ? value : "(not evaluated)"}
       handleRemove={dispatch.config.removeVariable}
       askOnRemove={variable.xpath.length > 0 || variable.regex.length > 0}
       fields={(

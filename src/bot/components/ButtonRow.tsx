@@ -5,6 +5,7 @@ import { useButtonValue } from "../logic/ButtonsManager.ts"
 import { dispatch } from "../logic/BotManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
+import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
 
 interface ButtonRowProps {
   button: ButtonConfig
@@ -43,13 +44,12 @@ export const ButtonRow = memo((props: ButtonRowProps) => {
       index={props.index}
       name={button.name}
       value={(
-        <>
+        <HoverableElementHighlighter elements={elements ?? []}>
           <span className="variable-current-value">
             {value}
           </span>
-        </>
+        </HoverableElementHighlighter>
       )}
-      summaryValue={value}
       handleRemove={dispatch.config.removeButton}
       askOnRemove={button.xpath.length > 0}
       fields={(

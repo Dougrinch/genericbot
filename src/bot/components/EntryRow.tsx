@@ -1,10 +1,11 @@
 import * as React from "react"
-import { memo } from "react"
+import { memo, useMemo } from "react"
 import type { EntryConfig } from "../logic/Config.ts"
 import { dispatch } from "../logic/BotManager.ts"
 import { useEntryValue } from "../logic/EntriesManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
+import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
 
 interface EntryRowProps {
   entry: EntryConfig
@@ -28,11 +29,34 @@ export const EntryRow = memo(({ entry, index }: EntryRowProps) => {
     }
   }
 
+  const elements = useMemo(() => {
+    if (statusType === "ok") {
+      return (entryValue?.elementsInfo ?? [])
+        .filter(e => e.isVisible)
+        .map(e => e.element)
+    } else {
+      return null
+    }
+  }, [entryValue?.elementsInfo, statusType])
+
+  const value = elements
+    ? (elements.length === 1
+      ? "1 element"
+      : `${elements.length} elements`)
+    : "(not resolved)"
+
   return (
     <ReorderableRow
       id={entry.id}
       index={index}
       name={entry.name}
+      value={(
+        <HoverableElementHighlighter elements={elements ?? []}>
+          <span className="variable-current-value">
+            {value}
+          </span>
+        </HoverableElementHighlighter>
+      )}
       handleRemove={dispatch.config.removeEntry}
       askOnRemove={entry.xpath.length > 0 || (entry.condition?.length ?? 0) > 0}
       fields={(
