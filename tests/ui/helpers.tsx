@@ -50,8 +50,8 @@ export function installCustomLocators() {
     getVariableRow(name: string): string {
       return `#variables div.reorderable-item:has(span:has-text("${name}"))`
     },
-    getButtonRow(name: string): string {
-      return `#buttons div.reorderable-item:has(span:has-text("${name}"))`
+    getElementRow(name: string): string {
+      return `#elements div.reorderable-item:has(span:has-text("${name}"))`
     },
     getBySelector(selectors: string): string {
       return selectors
@@ -62,7 +62,7 @@ export function installCustomLocators() {
 declare module "@vitest/browser/context" {
   interface LocatorSelectors {
     getVariableRow(name: string): Locator
-    getButtonRow(name: string): Locator
+    getElementRow(name: string): Locator
     getBySelector(selectors: string): Locator
   }
 }

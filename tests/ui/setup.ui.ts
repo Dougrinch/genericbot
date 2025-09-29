@@ -101,21 +101,21 @@ function initialBotConfig(): Config {
         type: "number"
       }
     ],
-    buttons: [
+    elements: [
       {
-        id: "btn_1",
+        id: "elem_1",
         name: "Dig",
         xpath: "//button[starts-with(., 'Dig for')]",
         allowMultiple: false
       },
       {
-        id: "btn_2",
+        id: "elem_2",
         name: "Buy Gnome",
         xpath: "//button[starts-with(., 'Buy Gnome')]",
         allowMultiple: false
       },
       {
-        id: "btn_3",
+        id: "elem_3",
         name: "Buy All",
         xpath: "//button[starts-with(., 'Buy')]",
         allowMultiple: true

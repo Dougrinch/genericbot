@@ -1,26 +1,26 @@
 import * as React from "react"
 import { memo } from "react"
-import type { ButtonConfig } from "../logic/Config.ts"
-import { useButtonValue } from "../logic/ButtonsManager.ts"
+import type { ElementConfig } from "../logic/Config.ts"
+import { useElementValue } from "../logic/ElementsManager.ts"
 import { dispatch } from "../logic/BotManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
 
-interface ButtonRowProps {
-  button: ButtonConfig
+interface ElementRowProps {
+  element: ElementConfig
   index: number
 }
 
-export const ButtonRow = memo((props: ButtonRowProps) => {
-  const button = props.button
+export const ElementRow = memo((props: ElementRowProps) => {
+  const element = props.element
 
-  const buttonValue = useButtonValue(button.id)
-  const elements = buttonValue?.value
-  const statusLine = buttonValue?.statusLine
-  const statusType = buttonValue?.statusType
+  const elementValue = useElementValue(element.id)
+  const elements = elementValue?.value
+  const statusLine = elementValue?.statusLine
+  const statusType = elementValue?.statusType
 
-  function handleInputChange(field: keyof ButtonConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
+  function handleInputChange(field: keyof ElementConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
     return e => {
       const value = e.target.type === "checkbox"
         ? (e.target as HTMLInputElement).checked
@@ -28,7 +28,7 @@ export const ButtonRow = memo((props: ButtonRowProps) => {
           ? Number(e.target.value) || 0
           : e.target.value
 
-      dispatch.config.updateButton(button.id, { [field]: value })
+      dispatch.config.updateElement(element.id, { [field]: value })
     }
   }
 
@@ -40,9 +40,9 @@ export const ButtonRow = memo((props: ButtonRowProps) => {
 
   return (
     <ReorderableRow
-      id={button.id}
+      id={element.id}
       index={props.index}
-      name={button.name}
+      name={element.name}
       value={(
         <HoverableElementHighlighter elements={elements ?? []}>
           <span className="variable-current-value">
@@ -50,33 +50,33 @@ export const ButtonRow = memo((props: ButtonRowProps) => {
           </span>
         </HoverableElementHighlighter>
       )}
-      handleRemove={dispatch.config.removeButton}
-      askOnRemove={button.xpath.length > 0}
+      handleRemove={dispatch.config.removeElement}
+      askOnRemove={element.xpath.length > 0}
       fields={(
         <>
-          <label className="label" htmlFor={`btn-name-${button.id}`}>Name</label>
+          <label className="label" htmlFor={`elem-name-${element.id}`}>Name</label>
           <input
             type="text"
-            id={`btn-name-${button.id}`}
-            placeholder="Button name"
-            value={button.name}
+            id={`elem-name-${element.id}`}
+            placeholder="Element name"
+            value={element.name}
             onChange={handleInputChange("name")}
           />
 
-          <label className="label" htmlFor={`btn-xpath-${button.id}`}>XPath</label>
+          <label className="label" htmlFor={`elem-xpath-${element.id}`}>XPath</label>
           <textarea
-            id={`btn-xpath-${button.id}`}
+            id={`elem-xpath-${element.id}`}
             className="auto-resize"
-            placeholder="XPath — will select button elements"
-            value={button.xpath}
+            placeholder="XPath — will select DOM elements"
+            value={element.xpath}
             onChange={handleInputChange("xpath")}
           />
 
-          <label className="label" htmlFor={`btn-allowMultiple-${button.id}`}>Allow Multiple</label>
+          <label className="label" htmlFor={`elem-allowMultiple-${element.id}`}>Allow Multiple</label>
           <input
             type="checkbox"
-            id={`btn-allowMultiple-${button.id}`}
-            checked={button.allowMultiple}
+            id={`elem-allowMultiple-${element.id}`}
+            checked={element.allowMultiple}
             onChange={handleInputChange("allowMultiple")}
           />
         </>
@@ -89,7 +89,7 @@ export const ButtonRow = memo((props: ButtonRowProps) => {
             </div>
           )}
 
-          <FoundElementsList elements={buttonValue?.elementsInfo ?? []} />
+          <FoundElementsList elements={elementValue?.elementsInfo ?? []} />
         </>
       )}
     />

@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { EntriesList } from "./EntriesList"
 import { VariablesList } from "./VariablesList"
-import { ButtonsList } from "./ButtonsList"
+import { ElementsList } from "./ElementsList"
 
 interface ConfigWrapperProps {
   isVisible: boolean
@@ -39,8 +39,8 @@ export function ConfigWrapper({ isVisible, onClose, onHotReload }: ConfigWrapper
     <div className="config-wrapper" hidden={!isVisible}>
       <div className="config-tab">
         <div className="config-section">
-          <div className="tab-header">Buttons</div>
-          <ButtonsList />
+          <div className="tab-header">Elements</div>
+          <ElementsList />
         </div>
         <div className="config-section">
           <div className="tab-header">Variables</div>

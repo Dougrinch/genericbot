@@ -1,4 +1,4 @@
-import { type Config, type EntryConfig, type VariableConfig, type ButtonConfig } from "./Config.ts"
+import { type Config, type ElementConfig, type EntryConfig, type VariableConfig } from "./Config.ts"
 import { type BotManager, useConfigManager } from "./BotManager.ts"
 import { type Draft, produce } from "immer"
 
@@ -52,7 +52,7 @@ export class ConfigManager {
 
   private readonly entriesCache = new IdCache(() => this.config.entries)
   private readonly variablesCache = new IdCache(() => this.config.variables)
-  private readonly buttonsCache = new IdCache(() => this.config.buttons)
+  private readonly elementsCache = new IdCache(() => this.config.elements)
 
   constructor(botState: BotManager) {
     this.bot = botState
@@ -71,15 +71,15 @@ export class ConfigManager {
     return this.variablesCache.get(id)
   }
 
-  getButton(id: string): ButtonConfig | undefined {
-    return this.buttonsCache.get(id)
+  getElement(id: string): ElementConfig | undefined {
+    return this.elementsCache.get(id)
   }
 
   reload() {
     this.config = this.loadConfig()
     this.entriesCache.reset()
     this.variablesCache.reset()
-    this.buttonsCache.reset()
+    this.elementsCache.reset()
   }
 
   private saveConfig(): void {
@@ -102,7 +102,7 @@ export class ConfigManager {
     return {
       entries: [],
       variables: [],
-      buttons: []
+      elements: []
     }
   }
 
@@ -113,8 +113,21 @@ export class ConfigManager {
           entry.allowMultiple = false
         }
       }
-      if (config.buttons === undefined) {
-        config.buttons = []
+      if (config.elements === undefined) {
+        config.elements = []
+
+        const configWithOldButtons = config as Partial<{ buttons: ElementConfig[] }>
+        if (configWithOldButtons.buttons !== undefined) {
+          const buttons = configWithOldButtons.buttons
+          for (const button of buttons) {
+            config.elements.push({
+              id: "elem" + button.id.slice(3),
+              name: button.name,
+              xpath: button.xpath,
+              allowMultiple: button.allowMultiple
+            })
+          }
+        }
       }
     })
   }
@@ -123,7 +136,7 @@ export class ConfigManager {
     this.config = produce(this.config, updater)
     this.entriesCache.reset()
     this.variablesCache.reset()
-    this.buttonsCache.reset()
+    this.elementsCache.reset()
     this.saveConfig()
   }
 
@@ -240,18 +253,18 @@ export class ConfigManager {
     })
   }
 
-  addButton(): void {
-    const oldIds = this.config.buttons
-      .map(b => b.id.match(/^btn_(\d+)$/))
+  addElement(): void {
+    const oldIds = this.config.elements
+      .map(e => e.id.match(/^elem_(\d+)$/))
       .filter(m => m !== null)
       .map(m => Number(m[1]))
 
     const newId = oldIds.length > 0
-      ? `btn_${Math.max(...oldIds) + 1}`
-      : "btn_1"
+      ? `elem_${Math.max(...oldIds) + 1}`
+      : "elem_1"
 
     this.updateConfig(config => {
-      config.buttons.push({
+      config.elements.push({
         id: newId,
         name: "",
         xpath: "",
@@ -259,35 +272,35 @@ export class ConfigManager {
       })
     })
 
-    this.bot.buttons.reset(newId)
+    this.bot.elements.reset(newId)
   }
 
-  updateButton(id: string, updates: Partial<ButtonConfig>): void {
-    const buttonIndex = this.indexOf(id, this.config.buttons)
-    if (buttonIndex !== undefined) {
+  updateElement(id: string, updates: Partial<ElementConfig>): void {
+    const elementIndex = this.indexOf(id, this.config.elements)
+    if (elementIndex !== undefined) {
       this.updateConfig(config => {
-        config.buttons[buttonIndex] = {
-          ...config.buttons[buttonIndex],
+        config.elements[elementIndex] = {
+          ...config.elements[elementIndex],
           ...updates
         }
       })
-      this.bot.buttons.reset(id)
+      this.bot.elements.reset(id)
     }
   }
 
-  removeButton(id: string): void {
-    const buttonIndex = this.indexOf(id, this.config.buttons)
-    if (buttonIndex !== undefined) {
+  removeElement(id: string): void {
+    const elementIndex = this.indexOf(id, this.config.elements)
+    if (elementIndex !== undefined) {
       this.updateConfig(config => {
-        config.buttons.splice(buttonIndex, 1)
+        config.elements.splice(elementIndex, 1)
       })
-      this.bot.buttons.reset(id)
+      this.bot.elements.reset(id)
     }
   }
 
-  reorderButtons(orderedIds: string[]): void {
+  reorderElements(orderedIds: string[]): void {
     this.updateConfig(config => {
-      config.buttons.sort((a, b) => {
+      config.elements.sort((a, b) => {
         const aIndex = orderedIds.indexOf(a.id)
         const bIndex = orderedIds.indexOf(b.id)
         return aIndex - bIndex
