@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react"
+import { memo, useCallback, useEffect, useState } from "react"
 import { BotPanel } from "./components/BotPanel"
 import { BotHeader } from "./components/BotHeader"
 import { ConfigWrapper } from "./components/ConfigWrapper"
 import { ActionsRow } from "./components/ActionsRow.tsx"
 import { hotReload, type HotReloadInfo } from "./hotReload.ts"
 import { BotManagerContext, useBotManager } from "./BotManagerContext.tsx"
+import { BotManager } from "./logic/BotManager.ts"
 
 function useCss(): string | null {
   const [value, setValue] = useState<string | null>(null)
@@ -40,9 +41,16 @@ export type BotProps = {
   hotReloadInfo?: HotReloadInfo
 }
 
-export function Bot({ root, terminate, hotReloadInfo }: BotProps) {
-  const botManager = useBotManager()
+export function Bot(props: BotProps) {
+  const botManager = useBotManager(() => new BotManager())
+  return (
+    <BotManagerContext value={botManager}>
+      <BotContent root={props.root} terminate={props.terminate} hotReloadInfo={props.hotReloadInfo} />
+    </BotManagerContext>
+  )
+}
 
+const BotContent = memo(({ root, terminate, hotReloadInfo }: BotProps) => {
   const [isConfigVisible, setIsConfigVisible] = useState(!!hotReloadInfo)
 
   const onHotReload = useCallback(() => {
@@ -55,18 +63,16 @@ export function Bot({ root, terminate, hotReloadInfo }: BotProps) {
   }
 
   return (
-    <BotManagerContext value={botManager}>
-      <BotPanel>
-        <style>{css}</style>
-        <BotHeader />
-        <ConfigWrapper
-          root={root}
-          isVisible={isConfigVisible}
-          onClose={terminate}
-          onHotReload={onHotReload}
-        />
-        <ActionsRow onToggleConfig={() => setIsConfigVisible(!isConfigVisible)} />
-      </BotPanel>
-    </BotManagerContext>
+    <BotPanel>
+      <style>{css}</style>
+      <BotHeader />
+      <ConfigWrapper
+        root={root}
+        isVisible={isConfigVisible}
+        onClose={terminate}
+        onHotReload={onHotReload}
+      />
+      <ActionsRow onToggleConfig={() => setIsConfigVisible(!isConfigVisible)} />
+    </BotPanel>
   )
-}
+})

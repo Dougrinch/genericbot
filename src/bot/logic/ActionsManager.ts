@@ -156,11 +156,12 @@ export class ActionsManager {
     if (!data) {
       throw Error(`ActionData ${id} not found`)
     }
+    const action = this.bot.config.getAction(id)
+    if (!action) {
+      throw Error(`Action ${id} not found`)
+    }
 
-    if (data.elements) {
-      for (const element of data.elements) {
-        element.click()
-      }
+    if (this.tryRunAction(action, data)) {
       data.pillValue.status = "running"
     } else {
       data.pillValue.status = "waiting"
@@ -170,6 +171,55 @@ export class ActionsManager {
       this.handleTick(id, interval)
       this.bot.notifyListeners()
     }, interval)
+  }
+
+  tryRunAction(action: ActionConfig, data: ActionData): boolean {
+    if (action.type === "xpath") {
+      if (data.elements) {
+        for (const element of data.elements) {
+          element.click()
+        }
+        return true
+      } else {
+        return false
+      }
+    } else if (action.type === "script") {
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval,@typescript-eslint/no-unsafe-call
+      new Function("helpers", `
+        function click(elementName) {
+          helpers.click(elementName)
+        }
+        function repeat(n, f) {
+          helpers.repeat(n, f)
+        }
+        
+        ${action.script}
+      `)({
+        click: (en: string) => this.click(en),
+        repeat: (n: number, f: () => void) => this.repeat(n, f)
+      })
+      return true
+    } else {
+      return false
+    }
+  }
+
+  click(elementName: string) {
+    const id = this.bot.config.getElementId(elementName)
+    if (id !== undefined) {
+      const elements = this.bot.elements.getValue(id)?.value
+      if (elements) {
+        for (const element of elements) {
+          element.click()
+        }
+      }
+    }
+  }
+
+  repeat(n: number, f: () => void) {
+    for (let i = 0; i < n; i++) {
+      f()
+    }
   }
 
   private stop(data: ActionData) {

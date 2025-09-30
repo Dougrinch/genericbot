@@ -26,8 +26,9 @@ export function ScriptInput(props: ScriptInputProps) {
             from: word.from,
             options: [
               { label: "click", type: "function", apply: snippet("click(${1:element})${}") },
-              { label: "wait", type: "function", apply: snippet("wait(${1:ms})${}") },
-              ...elements.map(e => ({ label: e, type: "variable", apply: `"${e}"` }))
+              { label: "wait", type: "function", apply: snippet("wait(${1:ms},${2:ms})${}") },
+              ...elements.map(e => ({ label: e, type: "variable", apply: `"${e}"` })),
+              { label: "repeat", type: "function", apply: snippet("repeat(${1:times}, () => {\n\t${2}\n})${}") }
             ]
           }
         }]

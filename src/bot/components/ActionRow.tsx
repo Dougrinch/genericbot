@@ -36,7 +36,7 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
 
   const onScriptChange = useCallback((value: string) => {
     dispatch.config.updateAction(action.id, { script: value })
-  }, [action.id, dispatch.config])
+  }, [action.id, dispatch])
 
   const elements = useMemo(() => {
     if (statusType === "ok") {

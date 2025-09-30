@@ -11,30 +11,44 @@ export function useConfig<T>(selector?: (state: Config) => T): T | Config {
 }
 
 
-class IdCache<T extends { readonly id: string }> {
+class Cache<T extends { readonly id: string, readonly name: string }> {
   private readonly elements: () => readonly T[]
 
   constructor(elements: () => readonly T[]) {
     this.elements = elements
   }
 
-  private readonly cache = new Map<string, { e: T } | "empty">()
+  private readonly cache = new Map<keyof T, Map<string, { v: T } | "empty">>()
 
   get(id: string): T | undefined {
-    const cached = this.cache.get(id)
+    return this.getBy("id", id)
+  }
+
+  getByName(name: string) {
+    return this.getBy("name", name)
+  }
+
+  getBy<K extends keyof T>(keyType: K, key: string): T | undefined {
+    let cache = this.cache.get(keyType)
+    if (cache === undefined) {
+      cache = new Map()
+      this.cache.set(keyType, cache)
+    }
+
+    const cached = cache.get(key)
     if (cached === "empty") {
       return undefined
     }
     if (cached !== undefined) {
-      return cached.e
+      return cached.v
     }
 
-    const element = this.elements().find(e => e.id === id)
+    const element = this.elements().find(e => e[keyType] === key)
     if (element) {
-      this.cache.set(id, { e: element })
+      cache.set(key, { v: element })
       return element
     } else {
-      this.cache.set(id, "empty")
+      cache.set(key, "empty")
       return undefined
     }
   }
@@ -51,9 +65,9 @@ export class ConfigManager {
   private readonly bot: BotManager
   private config: Config
 
-  private readonly actionsCache = new IdCache(() => this.config.actions)
-  private readonly variablesCache = new IdCache(() => this.config.variables)
-  private readonly elementsCache = new IdCache(() => this.config.elements)
+  private readonly actionsCache = new Cache(() => this.config.actions)
+  private readonly variablesCache = new Cache(() => this.config.variables)
+  private readonly elementsCache = new Cache(() => this.config.elements)
 
   constructor(botState: BotManager) {
     this.bot = botState
@@ -74,6 +88,10 @@ export class ConfigManager {
 
   getElement(id: string): ElementConfig | undefined {
     return this.elementsCache.get(id)
+  }
+
+  getElementId(name: string): string | undefined {
+    return this.elementsCache.getByName(name)?.id
   }
 
   reload() {
