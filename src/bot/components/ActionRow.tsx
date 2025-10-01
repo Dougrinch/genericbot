@@ -48,24 +48,34 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
     }
   }, [actionValue?.elementsInfo, statusType])
 
-  const value = elements
-    ? (elements.length === 1
-      ? "1 element"
-      : `${elements.length} elements`)
-    : "(not resolved)"
+  const value = action.type === "xpath"
+    ? (elements
+      ? (elements.length === 1
+        ? "1 element"
+        : `${elements.length} elements`)
+      : "(not resolved)")
+    : action.type === "script"
+      ? "script"
+      : "unknown type"
 
   return (
     <ReorderableRow
       id={action.id}
       index={index}
       name={action.name}
-      value={(
-        <HoverableElementHighlighter elements={elements ?? []}>
+      value={action.type === "xpath"
+        ? (
+          <HoverableElementHighlighter elements={elements ?? []}>
+            <span className="variable-current-value">
+              {value}
+            </span>
+          </HoverableElementHighlighter>
+        )
+        : (
           <span className="variable-current-value">
             {value}
           </span>
-        </HoverableElementHighlighter>
-      )}
+        )}
       handleRemove={dispatch.config.removeAction}
       askOnRemove={action.xpath.length > 0 || action.script.length > 0}
       fields={(
@@ -100,6 +110,14 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
                   value={action.xpath}
                   onChange={handleInputChange("xpath")}
                 />
+
+                <label className="label" htmlFor={`action-allowMultiple-${action.id}`}>Allow multiple</label>
+                <input
+                  type="checkbox"
+                  id={`action-allowMultiple-${action.id}`}
+                  checked={action.allowMultiple}
+                  onChange={handleInputChange("allowMultiple")}
+                />
               </>
             )
             : action.type === "script"
@@ -115,21 +133,25 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
               )
               : null}
 
-          <label className="label" htmlFor={`action-interval-${action.id}`}>Interval (ms)</label>
-          <input
-            type="number"
-            id={`action-interval-${action.id}`}
-            value={action.interval}
-            onChange={handleInputChange("interval")}
-          />
-
-          <label className="label" htmlFor={`action-allowMultiple-${action.id}`}>Allow multiple</label>
+          <label className="label" htmlFor={`action-periodic-${action.id}`}>Periodic</label>
           <input
             type="checkbox"
-            id={`action-allowMultiple-${action.id}`}
-            checked={action.allowMultiple}
-            onChange={handleInputChange("allowMultiple")}
+            id={`action-periodic-${action.id}`}
+            checked={action.periodic}
+            onChange={handleInputChange("periodic")}
           />
+
+          {action.periodic && (
+            <>
+              <label className="label" htmlFor={`action-interval-${action.id}`}>Interval (ms)</label>
+              <input
+                type="number"
+                id={`action-interval-${action.id}`}
+                value={action.interval}
+                onChange={handleInputChange("interval")}
+              />
+            </>
+          )}
         </>
       )}
       additionalContent={(
@@ -140,7 +162,9 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
             </div>
           )}
 
-          <FoundElementsList elements={actionValue?.elementsInfo ?? []} />
+          {action.type === "xpath" && (
+            <FoundElementsList elements={actionValue?.elementsInfo ?? []} />
+          )}
         </>
       )}
     />

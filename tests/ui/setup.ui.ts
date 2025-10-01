@@ -50,6 +50,7 @@ function initialBotConfig(): Config {
         type: "xpath",
         xpath: "//button[starts-with(., 'Dig for')]",
         script: "",
+        periodic: true,
         interval: 100,
         allowMultiple: false
       },
@@ -59,6 +60,7 @@ function initialBotConfig(): Config {
         type: "xpath",
         xpath: "//button[starts-with(., 'Buy Gnome')]",
         script: "",
+        periodic: true,
         interval: 100,
         allowMultiple: false
       },
@@ -68,6 +70,7 @@ function initialBotConfig(): Config {
         type: "xpath",
         xpath: "//button[starts-with(., 'Buy Snow White')]",
         script: "",
+        periodic: true,
         interval: 100,
         allowMultiple: false
       }

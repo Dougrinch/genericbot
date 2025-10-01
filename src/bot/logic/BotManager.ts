@@ -3,6 +3,7 @@ import { VariablesManager } from "./VariablesManager.ts"
 import { ActionsManager } from "./ActionsManager.ts"
 import { ElementsManager } from "./ElementsManager.ts"
 import { XPathSubscriptionManager } from "./XPathSubscriptionManager.ts"
+import { ScriptRunner } from "./ScriptRunner.ts"
 
 
 export class BotManager {
@@ -13,6 +14,7 @@ export class BotManager {
   readonly variables: VariablesManager
   readonly actions: ActionsManager
   readonly elements: ElementsManager
+  readonly scriptRunner: ScriptRunner
 
   constructor() {
     this.config = new ConfigManager(this)
@@ -20,6 +22,7 @@ export class BotManager {
     this.variables = new VariablesManager(this)
     this.actions = new ActionsManager(this)
     this.elements = new ElementsManager(this)
+    this.scriptRunner = new ScriptRunner(this)
   }
 
   init(): void {

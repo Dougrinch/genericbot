@@ -4,13 +4,22 @@ export type GameState = Immutable<{
   gold: number
   gnomes: number
   snowWhites: number
+
+  income: number
+  realIncome: number
+  oldGold: number
+  uncountedMs: number
 }>
 
 export function initialGameState(): GameState {
   return {
     gold: 0,
     gnomes: 0,
-    snowWhites: 0
+    snowWhites: 0,
+    income: 0,
+    realIncome: 0,
+    oldGold: 0,
+    uncountedMs: 0
   }
 }
 
@@ -29,6 +38,7 @@ export const gameUpdaters = {
     if (game.gold >= price) {
       game.gold -= price
       game.gnomes += 1
+      game.income = getIncome(game)
     }
   },
   buySnowWhite(game: Draft<GameState>) {
@@ -36,14 +46,24 @@ export const gameUpdaters = {
     if (game.gnomes >= price) {
       game.gnomes -= price
       game.snowWhites += 1
+      game.income = getIncome(game)
     }
   },
   tick(game: Draft<GameState>, action: { dt: number }) {
-    const totalIncome = game.gnomes + (game.snowWhites * 10)
-    if (totalIncome > 0) {
-      game.gold += totalIncome * (action.dt / 1000)
+    if (game.income > 0) {
+      game.gold += game.income * (action.dt / 1000)
+    }
+    game.uncountedMs += action.dt
+    if (game.uncountedMs > 100) {
+      game.realIncome = Math.floor((game.gold - game.oldGold) * 1000 / game.uncountedMs)
+      game.uncountedMs = 0
+      game.oldGold = game.gold
     }
   }
+}
+
+function getIncome(game: GameState) {
+  return game.gnomes + (game.snowWhites * 10)
 }
 
 export const getGnomePrice = (game: GameState) => 10 + (game.gnomes * 5)

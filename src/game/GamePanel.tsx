@@ -76,7 +76,7 @@ function GameTopPanel(props: { isGoldVisible: boolean, isGoldInTree: boolean }) 
   return (
     <div className="game-stats">
       <div className="game-stats-left">
-        <div>Income: {state.gnomes + (state.snowWhites * 10)}/sec</div>
+        <div>Income: {state.realIncome}/sec (expected {state.income}/sec)</div>
         <div>Gnomes: {state.gnomes}</div>
         <div>Snow Whites: {state.snowWhites}</div>
       </div>

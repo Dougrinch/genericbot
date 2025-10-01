@@ -14,6 +14,7 @@ export type ActionConfig = Immutable<{
   type: "xpath" | "script"
   xpath: string
   script: string
+  periodic: boolean
   interval: number
   allowMultiple: boolean
 }>

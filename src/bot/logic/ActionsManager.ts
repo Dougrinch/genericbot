@@ -14,9 +14,10 @@ export function useActionValue(id: string): ActionValue | undefined {
 
 
 type ActionData = {
-  unsubscribe: () => void
+  unsubscribe?: () => void
   elements?: HTMLElement[]
   timerId?: number
+  controller?: AbortController
   pillValue: PillValue
   actionValue: ActionValue
 }
@@ -29,7 +30,7 @@ type PillValue = {
 type ActionValue = {
   statusLine: string
   statusType: "warn" | "ok" | "err"
-  elementsInfo: ElementInfo[]
+  elementsInfo?: ElementInfo[]
 }
 
 
@@ -56,7 +57,7 @@ export class ActionsManager {
 
   close() {
     for (const action of this.actions.values()) {
-      action.unsubscribe()
+      action.unsubscribe?.()
       this.stop(action)
     }
     this.actions.clear()
@@ -79,38 +80,52 @@ export class ActionsManager {
   reset(id: string) {
     const data = this.actions.get(id)
     if (data) {
-      data.unsubscribe()
+      data.unsubscribe?.()
       this.stop(data)
       this.actions.delete(id)
     }
 
     const action = this.bot.config.getAction(id)
     if (action) {
-      const { unsubscribe, elements } = this.bot.xPathSubscriptionManager.subscribeOnElements(action.xpath, true, {
-        onUpdate: element => {
-          this.handleUpdate(action.id, element)
-          this.bot.notifyListeners()
-        }
-      }, action.allowMultiple)
+      if (action.type === "xpath") {
+        const { unsubscribe, elements } = this.bot.xPathSubscriptionManager.subscribeOnElements(action.xpath, true, {
+          onUpdate: element => {
+            this.handleUpdate(action.id, element)
+            this.bot.notifyListeners()
+          }
+        }, action.allowMultiple)
 
-      this.actions.set(id, {
-        unsubscribe,
-        elements: elements.ok ? elements.value : undefined,
-        pillValue: {
-          isRunning: false,
-          status: "stopped"
-        },
-        actionValue: {
-          statusType: elements.ok ? "ok" : elements.severity,
-          statusLine: elements.ok ? "" : elements.error,
-          elementsInfo: elements.elementsInfo
-        },
-        timerId: undefined
-      })
+        this.actions.set(id, {
+          unsubscribe,
+          elements: elements.ok ? elements.value : undefined,
+          pillValue: {
+            isRunning: false,
+            status: "stopped"
+          },
+          actionValue: {
+            statusType: elements.ok ? "ok" : elements.severity,
+            statusLine: elements.ok ? "" : elements.error,
+            elementsInfo: elements.elementsInfo
+          },
+          timerId: undefined
+        })
+      } else if (action.type === "script") {
+        this.actions.set(id, {
+          pillValue: {
+            isRunning: false,
+            status: "stopped"
+          },
+          actionValue: {
+            statusType: "ok",
+            statusLine: ""
+          },
+          timerId: undefined
+        })
+      }
     }
   }
 
-  handleUpdate(id: string, elements: Result<HTMLElement[]>): void {
+  private handleUpdate(id: string, elements: Result<HTMLElement[]>): void {
     const data = this.actions.get(id)
     if (!data) {
       throw Error(`ActionData ${id} not found`)
@@ -144,14 +159,11 @@ export class ActionsManager {
   }
 
   private start(action: ActionConfig, data: ActionData) {
-    data.timerId = setTimeout(() => {
-      this.handleTick(action.id, action.interval)
-      this.bot.notifyListeners()
-    }, 0)
+    this.requestNextTick(action, data, true)
     data.pillValue = this.buildPillValue(data)
   }
 
-  handleTick(id: string, interval: number) {
+  private handleTick(id: string) {
     const data = this.actions.get(id)
     if (!data) {
       throw Error(`ActionData ${id} not found`)
@@ -161,64 +173,53 @@ export class ActionsManager {
       throw Error(`Action ${id} not found`)
     }
 
-    if (this.tryRunAction(action, data)) {
-      data.pillValue.status = "running"
+    const controller = new AbortController()
+    const promise = this.tryRunAction(action, data, controller.signal)
+    if (promise != null) {
+      data.controller = controller
+      void promise.then(() => {
+        data.controller = undefined
+        if (action.periodic) {
+          this.requestNextTick(action, data)
+        } else {
+          this.stop(data)
+          this.bot.notifyListeners()
+        }
+      }, () => {
+        if (data.pillValue.isRunning) {
+          this.stop(data)
+          data.pillValue.status = "auto-stopped"
+          this.bot.notifyListeners()
+        }
+      })
     } else {
       data.pillValue.status = "waiting"
+      this.requestNextTick(action, data)
     }
+  }
 
+  private requestNextTick(action: ActionConfig, data: ActionData, immediate: boolean = false) {
     data.timerId = setTimeout(() => {
-      this.handleTick(id, interval)
+      this.handleTick(action.id)
       this.bot.notifyListeners()
-    }, interval)
+    }, immediate ? 0 : action.interval)
   }
 
-  tryRunAction(action: ActionConfig, data: ActionData): boolean {
-    if (action.type === "xpath") {
-      if (data.elements) {
-        for (const element of data.elements) {
-          element.click()
-        }
-        return true
-      } else {
-        return false
-      }
-    } else if (action.type === "script") {
-      // eslint-disable-next-line @typescript-eslint/no-implied-eval,@typescript-eslint/no-unsafe-call
-      new Function("helpers", `
-        function click(elementName) {
-          helpers.click(elementName)
-        }
-        function repeat(n, f) {
-          helpers.repeat(n, f)
-        }
-        
-        ${action.script}
-      `)({
-        click: (en: string) => this.click(en),
-        repeat: (n: number, f: () => void) => this.repeat(n, f)
-      })
-      return true
-    } else {
-      return false
-    }
-  }
-
-  click(elementName: string) {
-    const id = this.bot.config.getElementId(elementName)
-    if (id !== undefined) {
-      const elements = this.bot.elements.getValue(id)?.value
-      if (elements) {
-        for (const element of elements) {
-          element.click()
+  private tryRunAction(action: ActionConfig, data: ActionData, signal: AbortSignal): Promise<void> | null {
+    switch (action.type) {
+      case "xpath": {
+        if (data.elements) {
+          for (const element of data.elements) {
+            element.click()
+          }
+          return Promise.resolve()
+        } else {
+          return null
         }
       }
-    }
-  }
-
-  repeat(n: number, f: () => void) {
-    for (let i = 0; i < n; i++) {
-      f()
+      case "script": {
+        return this.bot.scriptRunner.run(action.script, signal)
+      }
     }
   }
 
@@ -226,6 +227,10 @@ export class ActionsManager {
     if (data.timerId !== undefined) {
       clearInterval(data.timerId)
       data.timerId = undefined
+      if (data.controller) {
+        data.controller.abort("Stopped")
+      }
+      data.controller = undefined
     }
     data.pillValue = this.buildPillValue(data)
   }
@@ -239,7 +244,7 @@ export class ActionsManager {
     } else {
       return {
         isRunning: true,
-        status: data.elements ? "running" : "waiting"
+        status: data.elements || !data.unsubscribe ? "running" : "waiting"
       }
     }
   }

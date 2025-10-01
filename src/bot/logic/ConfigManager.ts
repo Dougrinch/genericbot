@@ -148,6 +148,9 @@ export class ConfigManager {
         if (action.script === undefined) {
           action.script = ""
         }
+        if (action.periodic === undefined) {
+          action.periodic = true
+        }
       }
 
       if (config.elements === undefined) {
@@ -191,7 +194,8 @@ export class ConfigManager {
         type: "xpath",
         xpath: "",
         script: "",
-        interval: 1000,
+        periodic: true,
+        interval: 100,
         allowMultiple: false
       })
     })
