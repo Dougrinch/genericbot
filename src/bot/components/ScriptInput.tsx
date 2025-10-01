@@ -37,7 +37,7 @@ export function ScriptInput(props: ScriptInputProps) {
         }]
       })
     ]
-  }, [elements])
+  }, [elements, variables])
 
   const basicSetup = useMemo<BasicSetupOptions>(() => {
     return {
@@ -47,15 +47,17 @@ export function ScriptInput(props: ScriptInputProps) {
   }, [])
 
   return (
-    <CodeMirror
-      id={props.id}
-      minHeight="100px"
-      maxHeight="300px"
-      theme={githubDark}
-      value={props.value}
-      onChange={props.onChange}
-      extensions={extensions}
-      basicSetup={basicSetup}
-    />
+    <div style={{ minWidth: 0, width: "100%" }}>
+      <CodeMirror
+        id={props.id}
+        minHeight="100px"
+        maxHeight="300px"
+        theme={githubDark}
+        value={props.value}
+        onChange={props.onChange}
+        extensions={extensions}
+        basicSetup={basicSetup}
+      />
+    </div>
   )
 }
