@@ -14,6 +14,7 @@ interface ScriptInputProps {
 
 export function ScriptInput(props: ScriptInputProps) {
   const elements = useConfig(c => c.elements.map(e => e.name))
+  const variables = useConfig(c => c.variables.map(e => e.name))
 
   const extensions = useMemo<Extension[]>(() => {
     return [
@@ -26,9 +27,11 @@ export function ScriptInput(props: ScriptInputProps) {
             from: word.from,
             options: [
               { label: "click", type: "function", apply: snippet("click(${1:element})${}") },
+              { label: "get", type: "function", apply: snippet("get(${1:element})${}") },
               { label: "wait", type: "function", apply: snippet("wait(${1:ms})${}") },
               { label: "repeat", type: "function", apply: snippet("repeat(${1:times}) {\n\t${2}\n})${}") },
-              ...elements.map(e => ({ label: e, type: "variable", apply: `"${e}"` }))
+              ...elements.map(e => ({ label: e, type: "variable", apply: `"${e}"` })),
+              ...variables.map(e => ({ label: e, type: "variable", apply: `"${e}"` }))
             ]
           }
         }]

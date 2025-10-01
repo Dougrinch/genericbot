@@ -10,6 +10,7 @@ export class ScriptRunner {
   run(script: string, signal: AbortSignal): Promise<void> {
     const context = {
       click: this.click.bind(this),
+      get: this.get.bind(this),
       repeat: this.repeat.bind(this),
       wait: this.wait.bind(this),
       signal
@@ -61,6 +62,16 @@ export class ScriptRunner {
           element.click()
         }
       }
+    }
+  }
+
+  private async get(variableName: string) {
+    await Promise.resolve()
+    const id = this.bot.config.getVariableId(variableName)
+    if (id !== undefined) {
+      return this.bot.variables.getValue(id)!.value
+    } else {
+      return undefined
     }
   }
 

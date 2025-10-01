@@ -94,6 +94,10 @@ export class ConfigManager {
     return this.elementsCache.getByName(name)?.id
   }
 
+  getVariableId(name: string): string | undefined {
+    return this.variablesCache.getByName(name)?.id
+  }
+
   reload() {
     this.config = this.loadConfig()
     this.actionsCache.reset()
