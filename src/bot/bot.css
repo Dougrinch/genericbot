@@ -278,6 +278,17 @@ input, select, textarea {
     outline: none;
 }
 
+.cm-editor {
+    border-radius: 8px;
+    border: 1px solid #737373;
+    overflow: hidden;
+}
+
+.script-input .cm-editor {
+    min-height: 100px;
+    max-height: 500px;
+}
+
 input[type="text"], input[type="number"], select, textarea {
     width: 100%;
 }

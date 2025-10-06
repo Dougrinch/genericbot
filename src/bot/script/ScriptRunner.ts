@@ -44,7 +44,7 @@ export class ScriptRunner {
   }
 
   private buildExtensions(): Extensions {
-    const functions: FunctionExtension[] = [repeat, wait]
+    const functions: FunctionExtension[] = [...staticFunctionExtensions]
     const variables: VariableExtension[] = []
 
     for (const element of this.elements.values()) {
@@ -128,14 +128,13 @@ export class ScriptRunner {
       desc: {
         name: toIdentifier(element.name),
         async: true,
-        arguments: [],
-        lastAsBlock: false
+        arguments: []
       },
       value: async () => {
         const elements = this.bot.elements.getValue(element.id)?.value
         if (elements) {
-          for (const element of elements) {
-            element.click()
+          for (const e of elements) {
+            e.click()
           }
           await new Promise(resolve => setTimeout(resolve, 0))
         }
@@ -144,7 +143,7 @@ export class ScriptRunner {
   }
 }
 
-const repeat: FunctionExtension = {
+const staticFunctionExtensions: FunctionExtension[] = [{
   desc: {
     name: "repeat",
     async: true,
@@ -164,9 +163,7 @@ const repeat: FunctionExtension = {
       await f(i)
     }
   }
-}
-
-const wait: FunctionExtension = {
+}, {
   desc: {
     name: "wait",
     async: true,
@@ -178,8 +175,7 @@ const wait: FunctionExtension = {
       name: "signal",
       async: false,
       implicit: true
-    }],
-    lastAsBlock: false
+    }]
   },
   value: async function (ms: number, signal: AbortSignal): Promise<void> {
     return new Promise<void>((resolve, reject) => {
@@ -206,4 +202,16 @@ const wait: FunctionExtension = {
       }, ms)
     })
   }
-}
+}, {
+  desc: {
+    name: "print",
+    async: false,
+    arguments: [{
+      name: "msg",
+      async: false
+    }]
+  },
+  value: function (msg: unknown) {
+    console.log(msg)
+  }
+}]

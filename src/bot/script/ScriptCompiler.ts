@@ -1,4 +1,3 @@
-import type { PluginValue, ViewUpdate } from "@codemirror/view"
 import { type SyntaxNode } from "@lezer/common"
 import {
   BinaryExpression,
@@ -23,8 +22,7 @@ import {
   VariableDefinition,
   WhileStatement
 } from "./generated/script.terms.ts"
-import { ViewPlugin } from "@uiw/react-codemirror"
-import { findClosestScope, type LintResult, type LintScope, setLintResult } from "./ScriptLinter.ts"
+import { findClosestScope, type LintResult, type LintScope } from "./ScriptLinter.ts"
 
 
 export type CompilationResult = {
@@ -32,24 +30,6 @@ export type CompilationResult = {
   function: (ctx: object) => Promise<void>
   usedFunctions: Set<string>
   usedVariables: Set<string>
-}
-
-export function compiler(onCompilation: (result: CompilationResult | null) => void) {
-  return ViewPlugin.define<PluginValue>(() => {
-    return {
-      update(update: ViewUpdate) {
-        for (const transaction of update.transactions) {
-          for (const effect of transaction.effects) {
-            if (effect.is(setLintResult)) {
-              const lintResult = effect.value
-              const result = compile(lintResult)
-              onCompilation(result)
-            }
-          }
-        }
-      }
-    }
-  })
 }
 
 export function compile(lintResult: LintResult): CompilationResult | null {
