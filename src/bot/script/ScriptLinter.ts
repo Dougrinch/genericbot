@@ -20,6 +20,18 @@ import type { ScriptExternals } from "./ScriptExternals.ts"
 import { lazy } from "../../utils/lazy.ts"
 import { StateEffect, StateField } from "@uiw/react-codemirror"
 
+
+export function findClosestScope(root: LintScope, pos: number): LintScope {
+  for (const child of root.children) {
+    const inside = pos >= child.node.from && pos < child.node.to
+    if (inside) {
+      return findClosestScope(child, pos)
+    }
+  }
+  return root
+}
+
+
 export type LintResult = {
   code: string
   tree: Tree
@@ -39,16 +51,19 @@ export type LintScope = {
 }
 
 type ResolvedFunction = {
+  readonly external: boolean
   readonly name: string
   readonly async: boolean
   readonly nameNode?: SyntaxNodeRef
   readonly arguments: {
     readonly name: string
+    readonly async: boolean
     readonly implicit?: boolean
   }[]
 }
 
 type ResolvedVariable = {
+  readonly external: boolean
   readonly name: string
   readonly async: boolean
   readonly nameNode?: SyntaxNodeRef
@@ -128,20 +143,26 @@ export function lint(tree: Tree, code: string, externals: ScriptExternals): Lint
     depth: 0
   }
 
+  for (const func of externals.functions.values()) {
+    scopeRef.scope.functions.set(func.name, {
+      external: true,
+      ...func
+    })
+  }
+
+  for (const variable of externals.variables.values()) {
+    scopeRef.scope.variables.set(variable.name, {
+      external: true,
+      ...variable
+    })
+  }
+
   function getFunction(name: string): ResolvedFunction | undefined {
-    const fromScope = scopeRef.scope.functions.get(name)
-    if (fromScope) {
-      return fromScope
-    }
-    return externals.functions.get(name)
+    return scopeRef.scope.functions.get(name)
   }
 
   function getVariable(name: string): ResolvedVariable | undefined {
-    const fromScope = scopeRef.scope.variables.get(name)
-    if (fromScope) {
-      return fromScope
-    }
-    return externals.variables.get(name)
+    return scopeRef.scope.variables.get(name)
   }
 
   const cursor = tree.cursor()
@@ -160,6 +181,7 @@ export function lint(tree: Tree, code: string, externals: ScriptExternals): Lint
           }
 
           const variable = {
+            external: false,
             name: name,
             async: false,
             nameNode: nameNode
@@ -189,6 +211,7 @@ export function lint(tree: Tree, code: string, externals: ScriptExternals): Lint
           }
 
           scopeRef.scope.functions.set(name, {
+            external: false,
             name: name,
             async: true,
             nameNode: nameNode,

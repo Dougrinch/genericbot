@@ -1,7 +1,7 @@
 import { type CompilationResult, compiler } from "./ScriptCompiler.ts"
 import { useCallback, useMemo, useState } from "react"
 import { script } from "./ScriptLanguage.ts"
-import { AutocompleteOnLinting, scriptCompletion } from "./ScriptCompletion.ts"
+import { scriptCompletion } from "./ScriptCompletion.ts"
 import { type Diagnostic, linter, lintGutter } from "@codemirror/lint"
 import { autocompletion, nextSnippetField } from "@codemirror/autocomplete"
 import CodeMirror, { keymap, Prec } from "@uiw/react-codemirror"
@@ -33,12 +33,11 @@ export function ScriptInput({ id, value, onChange, onCompilation }: ScriptInputP
     return [
       script(),
       lintResultField,
-      AutocompleteOnLinting,
       linter(scriptLinter(scriptExtensions), { delay: 300 }),
       lintGutter(),
       autocompletion({ override: [scriptCompletion(scriptExtensions)] }),
       Prec.highest(keymap.of([{ key: "Enter", run: nextSnippetField }])),
-      compiler(scriptExtensions, onCompilationResult)
+      compiler(onCompilationResult)
     ]
   }, [onCompilationResult, scriptExtensions])
 

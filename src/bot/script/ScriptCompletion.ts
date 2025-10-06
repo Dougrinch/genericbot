@@ -1,15 +1,6 @@
-import {
-  type Completion,
-  CompletionContext,
-  type CompletionResult,
-  completionStatus,
-  snippet,
-  startCompletion
-} from "@codemirror/autocomplete"
+import { type Completion, CompletionContext, type CompletionResult, snippet } from "@codemirror/autocomplete"
 import type { FunctionDescriptor, ScriptExternals, VariableDescriptor } from "./ScriptExternals.ts"
-import { lintResultField, type LintScope, setLintResult } from "./ScriptLinter.ts"
-import { ViewPlugin } from "@uiw/react-codemirror"
-import type { PluginValue, ViewUpdate } from "@codemirror/view"
+import { findClosestScope, lintResultField } from "./ScriptLinter.ts"
 import { syntaxTree } from "@codemirror/language"
 import {
   FunctionDeclaration,
@@ -18,39 +9,6 @@ import {
   VariableDeclaration,
   VariableDefinition
 } from "./generated/script.terms.ts"
-
-
-export const AutocompleteOnLinting = ViewPlugin.define<PluginValue>(view => {
-  let completionRequestId: number | null = null
-
-  return {
-    update(u: ViewUpdate) {
-      const hasLintResultUpdate = u.transactions.some(tr =>
-        tr.effects.some(e => e.is(setLintResult))
-      )
-      if (!hasLintResultUpdate) {
-        return
-      }
-
-      const status = completionStatus(view.state)
-
-      if (completionRequestId == null) {
-        if (status === "active" || status === "pending") {
-          completionRequestId = setTimeout(() => {
-            completionRequestId = null
-            startCompletion(view)
-          }, 0)
-        }
-      }
-    },
-
-    destroy() {
-      if (completionRequestId != null) {
-        clearTimeout(completionRequestId)
-      }
-    }
-  }
-})
 
 
 export function scriptCompletion(externals: ScriptExternals): (context: CompletionContext) => CompletionResult | null {
@@ -98,22 +56,12 @@ export function scriptCompletion(externals: ScriptExternals): (context: Completi
       }
     }
 
-    function findNodeInside(root: LintScope): LintScope {
-      for (const child of root.children) {
-        const inside = context.pos >= child.node.from && context.pos < child.node.to
-        if (inside) {
-          return findNodeInside(child)
-        }
-      }
-      return root
-    }
-
-    const scope = findNodeInside(lintResult.root)
+    const scope = findClosestScope(lintResult.root, context.pos)
 
     return {
       from: word.from,
       options: [
-        ...staticOptions,
+        ...langOptions,
         ...Array.from(scope.functions.values()).map(functionCompletion),
         ...Array.from(scope.variables.values()).map(variableCompletion)
       ],

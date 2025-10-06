@@ -23,9 +23,8 @@ import {
   VariableDefinition,
   WhileStatement
 } from "./generated/script.terms.ts"
-import type { ScriptExternals } from "./ScriptExternals.ts"
 import { ViewPlugin } from "@uiw/react-codemirror"
-import { type LintResult, setLintResult } from "./ScriptLinter.ts"
+import { findClosestScope, type LintResult, type LintScope, setLintResult } from "./ScriptLinter.ts"
 
 
 export type CompilationResult = {
@@ -35,7 +34,7 @@ export type CompilationResult = {
   usedVariables: Set<string>
 }
 
-export function compiler(externals: ScriptExternals, onCompilation: (result: CompilationResult | null) => void) {
+export function compiler(onCompilation: (result: CompilationResult | null) => void) {
   return ViewPlugin.define<PluginValue>(() => {
     return {
       update(update: ViewUpdate) {
@@ -43,7 +42,7 @@ export function compiler(externals: ScriptExternals, onCompilation: (result: Com
           for (const effect of transaction.effects) {
             if (effect.is(setLintResult)) {
               const lintResult = effect.value
-              const result = compile(lintResult, externals)
+              const result = compile(lintResult)
               onCompilation(result)
             }
           }
@@ -53,15 +52,15 @@ export function compiler(externals: ScriptExternals, onCompilation: (result: Com
   })
 }
 
-export function compile(lintResult: LintResult, extensions: ScriptExternals): CompilationResult | null {
+export function compile(lintResult: LintResult): CompilationResult | null {
   if (lintResult.correct) {
-    return compileNode(lintResult.tree.topNode, lintResult.code, extensions)
+    return compileNode(lintResult.root, lintResult.tree.topNode, lintResult.code)
   } else {
     return null
   }
 }
 
-function compileNode(node: SyntaxNode, code: string, extensions: ScriptExternals): CompilationResult | null {
+function compileNode(root: LintScope, node: SyntaxNode, code: string): CompilationResult | null {
   const usedFunctions = new Set<string>()
   const usedVariables = new Set<string>()
 
@@ -126,14 +125,19 @@ function compileNode(node: SyntaxNode, code: string, extensions: ScriptExternals
         let valueIdx = 0
         let declarationIdx = 0
 
-        const externalFunction = extensions.functions.get(name)
-        const awaitPrefix = !externalFunction || externalFunction.async ? "await " : ""
-        if (externalFunction) {
-          usedFunctions.add(name)
-          while (valueIdx < parameters.length && declarationIdx < externalFunction.arguments.length) {
-            if (externalFunction.arguments[declarationIdx].implicit ?? false) {
-              argValues.push(externalFunction.arguments[declarationIdx].name)
-              usedVariables.add(externalFunction.arguments[declarationIdx].name)
+        const scope = findClosestScope(root, node.from)
+        const resolvedFunction = scope.functions.get(name)
+        if (resolvedFunction) {
+          if (resolvedFunction.external) {
+            usedFunctions.add(name)
+          }
+
+          const awaitPrefix = resolvedFunction.async ? "await " : ""
+
+          while (valueIdx < parameters.length && declarationIdx < resolvedFunction.arguments.length) {
+            if (resolvedFunction.arguments[declarationIdx].implicit ?? false) {
+              argValues.push(resolvedFunction.arguments[declarationIdx].name)
+              usedVariables.add(resolvedFunction.arguments[declarationIdx].name)
               declarationIdx += 1
               continue
             }
@@ -143,30 +147,37 @@ function compileNode(node: SyntaxNode, code: string, extensions: ScriptExternals
             declarationIdx += 1
           }
 
-          for (let i = declarationIdx; i < externalFunction.arguments.length; i++) {
-            if (externalFunction.arguments[i].implicit ?? false) {
-              argValues.push(externalFunction.arguments[i].name)
-              usedVariables.add(externalFunction.arguments[i].name)
+          for (let i = declarationIdx; i < resolvedFunction.arguments.length; i++) {
+            if (resolvedFunction.arguments[i].implicit ?? false) {
+              argValues.push(resolvedFunction.arguments[i].name)
+              usedVariables.add(resolvedFunction.arguments[i].name)
             }
           }
-        } else {
-          for (const p of parameters) {
-            argValues.push(compileNode(p.firstChild!, depth))
+
+          if (lastBlock) {
+            const functionArguments = resolvedFunction.arguments
+            const asyncLastBlock = functionArguments.length > 0 ? functionArguments[functionArguments.length - 1].async : undefined
+            const asyncLastBlockPrefix = asyncLastBlock ?? false ? "async " : ""
+            argValues.push(`${asyncLastBlockPrefix}() => ${nestedBlock(lastBlock)}`)
           }
+
+          return `${awaitPrefix}${name}(${argValues.join(", ")})`
+        } else {
+          const resolvedVariable = scope.variables.get(name)!
+          if (resolvedVariable.external) {
+            usedVariables.add(name)
+          }
+          return `await ${name}()`
         }
-        if (lastBlock) {
-          const functionArguments = externalFunction?.arguments
-          const asyncLastBlock = (functionArguments && functionArguments.length > 0) ? functionArguments[functionArguments.length - 1].async : undefined
-          const asyncLastBlockPrefix = asyncLastBlock ?? false ? "async " : ""
-          argValues.push(`${asyncLastBlockPrefix}() => ${nestedBlock(lastBlock)}`)
-        }
-        return `${awaitPrefix}${name}(${argValues.join(", ")})`
       }
       case FunctionDeclaration: {
         const name = slice(node.getChild(Identifier)!)
         const parameters = node.getChild(FunctionParametersDeclaration)?.getChildren(VariableDefinition) ?? []
         const body = node.getChild(CodeBlock)!
-        return `async function ${name}(${parameters.map(p => compileNode(p, depth)).join(",")}) ${nestedBlock(body)}`
+        const scope = findClosestScope(root, node.from)
+        const resolvedFunction = scope.functions.get(name)!
+        const asyncPrefix = resolvedFunction.async ? "async " : ""
+        return `${asyncPrefix}function ${name}(${parameters.map(p => compileNode(p, depth)).join(",")}) ${nestedBlock(body)}`
       }
       case WhileStatement: {
         const condition = node.getChild(Expression)!
@@ -210,14 +221,25 @@ function compileNode(node: SyntaxNode, code: string, extensions: ScriptExternals
         if (node.parent?.type?.id !== FunctionCall
           && node.parent?.type?.id !== FunctionDeclaration
           && node.parent?.type?.id !== VariableDefinition) {
-          const externalVariable = extensions.variables.get(name)
-          if (externalVariable) {
-            usedVariables.add(name)
-            if (externalVariable.async ?? false) {
-              return `await ${name}()`
-            } else {
-              return `${name}()`
+          const scope = findClosestScope(root, node.from)
+          const resolvedVariable = scope.variables.get(name)
+          if (resolvedVariable) {
+            if (resolvedVariable.external) {
+              usedVariables.add(name)
             }
+            if (resolvedVariable.async) {
+              return `await ${name}()`
+            } else if (resolvedVariable.external) {
+              return `${name}()`
+            } else {
+              return `${name}`
+            }
+          } else {
+            const resolvedFunction = scope.functions.get(name)!
+            if (resolvedFunction.external) {
+              usedFunctions.add(name)
+            }
+            return name
           }
         }
         return name

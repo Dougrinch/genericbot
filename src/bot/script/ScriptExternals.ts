@@ -8,7 +8,7 @@ export type FunctionDescriptor = {
   readonly async: boolean
   readonly arguments: {
     readonly name: string
-    readonly async?: boolean
+    readonly async: boolean
     readonly implicit?: boolean
   }[]
   readonly lastAsBlock?: boolean

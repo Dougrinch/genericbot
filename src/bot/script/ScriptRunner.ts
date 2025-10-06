@@ -84,7 +84,7 @@ export class ScriptRunner {
     this.revalidate()
     const tree = parser.parse(script)
     const lintResult = lint(tree, script, this.extensions.scriptExternals)
-    const compilationResult = compile(lintResult, this.extensions.scriptExternals)
+    const compilationResult = compile(lintResult)
     const context = this.createContext(signal)
     return compilationResult!.function(context)
   }
