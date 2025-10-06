@@ -10,7 +10,8 @@
     "test": "eslint . && tsc -b && vitest run",
     "test:ui": "vitest --browser.headless=false",
     "coverage": "vitest run --coverage",
-    "generate": "lezer-generator src/bot/script/script.grammar -o src/bot/script/generated/script --typeScript"
+    "generate:script": "lezer-generator src/bot/script/script.grammar -o src/bot/script/generated/script --typeScript",
+    "generate:xpath": "lezer-generator src/bot/xpath/xpath.grammar -o src/bot/xpath/generated/xpath --typeScript"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.19.0",

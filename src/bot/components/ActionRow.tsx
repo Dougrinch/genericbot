@@ -7,6 +7,7 @@ import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
 import { ScriptInput } from "../script/ScriptInput.tsx"
+import { XPathInput } from "../xpath/XPathInput.tsx"
 
 interface ActionConfigRowProps {
   action: ActionConfig
@@ -103,10 +104,8 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
             ? (
               <>
                 <label className="label" htmlFor={`action-xpath-${action.id}`}>XPath</label>
-                <textarea
+                <XPathInput
                   id={`action-xpath-${action.id}`}
-                  className="auto-resize"
-                  placeholder="//button[@id='dig']"
                   value={action.xpath}
                   onChange={handleInputChange("xpath")}
                 />

@@ -6,6 +6,7 @@ import { useDispatch } from "../BotManagerContext.tsx"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
+import { XPathInput } from "../xpath/XPathInput.tsx"
 
 interface ElementRowProps {
   element: ElementConfig
@@ -22,13 +23,15 @@ export const ElementRow = memo((props: ElementRowProps) => {
   const statusLine = elementValue?.statusLine
   const statusType = elementValue?.statusType
 
-  function handleInputChange(field: keyof ElementConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
+  function handleInputChange(field: keyof ElementConfig): (e: string | React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
     return e => {
-      const value = e.target.type === "checkbox"
-        ? (e.target as HTMLInputElement).checked
-        : e.target.type === "number"
-          ? Number(e.target.value) || 0
-          : e.target.value
+      const value = typeof e === "string"
+        ? e
+        : e.target.type === "checkbox"
+          ? (e.target as HTMLInputElement).checked
+          : e.target.type === "number"
+            ? Number(e.target.value) || 0
+            : e.target.value
 
       dispatch.config.updateElement(element.id, { [field]: value })
     }
@@ -66,10 +69,8 @@ export const ElementRow = memo((props: ElementRowProps) => {
           />
 
           <label className="label" htmlFor={`elem-xpath-${element.id}`}>XPath</label>
-          <textarea
+          <XPathInput
             id={`elem-xpath-${element.id}`}
-            className="auto-resize"
-            placeholder="XPath — will select DOM elements"
             value={element.xpath}
             onChange={handleInputChange("xpath")}
           />

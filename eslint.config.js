@@ -26,6 +26,7 @@ export default tseslint.config([
       "@stylistic": stylistic
     },
     files: ["**/*.{ts,tsx}"],
+    ignores: ["**/generated/**/*.{ts,tsx}"],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommendedTypeChecked,

@@ -1,0 +1,124 @@
+@top XPath { expr }
+
+keyword<w> { @specialize<localName, w> }
+
+@precedence {
+  invoke @left
+  filter @left
+  path @left
+  union @left
+  unary @right
+  multiplicative @left
+  additive @left
+  relational @left
+  equality @left
+  and @left
+  or @left
+}
+
+rootStep {
+  Child { Root { '/' } !path step }
+  | Descendant { Root { '//' } !path step }
+}
+
+step {
+  AxisSpecified { AxisName { localName } '::' generalStep}
+  | AttrSpecified { '@' generalStep }
+  | generalStep
+  | SelfStep { '.' }
+  | ParentStep { '..' }
+}
+
+generalStep {
+  NameTest
+  | Invoke {
+    FunctionName { name }
+    !invoke
+    ArgumentList {
+      '(' ( expr ( ',' expr )* )? ')'
+    }
+  }
+}
+
+expr {
+  VariableReference
+  | '(' expr ')'
+  | StringLiteral
+  | NumberLiteral
+  | rootStep
+  | step
+  | Child { expr !path '/' step }
+  | Descendant { expr !path '//' step }
+  | Filtered { expr !filter '[' expr ']' }
+  | UnionExpr { expr !union '|' expr }
+  | UnaryNegativeExpr { '-' !unary expr }
+  | MultiplyExpr { expr !multiplicative '*' expr }
+//  | DivideExpr { expr !multiplicative keyword<'div'> expr }
+//  | ModulusExpr { expr !multiplicative keyword<'mod'> expr }
+  | AddExpr { expr !additive '+' expr }
+  | SubtractExpr { expr !additive '-' expr }
+  | GreaterThanExpr { expr !relational '>' expr }
+  | GreaterEqualExpr { expr !relational '>=' expr }
+  | LessThanExpr { expr !relational '<' expr }
+  | LessEqualExpr { expr !relational '<=' expr }
+  | NotEqualsExpr { expr !equality '!=' expr }
+  | EqualsExpr { expr !equality '=' expr }
+  | AndExpr { expr !and keyword<'and'> expr }
+  | OrExpr { expr !or keyword<'or'> expr }
+}
+
+NameTest {
+  name
+  | wildcard
+  | qualifiedWildcard
+}
+
+name {
+  localName
+  | qualifiedName
+}
+
+@skip {
+  whitespace
+}
+
+@tokens {
+  "(" ")" "[" "]" "," "/" "//"
+  whitespace { $[ \r\n\t]+ }
+  localNameStartChar {
+    std.asciiLetter | "_"
+    | $[\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D]
+    | $[\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u{10000}-\u{EFFFF}]
+  }
+  localNameChar {
+    localNameStartChar | "-" | "." | std.digit | $[\u00B7\u0300-\u036F\u203F-\u2040]
+  }
+  localName {
+    localNameStartChar localNameChar*
+  }
+  qualifiedName {
+    localName ':' localName
+  }
+  wildcard {
+    '*'
+  }
+  qualifiedWildcard {
+    localName ':' '*'
+  }
+  StringLiteral {
+    '"' !["]* '"'
+    | "'" ![']* "'"
+  }
+  NumberLiteral {
+    @digit+ ('.' @digit*)?
+    | '.' @digit+
+  }
+  VariableReference {
+    '$' localName
+    | '$' qualifiedName
+  }
+  @precedence {
+    qualifiedWildcard qualifiedName localName
+    NumberLiteral '.'
+  }
+}

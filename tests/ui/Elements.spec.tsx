@@ -16,7 +16,7 @@ describe("Elements", () => {
     await openConfiguration()
 
     await page.getElementRow("Dig").getByText("Edit").click()
-    await page.getElementRow("Dig").getByLabelText("XPath").fill("//button")
+    await page.getElementRow("Dig").getBySelector(".cm-content").fill("//button")
     await page.getElementRow("Dig").getByText("need exactly 1").expect().toBeVisible()
   })
 
@@ -25,7 +25,7 @@ describe("Elements", () => {
     await openConfiguration()
 
     await page.getElementRow("Dig").getByText("Edit").click()
-    await page.getElementRow("Dig").getByLabelText("XPath").fill("//button")
+    await page.getElementRow("Dig").getBySelector(".cm-content").fill("//button")
     await page.getElementRow("Dig").getByLabelText("Allow Multiple").click()
     await page.getElementRow("Dig").getByText("need exactly 1").expect().not.toBeInTheDocument()
   })

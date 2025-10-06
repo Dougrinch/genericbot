@@ -6,6 +6,7 @@ import { useDispatch } from "../BotManagerContext.tsx"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
+import { XPathInput } from "../xpath/XPathInput.tsx"
 
 interface VariableRowProps {
   variable: VariableConfig
@@ -22,13 +23,15 @@ export const VariableRow = memo((props: VariableRowProps) => {
   const statusLine = variableValue?.statusLine
   const statusType = variableValue?.statusType
 
-  function handleInputChange(field: keyof VariableConfig): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
+  function handleInputChange(field: keyof VariableConfig): (e: string | React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
     return e => {
-      const value = e.target.type === "checkbox"
-        ? (e.target as HTMLInputElement).checked
-        : e.target.type === "number"
-          ? Number(e.target.value) || 0
-          : e.target.value
+      const value = typeof e === "string"
+        ? e
+        : e.target.type === "checkbox"
+          ? (e.target as HTMLInputElement).checked
+          : e.target.type === "number"
+            ? Number(e.target.value) || 0
+            : e.target.value
 
       dispatch.config.updateVariable(variable.id, { [field]: value })
     }
@@ -69,10 +72,8 @@ export const VariableRow = memo((props: VariableRowProps) => {
           />
 
           <label className="label" htmlFor={`var-xpath-${variable.id}`}>XPath</label>
-          <textarea
+          <XPathInput
             id={`var-xpath-${variable.id}`}
-            className="auto-resize"
-            placeholder="XPath — must match exactly one element"
             value={variable.xpath}
             onChange={handleInputChange("xpath")}
           />
