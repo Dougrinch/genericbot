@@ -55,7 +55,8 @@ export default tseslint.config([
       "@stylistic/arrow-parens": ["error", "as-needed"],
       "@stylistic/spaced-comment": "off",
       "@typescript-eslint/strict-boolean-expressions": "error",
-      "eqeqeq": ["error", "smart"]
+      "eqeqeq": ["error", "smart"],
+      "@stylistic/quote-props": "off",
     }
   }
 ])

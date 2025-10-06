@@ -6,7 +6,7 @@ import { useActionValue } from "../logic/ActionsManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
-import { ScriptInput } from "./ScriptInput.tsx"
+import { ScriptInput } from "../script/ScriptInput.tsx"
 
 interface ActionConfigRowProps {
   action: ActionConfig

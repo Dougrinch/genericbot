@@ -185,7 +185,11 @@ export class ActionsManager {
           this.stop(data)
           this.bot.notifyListeners()
         }
-      }, () => {
+      }, reason => {
+        if (reason instanceof Error) {
+          console.error(reason)
+        }
+
         if (data.pillValue.isRunning) {
           this.stop(data)
           data.pillValue.status = "auto-stopped"

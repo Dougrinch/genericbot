@@ -9,11 +9,15 @@
     "lint": "eslint .",
     "test": "eslint . && tsc -b && vitest run",
     "test:ui": "vitest --browser.headless=false",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "generate": "lezer-generator src/bot/script/script.grammar -o src/bot/script/generated/script --typeScript"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.19.0",
     "@codemirror/lang-javascript": "^6.2.4",
+    "@codemirror/language": "^6.11.3",
+    "@codemirror/lint": "^6.8.5",
+    "@lezer/highlight": "^1.2.1",
     "@uiw/codemirror-theme-github": "^4.25.2",
     "@uiw/react-codemirror": "^4.25.2",
     "immer": "^10.1.1",
@@ -22,6 +26,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
+    "@lezer/generator": "^1.8.0",
     "@stylistic/eslint-plugin": "^5.3.1",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",

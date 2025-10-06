@@ -1,0 +1,111 @@
+@skip { space | Comment }
+@tokens {
+  space       { @whitespace+ }
+  Comment { "//" ![\n\r]* }
+
+  Identifier  { $[A-Za-z_] $[A-Za-z0-9_]* }
+  Number { $[-+]? @digit+ ("." @digit+)? ("e" $[-+]? @digit+)? }
+  String { "\"" ( !["\\] | "\\" _ )* "\"" }
+  Boolean { "true" | "false" }
+
+  CompareOperator<op> { op }
+  LogicOperator<op> { op }
+  ArithmeticOperator<op> { op }
+
+  @precedence { Boolean, Identifier }
+  @precedence { Comment, ArithmeticOperator, Number }
+}
+
+@precedence {
+  call
+  times @left,
+  plus @left,
+  compare @left
+  equal @left,
+  and @left,
+  or @left
+}
+
+@top Script {
+  Statement*
+}
+
+CodeBlock {
+  l<"{"> Statement* l<"}">
+}
+
+Statement {
+  Expression |
+  IfStatement |
+  VariableDeclaration |
+  WhileStatement |
+  DoWhileStatement |
+  FunctionDeclaration
+}
+
+IfStatement {
+  kw<"if"> l<"("> Expression l<")"> CodeBlock ElseStatement?
+}
+
+ElseStatement {
+  kw<"else"> (IfStatement | CodeBlock)
+}
+
+FunctionDeclaration {
+  kw<"fun"> Identifier l<"("> FunctionParametersDeclaration? l<")"> CodeBlock
+}
+
+FunctionParametersDeclaration {
+  VariableDefinition (l<","> VariableDefinition)*
+}
+
+VariableDeclaration {
+  kw<"val"> VariableDefinition l<"="> Expression
+}
+
+VariableDefinition {
+  Identifier
+}
+
+FunctionCall {
+  Identifier !call (FunctionParameters CodeBlock? | CodeBlock)
+}
+
+FunctionParameters {
+  l<"("> (Expression (l<","> Expression)*)? l<")">
+}
+
+WhileStatement {
+  kw<"while"> l<"("> Expression l<")"> CodeBlock
+}
+
+DoWhileStatement {
+  kw<"do"> CodeBlock kw<"while"> l<"("> Expression l<")">
+}
+
+Expression {
+  ParenthesizedExpression |
+  FunctionCall |
+  BinaryExpression |
+  terminalExpression
+}
+
+ParenthesizedExpression {
+  l<"("> Expression l<")">
+}
+
+BinaryExpression {
+  Expression !times ArithmeticOperator<"*" | "/" | "%"> Expression |
+  Expression !plus ArithmeticOperator<"+" | "-"> Expression |
+  Expression !compare CompareOperator<">" | "<" | ">=" | "<="> Expression |
+  Expression !equal CompareOperator<"==" | "!="> Expression |
+  Expression !and LogicOperator<"&&"> Expression |
+  Expression !or LogicOperator<"||"> Expression
+}
+
+terminalExpression {
+  Identifier | Number | String | Boolean
+}
+
+kw<char> { @specialize[@name=Keyword]<Identifier, char> }
+l<char> { @specialize[@name={char}]<char, char> }

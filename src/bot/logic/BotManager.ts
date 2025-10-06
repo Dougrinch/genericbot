@@ -3,7 +3,7 @@ import { VariablesManager } from "./VariablesManager.ts"
 import { ActionsManager } from "./ActionsManager.ts"
 import { ElementsManager } from "./ElementsManager.ts"
 import { XPathSubscriptionManager } from "./XPathSubscriptionManager.ts"
-import { ScriptRunner } from "./ScriptRunner.ts"
+import { ScriptRunner } from "../script/ScriptRunner.ts"
 
 
 export class BotManager {

@@ -129,6 +129,7 @@ button:focus-visible {
 .game-stats-left {
   display: flex;
   gap: 1rem;
+  font-family: monospace;
 }
 
 .game-stats-center {
