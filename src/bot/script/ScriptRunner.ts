@@ -3,7 +3,7 @@ import { compile } from "./ScriptCompiler.ts"
 import type { FunctionDescriptor, ScriptExternals, VariableDescriptor } from "./ScriptExternals.ts"
 import { useBotManagerContext } from "../BotManagerContext.tsx"
 import type { ElementConfig, VariableConfig } from "../logic/Config.ts"
-import { toIdentifier } from "../../utils/identifiers.ts"
+import { toIdentifier } from "../../utils/Identifiers.ts"
 import { parser } from "./generated/script.ts"
 import { lint } from "./ScriptLinter.ts"
 
