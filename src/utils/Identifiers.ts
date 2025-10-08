@@ -1,5 +1,5 @@
 export function toIdentifier(string: string): string {
-  return Array.from(string.matchAll(/^([a-z]+)|([A-Z][a-z]+)|([A-Z]+(?![a-z]))|\d+/g))
+  return Array.from(string.matchAll(/([a-z]+)|([A-Z][a-z]+)|([A-Z]+(?![a-z]))|\d+/g))
     .map(match => match[0])
     .map((word, index) => {
       if (index === 0) {
