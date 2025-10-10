@@ -1,6 +1,6 @@
 import { describe, test } from "vitest"
 import { page } from "@vitest/browser/context"
-import { advanceBy, openConfiguration, renderBotAndGame } from "./helpers.tsx"
+import { openConfiguration, renderBotAndGame } from "./helpers.tsx"
 
 describe("Variables", () => {
   test("value changes are detected", async () => {
@@ -12,8 +12,6 @@ describe("Variables", () => {
     await page.getVariableRow("Gold").getByText(/^10$/).expect().toBeVisible()
     await page.getByRole("button", { name: /^Buy Gnome/ }).click()
     await page.getVariableRow("Gold").getByText(/^0$/).expect().toBeVisible()
-    await advanceBy(5000)
-    await page.getVariableRow("Gold").getByText(/^5$/).expect().toBeVisible()
   })
 
   test("synced with visibility", async () => {

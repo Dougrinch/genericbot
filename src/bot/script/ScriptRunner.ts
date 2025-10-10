@@ -6,6 +6,8 @@ import type { ElementConfig, VariableConfig } from "../logic/Config.ts"
 import { toIdentifier } from "../../utils/Identifiers.ts"
 import { parser } from "./generated/script.ts"
 import { lint } from "./ScriptLinter.ts"
+import { BehaviorSubject } from "rxjs"
+import type { VariableValue } from "../logic/VariablesManager.ts"
 
 export function useScriptExtensions(): ScriptExternals {
   return useBotManagerContext().useStoreState(bm => bm.scriptRunner.getScriptExtensions())
@@ -118,7 +120,13 @@ export class ScriptRunner {
         async: false
       },
       value: () => {
-        return this.bot.variables.getValue(variable.id)!.value
+        //TODO just fix this
+        const ref = new BehaviorSubject<VariableValue | undefined>(undefined)
+        const sub = this.bot.variables.value(variable.id).subscribe(ref)
+        const result = ref.value!.value
+        sub.unsubscribe()
+        ref.complete()
+        return result
       }
     }
   }

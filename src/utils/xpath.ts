@@ -1,11 +1,4 @@
-export type Try<T> = {
-  ok: true
-  value: T
-} | {
-  ok: false
-  error: string
-  severity: "warn" | "err"
-}
+import type { Try } from "./Try.ts"
 
 export function findElementsByXPath(xpath: string): Try<HTMLElement[]> {
   if (!xpath || !xpath.trim()) {

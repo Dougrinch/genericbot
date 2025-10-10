@@ -1,20 +1,38 @@
 import type { VariableConfig } from "./Config.ts"
 import { type BotManager } from "./BotManager.ts"
 import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
-import { useVariablesManager } from "../BotManagerContext.tsx"
+import { useBotManagerContext } from "../BotManagerContext.tsx"
+import { map, switchMap } from "rxjs/operators"
+import { type Observable, of, shareReplay } from "rxjs"
+import { useCallback, useMemo, useRef, useSyncExternalStore } from "react"
 
 
 export function useVariableValue(id: string): VariableValue | undefined {
-  return useVariablesManager(vm => vm.getValue(id))
+  const manager = useBotManagerContext().manager
+  const observable = useMemo(() => {
+    return manager.variables.value(id)
+  }, [manager, id])
+  return useObservable(observable)
+}
+
+export function useObservable<T>(observable: Observable<T>): T | undefined {
+  const lastValue = useRef<T | undefined>(undefined)
+
+  const subscribe = useCallback((onChange: () => void) => {
+    const subscription = observable.subscribe(value => {
+      lastValue.current = value
+      onChange()
+    })
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [observable])
+
+  return useSyncExternalStore(subscribe, () => lastValue.current)
 }
 
 
-type VariableData = {
-  unsubscribe: () => void
-  value: VariableValue
-}
-
-type VariableValue = {
+export type VariableValue = {
   value: number | string | undefined
   statusLine: string
   statusType: "warn" | "ok" | "err"
@@ -24,80 +42,32 @@ type VariableValue = {
 
 export class VariablesManager {
   private readonly bot: BotManager
-  private readonly variables: Map<string, VariableData>
 
   constructor(botState: BotManager) {
     this.bot = botState
-    this.variables = new Map()
   }
 
-  getValue(id: string) {
-    return this.variables.get(id)?.value
+  value(id: string): Observable<VariableValue | undefined> {
+    return this.bot.config.variable(id)
+      .pipe(
+        switchMap(variable => {
+          if (variable) {
+            return this.variableValue(variable)
+          } else {
+            return of(undefined)
+          }
+        }),
+        shareReplay(1)
+      )
   }
 
-  init(): void {
-    this.resetAll()
+  private variableValue(variable: VariableConfig): Observable<VariableValue> {
+    return this.bot.xPathSubscriptionManager
+      .innerText(variable.xpath, false)
+      .pipe(map(v => this.buildValue(variable, v)))
   }
 
-  close() {
-    for (const variable of this.variables.values()) {
-      variable.unsubscribe()
-    }
-    this.variables.clear()
-  }
-
-  resetAll(): void {
-    const uniqueIds = new Set<string>()
-    for (const variable of this.bot.config.getConfig().variables.values()) {
-      uniqueIds.add(variable.id)
-    }
-    for (const id of this.variables.keys()) {
-      uniqueIds.add(id)
-    }
-
-    for (const id of uniqueIds) {
-      this.reset(id)
-    }
-  }
-
-  reset(id: string) {
-    const data = this.variables.get(id)
-    if (data) {
-      data.unsubscribe()
-      this.variables.delete(id)
-    }
-
-    const variable = this.bot.config.getVariable(id)
-    if (variable) {
-      const { unsubscribe, innerText } = this.bot.xPathSubscriptionManager.subscribeOnInnerText(variable.xpath, false, {
-        onUpdate: innerText => {
-          this.handleUpdate(id, innerText)
-          this.bot.notifyListeners()
-        }
-      })
-
-      this.variables.set(id, {
-        unsubscribe,
-        value: this.tryEvaluateVariableValue(variable, innerText)
-      })
-    }
-  }
-
-  handleUpdate(id: string, innerText: Result<string>): void {
-    const variable = this.bot.config.getVariable(id)
-    if (!variable) {
-      throw Error(`Variable ${id} not found`)
-    }
-
-    const data = this.variables.get(id)
-    if (!data) {
-      throw Error(`VariableData ${id} not found`)
-    }
-
-    data.value = this.tryEvaluateVariableValue(variable, innerText)
-  }
-
-  private tryEvaluateVariableValue(variable: VariableConfig, innerText: Result<string>): VariableValue {
+  private buildValue(variable: VariableConfig, innerText: Result<string>): VariableValue {
     if (innerText.ok) {
       return this.evaluateVariableValue(variable, innerText.value, innerText.elementsInfo)
     } else {

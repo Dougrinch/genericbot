@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useReducer, useRef, useSyncExternalStore } from "react"
-import type { BotManager } from "./logic/BotManager.ts"
+import { createContext, useCallback, useContext, useRef, useSyncExternalStore } from "react"
+import { BotManager } from "./logic/BotManager.ts"
 import type { Dispatch } from "../utils/ManagerStore.ts"
 import type { ConfigManager } from "./logic/ConfigManager.ts"
 import type { VariablesManager } from "./logic/VariablesManager.ts"
@@ -31,6 +31,7 @@ export function useDispatch(): Dispatch<BotManager> {
 
 
 export type BotManagerContextData = {
+  manager: BotManager
   useStoreState<T>(selector: (bm: BotManager) => T): T
   get dispatch(): Dispatch<BotManager>
 }
@@ -54,16 +55,6 @@ export function useBotManager(create: () => BotManager): BotManagerContextData {
 
   botManagerRef.current = create()
   botManagerRef.current.init()
-
-  const [, forceUpdate] = useReducer(x => x + 1, 0)
-
-  useEffect(() => {
-    return () => {
-      botManagerRef.current?.close()
-      botManagerRef.current = null
-      forceUpdate()
-    }
-  }, [])
 
   return createBotManagerContext(botManagerRef.current)
 }
@@ -100,8 +91,14 @@ function createBotManagerContext(manager: BotManager) {
   }
 
   return {
+    manager,
+
     useStoreState: function <T>(selector: (bm: BotManager) => T): T {
-      return useSyncExternalStore(onChange => manager.subscribe(onChange), useGetSnapshot(() => selector(manager)))
+      const subscribe = useCallback((onChange: () => void) => {
+        return manager.subscribe(onChange)
+      }, [manager])
+
+      return useSyncExternalStore(subscribe, useGetSnapshot(() => selector(manager)))
     },
 
     dispatch: buildDispatch()

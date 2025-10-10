@@ -2,6 +2,8 @@ import { type ActionConfig, type Config, type ElementConfig, type VariableConfig
 import { type BotManager } from "./BotManager.ts"
 import { type Draft, produce } from "immer"
 import { useConfigManager } from "../BotManagerContext.tsx"
+import { BehaviorSubject, Observable, shareReplay } from "rxjs"
+import { map } from "rxjs/operators"
 
 
 export function useConfig(): Config
@@ -63,19 +65,20 @@ export const CONFIG_STORAGE_KEY = "autoclick.config.v1"
 
 export class ConfigManager {
   private readonly bot: BotManager
-  private config: Config
 
-  private readonly actionsCache = new Cache(() => this.config.actions)
-  private readonly variablesCache = new Cache(() => this.config.variables)
-  private readonly elementsCache = new Cache(() => this.config.elements)
+  private readonly config: BehaviorSubject<Config>
+
+  private readonly actionsCache = new Cache(() => this.getConfig().actions)
+  private readonly variablesCache = new Cache(() => this.getConfig().variables)
+  private readonly elementsCache = new Cache(() => this.getConfig().elements)
 
   constructor(botState: BotManager) {
     this.bot = botState
-    this.config = this.loadConfig()
+    this.config = new BehaviorSubject<Config>(loadConfig())
   }
 
   getConfig(): Config {
-    return this.config
+    return this.config.value
   }
 
   getAction(id: string): ActionConfig | undefined {
@@ -84,6 +87,13 @@ export class ConfigManager {
 
   getVariable(id: string): VariableConfig | undefined {
     return this.variablesCache.get(id)
+  }
+
+  variable(id: string): Observable<VariableConfig | undefined> {
+    return this.config.pipe(
+      map(c => c.variables.find(v => v.id === id)),
+      shareReplay(1)
+    )
   }
 
   getElement(id: string): ElementConfig | undefined {
@@ -99,90 +109,22 @@ export class ConfigManager {
   }
 
   reload() {
-    this.config = this.loadConfig()
+    this.config.next(loadConfig())
     this.actionsCache.reset()
     this.variablesCache.reset()
     this.elementsCache.reset()
-  }
-
-  private saveConfig(): void {
-    try {
-      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(this.config))
-    } catch (error) {
-      console.error("Failed to save config to localStorage:", error)
-    }
-  }
-
-  private loadConfig(): Config {
-    try {
-      const saved = localStorage.getItem(CONFIG_STORAGE_KEY)
-      if (saved !== null && saved.length > 0) {
-        return this.fixCompatibility(JSON.parse(saved) as Config)
-      }
-    } catch (error) {
-      console.error("Failed to load config from localStorage:", error)
-    }
-    return {
-      actions: [],
-      variables: [],
-      elements: []
-    }
-  }
-
-  private fixCompatibility(oldConfig: Config): Config {
-    return produce(oldConfig, config => {
-      if (config.actions === undefined) {
-        config.actions = []
-
-        const configWithOldEntries = config as Partial<{ entries: ActionConfig[] }>
-        if (configWithOldEntries.entries) {
-          for (const entry of configWithOldEntries.entries) {
-            config.actions.push({
-              ...entry,
-              id: "action_" + entry.id.slice(5)
-            })
-          }
-        }
-      }
-
-      for (const action of config.actions) {
-        if (action.type === undefined) {
-          action.type = "xpath"
-        }
-        if (action.script === undefined) {
-          action.script = ""
-        }
-        if (action.periodic === undefined) {
-          action.periodic = true
-        }
-      }
-
-      if (config.elements === undefined) {
-        config.elements = []
-
-        const configWithOldButtons = config as Partial<{ buttons: ElementConfig[] }>
-        if (configWithOldButtons.buttons) {
-          for (const button of configWithOldButtons.buttons) {
-            config.elements.push({
-              ...button,
-              id: "elem" + button.id.slice(3)
-            })
-          }
-        }
-      }
-    })
   }
 
   private updateConfig(updater: (config: Draft<Config>) => void): void {
-    this.config = produce(this.config, updater)
+    this.config.next(produce(this.getConfig(), updater))
     this.actionsCache.reset()
     this.variablesCache.reset()
     this.elementsCache.reset()
-    this.saveConfig()
+    saveConfig(this.getConfig())
   }
 
   addAction(): void {
-    const oldIds = this.config.actions
+    const oldIds = this.getConfig().actions
       .map(a => a.id.match(/^action_(\d+)$/))
       .filter(m => m !== null)
       .map(m => Number(m[1]))
@@ -208,7 +150,7 @@ export class ConfigManager {
   }
 
   updateAction(id: string, updates: Partial<ActionConfig>): void {
-    const actionIndex = this.indexOf(id, this.config.actions)
+    const actionIndex = this.indexOf(id, this.getConfig().actions)
     if (actionIndex !== undefined) {
       this.updateConfig(config => {
         config.actions[actionIndex] = {
@@ -221,7 +163,7 @@ export class ConfigManager {
   }
 
   removeAction(id: string): void {
-    const actionIndex = this.indexOf(id, this.config.actions)
+    const actionIndex = this.indexOf(id, this.getConfig().actions)
     if (actionIndex !== undefined) {
       this.updateConfig(config => {
         config.actions.splice(actionIndex, 1)
@@ -241,7 +183,7 @@ export class ConfigManager {
   }
 
   addVariable(): void {
-    const oldIds = this.config.variables
+    const oldIds = this.getConfig().variables
       .map(v => v.id.match(/^var_(\d+)$/))
       .filter(m => m !== null)
       .map(m => Number(m[1]))
@@ -259,12 +201,10 @@ export class ConfigManager {
         type: "number"
       })
     })
-
-    this.bot.variables.reset(newId)
   }
 
   updateVariable(id: string, updates: Partial<VariableConfig>): void {
-    const variableIndex = this.indexOf(id, this.config.variables)
+    const variableIndex = this.indexOf(id, this.getConfig().variables)
     if (variableIndex !== undefined) {
       this.updateConfig(config => {
         config.variables[variableIndex] = {
@@ -272,17 +212,15 @@ export class ConfigManager {
           ...updates
         }
       })
-      this.bot.variables.reset(id)
     }
   }
 
   removeVariable(id: string): void {
-    const variableIndex = this.indexOf(id, this.config.variables)
+    const variableIndex = this.indexOf(id, this.getConfig().variables)
     if (variableIndex !== undefined) {
       this.updateConfig(config => {
         config.variables.splice(variableIndex, 1)
       })
-      this.bot.variables.reset(id)
     }
   }
 
@@ -297,7 +235,7 @@ export class ConfigManager {
   }
 
   addElement(): void {
-    const oldIds = this.config.elements
+    const oldIds = this.getConfig().elements
       .map(e => e.id.match(/^elem_(\d+)$/))
       .filter(m => m !== null)
       .map(m => Number(m[1]))
@@ -319,7 +257,7 @@ export class ConfigManager {
   }
 
   updateElement(id: string, updates: Partial<ElementConfig>): void {
-    const elementIndex = this.indexOf(id, this.config.elements)
+    const elementIndex = this.indexOf(id, this.getConfig().elements)
     if (elementIndex !== undefined) {
       this.updateConfig(config => {
         config.elements[elementIndex] = {
@@ -332,7 +270,7 @@ export class ConfigManager {
   }
 
   removeElement(id: string): void {
-    const elementIndex = this.indexOf(id, this.config.elements)
+    const elementIndex = this.indexOf(id, this.getConfig().elements)
     if (elementIndex !== undefined) {
       this.updateConfig(config => {
         config.elements.splice(elementIndex, 1)
@@ -358,4 +296,72 @@ export class ConfigManager {
     }
     return result
   }
+}
+
+function loadConfig(): Config {
+  try {
+    const saved = localStorage.getItem(CONFIG_STORAGE_KEY)
+    if (saved !== null && saved.length > 0) {
+      return fixCompatibility(JSON.parse(saved) as Config)
+    }
+  } catch (error) {
+    console.error("Failed to load config from localStorage:", error)
+  }
+  return {
+    actions: [],
+    variables: [],
+    elements: []
+  }
+}
+
+function saveConfig(config: Config): void {
+  try {
+    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config))
+  } catch (error) {
+    console.error("Failed to save config to localStorage:", error)
+  }
+}
+
+function fixCompatibility(oldConfig: Config): Config {
+  return produce(oldConfig, config => {
+    if (config.actions === undefined) {
+      config.actions = []
+
+      const configWithOldEntries = config as Partial<{ entries: ActionConfig[] }>
+      if (configWithOldEntries.entries) {
+        for (const entry of configWithOldEntries.entries) {
+          config.actions.push({
+            ...entry,
+            id: "action_" + entry.id.slice(5)
+          })
+        }
+      }
+    }
+
+    for (const action of config.actions) {
+      if (action.type === undefined) {
+        action.type = "xpath"
+      }
+      if (action.script === undefined) {
+        action.script = ""
+      }
+      if (action.periodic === undefined) {
+        action.periodic = true
+      }
+    }
+
+    if (config.elements === undefined) {
+      config.elements = []
+
+      const configWithOldButtons = config as Partial<{ buttons: ElementConfig[] }>
+      if (configWithOldButtons.buttons) {
+        for (const button of configWithOldButtons.buttons) {
+          config.elements.push({
+            ...button,
+            id: "elem" + button.id.slice(3)
+          })
+        }
+      }
+    }
+  })
 }

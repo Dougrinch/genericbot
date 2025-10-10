@@ -1,9 +1,11 @@
-import { describe, test } from "vitest"
+import { describe, test, vi } from "vitest"
 import { page } from "@vitest/browser/context"
 import { advanceBy, renderGame } from "./helpers.tsx"
 
 describe("Game", () => {
   test("simple Game test", async () => {
+    vi.useFakeTimers()
+
     renderGame()
 
     await page.getByText("Gnome Gold Mine").expect().toBeInTheDocument()

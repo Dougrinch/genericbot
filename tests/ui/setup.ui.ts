@@ -20,7 +20,6 @@ beforeAll(() => {
 
 beforeEach(() => {
   cleanup()
-  vi.useFakeTimers()
   vi.resetModules()
   vi.resetAllMocks()
 

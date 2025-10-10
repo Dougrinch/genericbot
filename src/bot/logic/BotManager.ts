@@ -27,13 +27,11 @@ export class BotManager {
 
   init(): void {
     this.xPathSubscriptionManager.init()
-    this.variables.init()
     this.actions.init()
     this.elements.init()
   }
 
   close(): void {
-    this.variables.close()
     this.actions.close()
     this.elements.close()
     this.xPathSubscriptionManager.close()

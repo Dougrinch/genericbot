@@ -1,0 +1,100 @@
+import { debounceTime, mergeWith, Observable, pipe, shareReplay } from "rxjs"
+import { findElementsByXPath } from "../xpath.ts"
+import { isRelevantAttribute, observeMutated } from "./MutationObserver.ts"
+import { distinctUntilChanged, share } from "rxjs/operators"
+import { splitMerge } from "./SplitMerge.ts"
+import { mapWithInvalidation } from "./Invalidation.ts"
+import { collectAllToSet, elementsToRoot } from "../Collections.ts"
+import type { Try } from "../Try.ts"
+
+const cache: Map<string, { subscribed: number, observable: Observable<Try<HTMLElement[]>> }> = new Map()
+
+export function observeXPath(xpath: string): Observable<Try<HTMLElement[]>> {
+  return new Observable(subscriber => {
+    const existing = cache.get(xpath)
+    if (existing) {
+      existing.subscribed += 1
+      existing.observable.subscribe(subscriber)
+    } else {
+      const newObservable = rawElements(xpath).pipe(shareReplay(1))
+      newObservable.subscribe(subscriber)
+      cache.set(xpath, {
+        subscribed: 1,
+        observable: newObservable
+      })
+    }
+    return () => {
+      const existing = cache.get(xpath)!
+      existing.subscribed -= 1
+      if (existing.subscribed === 0) {
+        cache.delete(xpath)
+      }
+    }
+  })
+}
+
+function rawElements(xpath: string): Observable<Try<HTMLElement[]>> {
+  return new Observable<void>(subscriber => {
+    subscriber.next()
+  }).pipe(
+    mapWithInvalidation({
+      project: () => findElementsByXPath(xpath),
+      invalidationTriggerByProjected: pipe(nodeRemoved(), mergeWith(nodeAddedOrAttrChanged))
+    }),
+    distinctUntilChanged(isEquals)
+  )
+}
+
+const trackedAttributes = ["style", "hidden", "class"]
+
+const nodeAddedOrAttrChanged = observeMutated(document.body, {
+  subtree: true,
+  childList: true,
+  attributes: true,
+  attributeFilter: trackedAttributes
+}, mr => isRelevantAttribute(mr, trackedAttributes) || (mr.type === "childList" && mr.addedNodes.length > 0))
+  .pipe(debounceTime(100), share())
+
+function nodeRemoved() {
+  return splitMerge<Try<HTMLElement[]>, HTMLElement, void>(
+    elements => collectAllToSet(
+      elements.ok ? elements.value : [],
+      e => elementsToRoot(e, {
+        includeSelf: true,
+        includeRoot: false
+      })
+    ),
+    element => {
+      return observeMutated(element.parentElement!, {
+        childList: true
+      }, mr => {
+        if (mr.type === "childList") {
+          for (const removedNode of mr.removedNodes) {
+            if (removedNode === element) {
+              return true
+            }
+          }
+        }
+        return false
+      })
+    }
+  )
+}
+
+function isEquals(e1: Try<HTMLElement[]>, e2: Try<HTMLElement[]>) {
+  if (e1.ok && e2.ok) {
+    if (e1.value.length !== e2.value.length) {
+      return false
+    }
+    for (let i = 0; i < e1.value.length; i++) {
+      if (e1.value[i] !== e2.value[i]) {
+        return false
+      }
+    }
+    return true
+  }
+  if (!e1.ok && !e2.ok) {
+    return e1.error !== e2.error && e1.severity === e2.severity
+  }
+  return false
+}

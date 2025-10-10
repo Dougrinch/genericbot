@@ -1,5 +1,13 @@
 import { ElementSubscriptionManager } from "./ElementSubscriptionManager.ts"
-import { findElementsByXPath, type Try } from "../../utils/xpath.ts"
+import { findElementsByXPath } from "../../utils/xpath.ts"
+import { observeAttributeChange, observeMutated } from "../../utils/observables/MutationObserver.ts"
+import { EMPTY, type Observable } from "rxjs"
+import { observeXPath } from "../../utils/observables/XPathObserver.ts"
+import { mapWithInvalidation } from "../../utils/observables/Invalidation.ts"
+import { splitMerge } from "../../utils/observables/SplitMerge.ts"
+import { collectAllToSet, elementsToRoot } from "../../utils/Collections.ts"
+import { map, switchMap } from "rxjs/operators"
+import { mapTry, type Severity, type Try } from "../../utils/Try.ts"
 
 type XPathSubscription = {
   readonly xpath: string
@@ -66,7 +74,7 @@ export type Result<T> = {
 } | {
   ok: false
   error: string
-  severity: "warn" | "err"
+  severity: Severity
   elementsInfo: ElementInfo[]
 }
 
@@ -113,6 +121,25 @@ export class XPathSubscriptionManager {
     }
   }
 
+
+  errorResult<R>(source: Result<unknown>, defaultError: string, defaultSeverity: Severity): Result<R> {
+    return {
+      ok: false,
+      error: source.ok ? defaultError : source.error,
+      severity: source.ok ? defaultSeverity : source.severity,
+      elementsInfo: source.elementsInfo
+    }
+  }
+
+  okResult<R>(source: Result<unknown>, value: R): Result<R> {
+    return {
+      ok: true,
+      value: value,
+      elementsInfo: source.elementsInfo
+    }
+  }
+
+
   subscribeOnElement(xpath: string, includeInvisible: boolean, callback: ElementChangeCallback): ElementSubscribeResult {
     const { subscription, unsubscribe } = this.subscribe(xpath, {
       type: "element",
@@ -124,6 +151,100 @@ export class XPathSubscriptionManager {
       unsubscribe,
       element: this.buildElement(subscription, includeInvisible)
     }
+  }
+
+  innerText(xpath: string, includeInvisible: boolean): Observable<Result<string>> {
+    return this.element(xpath, includeInvisible)
+      .pipe(
+        mapWithInvalidation({
+          project: mapResultValue(e => e.innerText),
+          invalidationTriggerBySource: switchMap(r => {
+            if (r.ok) {
+              return observeMutated(r.value, {
+                subtree: true,
+                childList: true,
+                characterData: true,
+                attributes: true
+              }, () => true)
+            } else {
+              return EMPTY
+            }
+          })
+        })
+      )
+  }
+
+  element(xpath: string, includeInvisible: boolean): Observable<Result<HTMLElement>> {
+    return this.elements(xpath, includeInvisible, false)
+      .pipe(
+        map(r => {
+          if (!r.ok) {
+            return r
+          }
+
+          if (r.value.length === 0) {
+            if (r.elementsInfo.length > 0) {
+              return this.errorResult(r, "Element hidden", "warn")
+            } else {
+              return this.errorResult(r, "XPath matched 0 elements.", "warn")
+            }
+          }
+
+          return this.okResult(r, r.value[0])
+        })
+      )
+  }
+
+  elements(xpath: string, includeInvisible: boolean, allowMultiple: boolean = true): Observable<Result<HTMLElement[]>> {
+    return this.allElements(xpath)
+      .pipe(
+        map(t => {
+          if (t.ok) {
+            return {
+              ok: true as const,
+              value: (includeInvisible ? t.value : t.value.filter(i => i.isVisible)).map(i => i.element),
+              elementsInfo: t.value
+            }
+          } else {
+            return {
+              ok: false as const,
+              error: t.error,
+              severity: t.severity,
+              elementsInfo: []
+            }
+          }
+        }),
+        map(r => {
+          if (!allowMultiple && r.ok && r.value.length > 1) {
+            return this.errorResult(r,
+              `XPath matched ${r.elementsInfo.length} elements (need exactly 1).`,
+              "warn")
+          }
+          return r
+        })
+      )
+  }
+
+  private allElements(xpath: string): Observable<Try<ElementInfo[]>> {
+    return observeXPath(xpath)
+      .pipe(
+        mapWithInvalidation({
+          project: mapTry(es => es.map(e => ({
+            element: e,
+            isVisible: e.checkVisibility()
+          }))),
+          invalidationTriggerByProjected: splitMerge(
+            v => collectAllToSet(
+              v.ok ? v.value.map(i => i.element) : [],
+              e => elementsToRoot(e, {
+                includeSelf: true,
+                includeRoot: true
+              })
+            ),
+            element => observeAttributeChange(element, ["style", "hidden", "class"])
+          )
+        })
+      )
   }
 
   subscribeOnElements(xpath: string, includeInvisible: boolean, callback: ElementsChangeCallback, allowMultiple: boolean = true): ElementsSubscribeResult {
@@ -418,6 +539,25 @@ function lazy<T>(f: () => T): { value: T } {
         value = f()
       }
       return value
+    }
+  }
+}
+
+function mapResultValue<T, R>(f: (v: T, r: Result<T>) => R): (r: Result<T>) => Result<R> {
+  return (r: Result<T>) => {
+    if (!r.ok) {
+      return {
+        ok: r.ok,
+        error: r.error,
+        severity: r.severity,
+        elementsInfo: r.elementsInfo
+      }
+    } else {
+      return {
+        ok: r.ok,
+        value: f(r.value, r),
+        elementsInfo: r.elementsInfo
+      }
     }
   }
 }
