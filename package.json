@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build --config vite.config.ts",
+    "build": "eslint . && tsc -b && vite build --config vite.config.ts",
     "lint": "eslint .",
     "test": "eslint . && tsc -b && vitest run",
     "test:ui": "vitest --browser.headless=false",

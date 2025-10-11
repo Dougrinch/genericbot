@@ -2,11 +2,8 @@ name: Deploy
 
 on:
   push:
-    branches: [ "main" ]
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
+    branches:
+      - '**'
 
 jobs:
   build:
@@ -18,15 +15,20 @@ jobs:
           node-version: 24.x
       - run: npm ci
       - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+      - if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
   deploy:
+    if: github.ref == 'refs/heads/main'
     needs: build
     permissions:
       pages: write
       id-token: write
     runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
