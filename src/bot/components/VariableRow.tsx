@@ -54,7 +54,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
       name={variable.name}
       value={(
         <HoverableElementHighlighter elements={elements ?? []}>
-          <span className="variable-current-value">{value !== undefined ? value : "(not evaluated)"}</span>
+          <span className="variable-current-value">{value !== undefined ? String(value) : "(not evaluated)"}</span>
           <span className="variable-type">({variable.type})</span>
         </HoverableElementHighlighter>
       )}

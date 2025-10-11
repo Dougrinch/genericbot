@@ -1,19 +1,28 @@
-import { createContext, useCallback, useContext, useRef, useSyncExternalStore } from "react"
+import { createContext, type DependencyList, useCallback, useContext, useRef, useSyncExternalStore } from "react"
 import { BotManager } from "./logic/BotManager.ts"
 import type { Dispatch } from "../utils/ManagerStore.ts"
 import type { ConfigManager } from "./logic/ConfigManager.ts"
-import type { VariablesManager } from "./logic/VariablesManager.ts"
 import type { ActionsManager } from "./logic/ActionsManager.ts"
 import type { ElementsManager } from "./logic/ElementsManager.ts"
 import { useGetSnapshot } from "../utils/Store.ts"
+import type { Observable } from "rxjs"
+import { useObservable } from "../utils/observables/Hook.ts"
+
+
+export function useBotObservable<T>(factory: (m: BotManager) => Observable<T>, deps: DependencyList): T | undefined {
+  const manager = useBotManagerContext().manager
+
+  const observableFactory = useCallback(() => {
+    return factory(manager)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manager, ...deps])
+
+  return useObservable(observableFactory)
+}
 
 
 export function useConfigManager<T>(selector: (cm: ConfigManager) => T): T {
   return useBotManagerContext().useStoreState(bm => selector(bm.config))
-}
-
-export function useVariablesManager<T>(selector: (vm: VariablesManager) => T): T {
-  return useBotManagerContext().useStoreState(bm => selector(bm.variables))
 }
 
 export function useActionsManager<T>(selector: (am: ActionsManager) => T): T {

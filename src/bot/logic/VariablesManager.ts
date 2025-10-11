@@ -1,40 +1,14 @@
 import type { VariableConfig } from "./Config.ts"
 import { type BotManager } from "./BotManager.ts"
 import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
-import { useBotManagerContext } from "../BotManagerContext.tsx"
+import { useBotObservable } from "../BotManagerContext.tsx"
 import { map, switchMap } from "rxjs/operators"
 import { type Observable, of, shareReplay } from "rxjs"
-import { type DependencyList, useCallback, useMemo, useRef, useSyncExternalStore } from "react"
 
 
 export function useVariableValue(id: string): VariableValue | undefined {
-  return useObservable(m => m.variables.value(id), [id])
+  return useBotObservable(m => m.variables.value(id), [id])
 }
-
-export function useObservable<T>(factory: (m: BotManager) => Observable<T>, deps: DependencyList): T | undefined {
-  const manager = useBotManagerContext().manager
-
-  const observable = useMemo(() => {
-    console.log("new observable")
-    return factory(manager)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manager, ...deps])
-
-  const lastValue = useRef<T | undefined>(undefined)
-
-  const subscribe = useCallback((onChange: () => void) => {
-    const subscription = observable.subscribe(value => {
-      lastValue.current = value
-      onChange()
-    })
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [observable])
-
-  return useSyncExternalStore(subscribe, () => lastValue.current)
-}
-
 
 export type VariableValue = {
   value: number | string | undefined
