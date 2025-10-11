@@ -1,22 +1,74 @@
-import { type Observable } from "rxjs"
-import { useCallback, useMemo, useRef, useSyncExternalStore } from "react"
+import { BehaviorSubject, type Observable, type Subscription } from "rxjs"
+import { useCallback, useRef, useSyncExternalStore } from "react"
 
-export function useObservable<T>(factory: () => Observable<T>): T | undefined {
-  const observable = useMemo(factory, [factory])
+const UNSET: unique symbol = Symbol("UNSET")
 
-  const lastValue = useRef<T | undefined>(undefined)
+type Entry<T> = {
+  subject: BehaviorSubject<T | typeof UNSET>
+  observable: Observable<T>
+  subscription?: Subscription
+  active: number
+}
+
+function trySubscribeToRoot<T>(entry: Entry<T>) {
+  if (entry.subscription === undefined) {
+    entry.subscription = entry.observable.subscribe(entry.subject)
+  }
+}
+
+function tryUnsubscribeFromRoot<T>(entry: Entry<T>) {
+  if (entry.active === 0) {
+    forceUnsubscribeFromRoot(entry)
+  }
+}
+
+function forceUnsubscribeFromRoot<T>(entry: Entry<T>) {
+  entry.subscription!.unsubscribe()
+  entry.subscription = undefined
+}
+
+
+export function useObservable<T>(observable: Observable<T>): T | undefined {
+  const entryRef = useRef<Entry<T>>(null)
+  if (entryRef.current == null) {
+    entryRef.current = {
+      subject: new BehaviorSubject<T | typeof UNSET>(UNSET),
+      observable: observable,
+      active: 0
+    }
+  }
+
+  const entry = entryRef.current
+  if (observable !== entry.observable) {
+    forceUnsubscribeFromRoot(entry)
+    entry.observable = observable
+  }
+  trySubscribeToRoot(entry)
+
+  if (entry.active === 0) {
+    setTimeout(() => {
+      tryUnsubscribeFromRoot(entry)
+    }, 100)
+  }
 
   const subscribe = useCallback((onChange: () => void) => {
-    const subscription = observable.subscribe(value => {
-      lastValue.current = value
-      onChange()
+    trySubscribeToRoot(entry)
+    entry.active += 1
+    const subscription = entry.subject.subscribe({
+      next: onChange
     })
     return () => {
       subscription.unsubscribe()
+      entry.active -= 1
+      tryUnsubscribeFromRoot(entry)
     }
-  }, [observable])
+  }, [entry])
 
-  const getSnapshot = useCallback(() => lastValue.current, [lastValue])
+  const getSnapshot = useCallback(() => entry.subject.value, [entry])
 
-  return useSyncExternalStore(subscribe, getSnapshot)
+  const result = useSyncExternalStore(subscribe, getSnapshot)
+  if (result === UNSET) {
+    throw Error("Observable must return a value immediately")
+  }
+  return result
 }

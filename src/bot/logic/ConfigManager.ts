@@ -1,7 +1,7 @@
 import { type ActionConfig, type Config, type ElementConfig, type VariableConfig } from "./Config.ts"
 import { type BotManager } from "./BotManager.ts"
 import { type Draft, produce } from "immer"
-import { useConfigManager } from "../BotManagerContext.tsx"
+import { useBotObservable } from "../BotManagerContext.tsx"
 import { BehaviorSubject, Observable, shareReplay } from "rxjs"
 import { map } from "rxjs/operators"
 
@@ -9,7 +9,8 @@ import { map } from "rxjs/operators"
 export function useConfig(): Config
 export function useConfig<T>(selector: (state: Config) => T): T
 export function useConfig<T>(selector?: (state: Config) => T): T | Config {
-  return useConfigManager(cm => selector ? selector(cm.getConfig()) : cm.getConfig())
+  const config = useBotObservable(m => m.config.config(), [])
+  return selector ? selector(config) : config
 }
 
 
@@ -66,17 +67,21 @@ export const CONFIG_STORAGE_KEY = "autoclick.config.v1"
 export class ConfigManager {
   private readonly bot: BotManager
 
-  private readonly config: BehaviorSubject<Config>
+  private readonly configSubject: BehaviorSubject<Config>
 
   private readonly actionsCache = new Cache(() => this.getConfig().actions)
 
   constructor(botState: BotManager) {
     this.bot = botState
-    this.config = new BehaviorSubject<Config>(loadConfig())
+    this.configSubject = new BehaviorSubject<Config>(loadConfig())
   }
 
   getConfig(): Config {
-    return this.config.value
+    return this.configSubject.value
+  }
+
+  config(): Observable<Config> {
+    return this.configSubject
   }
 
   getAction(id: string): ActionConfig | undefined {
@@ -84,14 +89,14 @@ export class ConfigManager {
   }
 
   variable(id: string): Observable<VariableConfig | undefined> {
-    return this.config.pipe(
+    return this.configSubject.pipe(
       map(c => c.variables.find(v => v.id === id)),
       shareReplay(1)
     )
   }
 
   element(id: string): Observable<ElementConfig | undefined> {
-    return this.config.pipe(
+    return this.configSubject.pipe(
       map(c => c.elements.find(v => v.id === id)),
       shareReplay(1)
     )
@@ -101,7 +106,7 @@ export class ConfigManager {
     const newConfig = produce(this.getConfig(), updater)
     saveConfig(newConfig)
     this.actionsCache.reset()
-    this.config.next(newConfig)
+    this.configSubject.next(newConfig)
   }
 
   addAction(): void {
