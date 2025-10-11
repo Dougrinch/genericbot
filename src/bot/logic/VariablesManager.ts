@@ -4,18 +4,22 @@ import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
 import { useBotManagerContext } from "../BotManagerContext.tsx"
 import { map, switchMap } from "rxjs/operators"
 import { type Observable, of, shareReplay } from "rxjs"
-import { useCallback, useMemo, useRef, useSyncExternalStore } from "react"
+import { type DependencyList, useCallback, useMemo, useRef, useSyncExternalStore } from "react"
 
 
 export function useVariableValue(id: string): VariableValue | undefined {
-  const manager = useBotManagerContext().manager
-  const observable = useMemo(() => {
-    return manager.variables.value(id)
-  }, [manager, id])
-  return useObservable(observable)
+  return useObservable(m => m.variables.value(id), [id])
 }
 
-export function useObservable<T>(observable: Observable<T>): T | undefined {
+export function useObservable<T>(factory: (m: BotManager) => Observable<T>, deps: DependencyList): T | undefined {
+  const manager = useBotManagerContext().manager
+
+  const observable = useMemo(() => {
+    console.log("new observable")
+    return factory(manager)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manager, ...deps])
+
   const lastValue = useRef<T | undefined>(undefined)
 
   const subscribe = useCallback((onChange: () => void) => {
