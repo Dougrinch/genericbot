@@ -6,8 +6,7 @@ import type { ElementConfig, VariableConfig } from "../logic/Config.ts"
 import { toIdentifier } from "../../utils/Identifiers.ts"
 import { parser } from "./generated/script.ts"
 import { lint } from "./ScriptLinter.ts"
-import { BehaviorSubject } from "rxjs"
-import type { VariableValue } from "../logic/VariablesManager.ts"
+import { BehaviorSubject, type Observable } from "rxjs"
 
 export function useScriptExtensions(): ScriptExternals {
   return useBotManagerContext().useStoreState(bm => bm.scriptRunner.getScriptExtensions())
@@ -120,13 +119,7 @@ export class ScriptRunner {
         async: false
       },
       value: () => {
-        //TODO just fix this
-        const ref = new BehaviorSubject<VariableValue | undefined>(undefined)
-        const sub = this.bot.variables.value(variable.id).subscribe(ref)
-        const result = ref.value!.value
-        sub.unsubscribe()
-        ref.complete()
-        return result
+        return getFirstImmediately(this.bot.variables.value(variable.id))!.value
       }
     }
   }
@@ -139,7 +132,7 @@ export class ScriptRunner {
         arguments: []
       },
       value: async () => {
-        const elements = this.bot.elements.getValue(element.id)?.value
+        const elements = getFirstImmediately(this.bot.elements.value(element.id))!.value
         if (elements) {
           for (const e of elements) {
             e.click()
@@ -149,6 +142,15 @@ export class ScriptRunner {
       }
     }
   }
+}
+
+function getFirstImmediately<T>(observable: Observable<T>): T {
+  const ref = new BehaviorSubject<T | undefined>(undefined)
+  const sub = observable.subscribe(ref)
+  const result = ref.value!
+  sub.unsubscribe()
+  ref.complete()
+  return result
 }
 
 const staticFunctionExtensions: FunctionExtension[] = [{

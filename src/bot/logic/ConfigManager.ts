@@ -69,8 +69,6 @@ export class ConfigManager {
   private readonly config: BehaviorSubject<Config>
 
   private readonly actionsCache = new Cache(() => this.getConfig().actions)
-  private readonly variablesCache = new Cache(() => this.getConfig().variables)
-  private readonly elementsCache = new Cache(() => this.getConfig().elements)
 
   constructor(botState: BotManager) {
     this.bot = botState
@@ -85,10 +83,6 @@ export class ConfigManager {
     return this.actionsCache.get(id)
   }
 
-  getVariable(id: string): VariableConfig | undefined {
-    return this.variablesCache.get(id)
-  }
-
   variable(id: string): Observable<VariableConfig | undefined> {
     return this.config.pipe(
       map(c => c.variables.find(v => v.id === id)),
@@ -96,31 +90,18 @@ export class ConfigManager {
     )
   }
 
-  getElement(id: string): ElementConfig | undefined {
-    return this.elementsCache.get(id)
-  }
-
-  getElementId(name: string): string | undefined {
-    return this.elementsCache.getByName(name)?.id
-  }
-
-  getVariableId(name: string): string | undefined {
-    return this.variablesCache.getByName(name)?.id
-  }
-
-  reload() {
-    this.config.next(loadConfig())
-    this.actionsCache.reset()
-    this.variablesCache.reset()
-    this.elementsCache.reset()
+  element(id: string): Observable<ElementConfig | undefined> {
+    return this.config.pipe(
+      map(c => c.elements.find(v => v.id === id)),
+      shareReplay(1)
+    )
   }
 
   private updateConfig(updater: (config: Draft<Config>) => void): void {
-    this.config.next(produce(this.getConfig(), updater))
+    const newConfig = produce(this.getConfig(), updater)
+    saveConfig(newConfig)
     this.actionsCache.reset()
-    this.variablesCache.reset()
-    this.elementsCache.reset()
-    saveConfig(this.getConfig())
+    this.config.next(newConfig)
   }
 
   addAction(): void {
@@ -252,8 +233,6 @@ export class ConfigManager {
         allowMultiple: false
       })
     })
-
-    this.bot.elements.reset(newId)
   }
 
   updateElement(id: string, updates: Partial<ElementConfig>): void {
@@ -265,7 +244,6 @@ export class ConfigManager {
           ...updates
         }
       })
-      this.bot.elements.reset(id)
     }
   }
 
@@ -275,7 +253,6 @@ export class ConfigManager {
       this.updateConfig(config => {
         config.elements.splice(elementIndex, 1)
       })
-      this.bot.elements.reset(id)
     }
   }
 

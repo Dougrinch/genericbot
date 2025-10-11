@@ -1,17 +1,15 @@
 import { type BotManager } from "./BotManager.ts"
 import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
-import { useElementsManager } from "../BotManagerContext.tsx"
+import { useBotObservable } from "../BotManagerContext.tsx"
+import { type Observable, of, shareReplay } from "rxjs"
+import type { ElementConfig } from "./Config.ts"
+import { map, switchMap } from "rxjs/operators"
 
 
 export function useElementValue(id: string): ElementValue | undefined {
-  return useElementsManager(em => em.getValue(id))
+  return useBotObservable(m => m.elements.value(id), [id])
 }
 
-
-type ElementData = {
-  unsubscribe: () => void
-  value: ElementValue
-}
 
 export type ElementValue = {
   value: HTMLElement[] | undefined
@@ -23,77 +21,29 @@ export type ElementValue = {
 
 export class ElementsManager {
   private readonly bot: BotManager
-  private readonly elements: Map<string, ElementData>
 
   constructor(botState: BotManager) {
     this.bot = botState
-    this.elements = new Map()
   }
 
-  getValue(id: string) {
-    return this.elements.get(id)?.value
+  value(id: string): Observable<ElementValue | undefined> {
+    return this.bot.config.element(id)
+      .pipe(
+        switchMap(element => {
+          if (element) {
+            return this.elementValue(element)
+          } else {
+            return of(undefined)
+          }
+        }),
+        shareReplay(1)
+      )
   }
 
-  init(): void {
-    this.resetAll()
-  }
-
-  close() {
-    for (const element of this.elements.values()) {
-      element.unsubscribe()
-    }
-    this.elements.clear()
-  }
-
-  resetAll(): void {
-    const uniqueIds = new Set<string>()
-    for (const element of this.bot.config.getConfig().elements.values()) {
-      uniqueIds.add(element.id)
-    }
-    for (const id of this.elements.keys()) {
-      uniqueIds.add(id)
-    }
-
-    for (const id of uniqueIds) {
-      this.reset(id)
-    }
-  }
-
-  reset(id: string) {
-    const data = this.elements.get(id)
-    if (data) {
-      data.unsubscribe()
-      this.elements.delete(id)
-    }
-
-    const element = this.bot.config.getElement(id)
-    if (element) {
-      const { unsubscribe, elements } = this.bot.xPathSubscriptionManager.subscribeOnElements(element.xpath, true, {
-        onUpdate: elements => {
-          this.handleUpdate(id, elements)
-          this.bot.notifyListeners()
-        }
-      }, element.allowMultiple)
-
-      this.elements.set(id, {
-        unsubscribe,
-        value: this.buildElementValue(elements)
-      })
-    }
-  }
-
-  handleUpdate(id: string, elements: Result<HTMLElement[]>): void {
-    const element = this.bot.config.getElement(id)
-    if (!element) {
-      throw Error(`Element ${id} not found`)
-    }
-
-    const data = this.elements.get(id)
-    if (!data) {
-      throw Error(`ElementData ${id} not found`)
-    }
-
-    data.value = this.buildElementValue(elements)
+  private elementValue(element: ElementConfig): Observable<ElementValue> {
+    return this.bot.xPathSubscriptionManager
+      .elements(element.xpath, true, element.allowMultiple)
+      .pipe(map(e => this.buildElementValue(e)))
   }
 
   private buildElementValue(elements: Result<HTMLElement[]>): ElementValue {

@@ -3,7 +3,6 @@ import { BotManager } from "./logic/BotManager.ts"
 import type { Dispatch } from "../utils/ManagerStore.ts"
 import type { ConfigManager } from "./logic/ConfigManager.ts"
 import type { ActionsManager } from "./logic/ActionsManager.ts"
-import type { ElementsManager } from "./logic/ElementsManager.ts"
 import { useGetSnapshot } from "../utils/Store.ts"
 import type { Observable } from "rxjs"
 import { useObservable } from "../utils/observables/Hook.ts"
@@ -27,10 +26,6 @@ export function useConfigManager<T>(selector: (cm: ConfigManager) => T): T {
 
 export function useActionsManager<T>(selector: (am: ActionsManager) => T): T {
   return useBotManagerContext().useStoreState(bm => selector(bm.actions))
-}
-
-export function useElementsManager<T>(selector: (em: ElementsManager) => T): T {
-  return useBotManagerContext().useStoreState(bm => selector(bm.elements))
 }
 
 
@@ -105,6 +100,7 @@ function createBotManagerContext(manager: BotManager) {
     useStoreState: function <T>(selector: (bm: BotManager) => T): T {
       const subscribe = useCallback((onChange: () => void) => {
         return manager.subscribe(onChange)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [manager])
 
       return useSyncExternalStore(subscribe, useGetSnapshot(() => selector(manager)))
