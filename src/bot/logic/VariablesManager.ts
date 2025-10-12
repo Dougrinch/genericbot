@@ -1,10 +1,11 @@
 import type { VariableConfig } from "./Config.ts"
 import { type BotManager } from "./BotManager.ts"
-import { type ElementInfo, innerTextResult, type Result } from "./XPathSubscriptionManager.ts"
+import { buildResult, type ElementInfo, ElementsInfoKey, innerTextResult } from "./XPathSubscriptionManager.ts"
 import { useBotObservable } from "../BotManagerContext.tsx"
 import { map, switchMap } from "rxjs/operators"
 import { type Observable, of } from "rxjs"
 import type { ElementValue } from "./ElementsManager.ts"
+import type { Result } from "../../utils/Result.ts"
 
 
 export function useVariableValue(id: string): VariableValue | undefined {
@@ -58,13 +59,13 @@ export class VariablesManager {
 
   private buildValue(variable: VariableConfig, innerText: Result<string>): VariableValue {
     if (innerText.ok) {
-      return this.evaluateVariableValue(variable, innerText.value, innerText.elementsInfo)
+      return this.evaluateVariableValue(variable, innerText.value, innerText.attachments.get(ElementsInfoKey))
     } else {
       return {
         value: undefined,
         statusType: innerText.severity,
         statusLine: innerText.error,
-        elementsInfo: innerText.elementsInfo
+        elementsInfo: innerText.attachments.get(ElementsInfoKey)
       }
     }
   }
@@ -72,32 +73,32 @@ export class VariablesManager {
   private buildElement(element: ElementValue | undefined, id: string): Result<HTMLElement> {
     if (element) {
       if (!element.value) {
-        return {
+        return buildResult({
           ok: false,
           error: element.statusLine !== "" ? element.statusLine : `Missing element in ${id}`,
           severity: element.statusType !== "ok" ? element.statusType : "warn",
           elementsInfo: element.elementsInfo
-        }
+        })
       } else if (element.value.length !== 1) {
-        return {
+        return buildResult({
           ok: false,
           error: element.statusLine !== "" ? element.statusLine : `Must be exactly one element in ${id}`,
           severity: element.statusType !== "ok" ? element.statusType : "warn",
           elementsInfo: element.elementsInfo
-        }
+        })
       }
-      return {
+      return buildResult({
         ok: true,
         value: element.value[0],
         elementsInfo: element.elementsInfo
-      }
+      })
     } else {
-      return {
+      return buildResult({
         ok: false,
         error: `Element ${id} not found`,
         severity: "err",
         elementsInfo: []
-      }
+      })
     }
   }
 

@@ -1,8 +1,8 @@
-import type { Try } from "./Try.ts"
+import { error, fmapResult, ok, type Result } from "./Result.ts"
 
-export function findElementsByXPath(xpath: string): Try<HTMLElement[]> {
+export function findElementsByXPath(xpath: string): Result<HTMLElement[]> {
   if (!xpath || !xpath.trim()) {
-    return { ok: false, error: "XPath is empty", severity: "warn" }
+    return error("XPath is empty", "warn")
   }
   try {
     const res = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null)
@@ -13,33 +13,27 @@ export function findElementsByXPath(xpath: string): Try<HTMLElement[]> {
         nodes.push(n)
       }
     }
-    return { ok: true, value: nodes }
-  } catch (error) {
-    if (error instanceof Error) {
-      return { ok: false, error: `XPath error: ${error.message}`, severity: "err" }
+    return ok(nodes)
+  } catch (e) {
+    if (e instanceof Error) {
+      return error(`XPath error: ${e.message}`, "err")
     } else {
-      return { ok: false, error: `XPath error: ${String(error)}`, severity: "err" }
+      return error(`XPath error: ${String(e)}`, "err")
     }
   }
 }
 
-export function findElementByXPath(xpath: string): Try<HTMLElement> {
+export function findElementByXPath(xpath: string): Result<HTMLElement> {
   const res = findElementsByXPath(xpath)
-  if (!res.ok) {
-    return { ok: false, error: res.error, severity: res.severity }
-  }
-
-  if (res.value.length === 0) {
-    return { ok: false, error: "XPath matched 0 elements.", severity: "warn" }
-  }
-
-  if (res.value.length > 1) {
-    return {
-      ok: false,
-      error: `XPath matched ${res.value.length} elements (need exactly 1).`,
-      severity: "warn"
+  return fmapResult(res, elements => {
+    if (elements.length === 0) {
+      return error("XPath matched 0 elements.", "warn")
     }
-  }
 
-  return { ok: true, value: res.value[0] }
+    if (elements.length > 1) {
+      return error(`XPath matched ${elements.length} elements (need exactly 1).`, "warn")
+    }
+
+    return ok(elements[0])
+  })
 }

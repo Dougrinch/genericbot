@@ -7,8 +7,8 @@ import { mapWithInvalidation } from "../../utils/observables/Invalidation.ts"
 import { splitMerge } from "../../utils/observables/SplitMerge.ts"
 import { collectAllToSet, elementsToRoot } from "../../utils/Collections.ts"
 import { map } from "rxjs/operators"
-import { mapTry, type Severity, type Try } from "../../utils/Try.ts"
 import { innerText } from "../../utils/observables/InnerText.ts"
+import { error, fmapResult, mapResult, newAttachmentKey, ok, type Result, type Severity } from "../../utils/Result.ts"
 
 type XPathSubscription = {
   readonly xpath: string
@@ -41,21 +41,12 @@ type Callback = {
   onUpdate: (element: Result<HTMLElement[]>) => void
 }
 
-export type InnerTextChangeCallback = {
-  onUpdate: (innerText: Result<string>) => void
-}
-
 export type ElementChangeCallback = {
   onUpdate: (element: Result<HTMLElement>) => void
 }
 
 export type ElementsChangeCallback = {
   onUpdate: (elements: Result<HTMLElement[]>) => void
-}
-
-export type InnerTextSubscribeResult = {
-  unsubscribe: () => void
-  innerText: Result<string>
 }
 
 export type ElementSubscribeResult = {
@@ -68,16 +59,7 @@ export type ElementsSubscribeResult = {
   elements: Result<HTMLElement[]>
 }
 
-export type Result<T> = {
-  ok: true
-  value: T
-  elementsInfo: ElementInfo[]
-} | {
-  ok: false
-  error: string
-  severity: Severity
-  elementsInfo: ElementInfo[]
-}
+export const ElementsInfoKey = newAttachmentKey<ElementInfo[]>("elementsInfo")
 
 export type ElementInfo = {
   element: HTMLElement
@@ -124,20 +106,12 @@ export class XPathSubscriptionManager {
 
 
   errorResult<R>(source: Result<unknown>, defaultError: string, defaultSeverity: Severity): Result<R> {
-    return {
+    return buildResult({
       ok: false,
       error: source.ok ? defaultError : source.error,
       severity: source.ok ? defaultSeverity : source.severity,
-      elementsInfo: source.elementsInfo
-    }
-  }
-
-  okResult<R>(source: Result<unknown>, value: R): Result<R> {
-    return {
-      ok: true,
-      value: value,
-      elementsInfo: source.elementsInfo
-    }
+      elementsInfo: source.attachments.get(ElementsInfoKey)
+    })
   }
 
 
@@ -170,14 +144,14 @@ export class XPathSubscriptionManager {
           }
 
           if (r.value.length === 0) {
-            if (r.elementsInfo.length > 0) {
+            if (r.attachments.get(ElementsInfoKey).length > 0) {
               return this.errorResult(r, "Element hidden", "warn")
             } else {
               return this.errorResult(r, "XPath matched 0 elements.", "warn")
             }
           }
 
-          return this.okResult(r, r.value[0])
+          return mapResult(r, v => v[0])
         })
       )
   }
@@ -185,43 +159,33 @@ export class XPathSubscriptionManager {
   elements(xpath: string, includeInvisible: boolean, allowMultiple: boolean = true): Observable<Result<HTMLElement[]>> {
     return this.allElements(xpath)
       .pipe(
-        map(t => {
-          if (t.ok) {
-            return {
-              ok: true as const,
-              value: (includeInvisible ? t.value : t.value.filter(i => i.isVisible)).map(i => i.element),
-              elementsInfo: t.value
-            }
-          } else {
-            return {
-              ok: false as const,
-              error: t.error,
-              severity: t.severity,
-              elementsInfo: []
-            }
-          }
+        map(r => {
+          return mapResult(r, elements => {
+            return (includeInvisible ? elements : elements.filter(i => i.isVisible))
+              .map(i => i.element)
+          })
         }),
         map(r => {
           if (!allowMultiple && r.ok && r.value.length > 1) {
-            return this.errorResult(r,
-              `XPath matched ${r.elementsInfo.length} elements (need exactly 1).`,
-              "warn")
+            return fmapResult(r, () => {
+              return error(`XPath matched ${r.attachments.get(ElementsInfoKey).length} elements (need exactly 1).`, "warn")
+            })
           }
           return r
         })
       )
   }
 
-  private allElements(xpath: string): Observable<Try<ElementInfo[]>> {
+  private allElements(xpath: string): Observable<Result<ElementInfo[]>> {
     return observeXPath(xpath)
       .pipe(
         mapWithInvalidation({
-          project: mapTry(es => es.map(e => ({
+          project: r => mapResult(r, es => es.map(e => ({
             element: e,
             isVisible: e.checkVisibility()
           }))),
           invalidationTriggerByProjected: splitMerge(
-            v => collectAllToSet(
+            (v: Result<ElementInfo[]>) => collectAllToSet(
               v.ok ? v.value.map(i => i.element) : [],
               e => elementsToRoot(e, {
                 includeSelf: true,
@@ -230,6 +194,12 @@ export class XPathSubscriptionManager {
             ),
             element => observeAttributeChange(element, ["style", "hidden", "class"])
           )
+        }),
+        map(r => {
+          if (r.ok) {
+            r.attachments.set(ElementsInfoKey, r.value)
+          }
+          return r
         })
       )
   }
@@ -255,19 +225,6 @@ export class XPathSubscriptionManager {
         unsubscribe,
         elements: asArray(element)
       }
-    }
-  }
-
-  subscribeOnInnerText(xpath: string, includeInvisible: boolean, callback: InnerTextChangeCallback): InnerTextSubscribeResult {
-    const { subscription, unsubscribe } = this.subscribe(xpath, {
-      type: "innerText",
-      includeInvisible,
-      onUpdate: callback.onUpdate
-    })
-
-    return {
-      unsubscribe,
-      innerText: this.buildInnerText(subscription, includeInvisible)
     }
   }
 
@@ -335,7 +292,7 @@ export class XPathSubscriptionManager {
     return { updated: true }
   }
 
-  private isChanged(subscription: XPathSubscription, xpathResult: Try<HTMLElement[]>): boolean {
+  private isChanged(subscription: XPathSubscription, xpathResult: Result<HTMLElement[]>): boolean {
     if (!xpathResult.ok && xpathResult.error === subscription.error) {
       return false
     } else if (xpathResult.ok
@@ -445,56 +402,56 @@ export class XPathSubscriptionManager {
 
   private buildElements(subscription: XPathSubscription, includeInvisible: boolean): Result<HTMLElement[]> {
     if (subscription.error !== undefined) {
-      return {
+      return buildResult({
         ok: false,
         error: subscription.error,
         severity: subscription.severity ?? "warn",
         elementsInfo: this.buildElementsInfo(subscription)
-      }
+      })
     }
 
-    return {
+    return buildResult({
       ok: true,
       value: Array.from(subscription.elements.values())
         .filter(e => e.isVisible || includeInvisible)
         .map(e => e.element),
       elementsInfo: this.buildElementsInfo(subscription)
-    }
+    })
   }
 
   private buildSingleValue<T>(subscription: XPathSubscription, includeInvisible: boolean, value: (element: ResolvedElement) => T): Result<T> {
     if (subscription.elements.size === 0) {
-      return {
+      return buildResult({
         ok: false,
         error: subscription.error ?? "XPath matched 0 elements.",
         severity: subscription.severity ?? "warn",
         elementsInfo: this.buildElementsInfo(subscription)
-      }
+      })
     } else if (subscription.elements.size > 1) {
-      return {
+      return buildResult({
         ok: false,
         error: subscription.error ?? `XPath matched ${subscription.elements.size} elements (need exactly 1).`,
         severity: subscription.severity ?? "warn",
         elementsInfo: this.buildElementsInfo(subscription)
-      }
+      })
     }
 
     const element = subscription.elements.values().next().value!
 
     if (!element.isVisible && !includeInvisible) {
-      return {
+      return buildResult({
         ok: false,
         error: "Element hidden",
         severity: "warn",
         elementsInfo: this.buildElementsInfo(subscription)
-      }
+      })
     }
 
-    return {
+    return buildResult({
       ok: true,
       value: value(element),
       elementsInfo: this.buildElementsInfo(subscription)
-    }
+    })
   }
 
   buildElementsInfo(subscription: XPathSubscription) {
@@ -507,15 +464,7 @@ export class XPathSubscriptionManager {
 }
 
 function asArray(t: Result<HTMLElement>): Result<HTMLElement[]> {
-  if (!t.ok) {
-    return t
-  } else {
-    return {
-      ok: true,
-      value: [t.value],
-      elementsInfo: t.elementsInfo
-    }
-  }
+  return mapResult(t, v => [v])
 }
 
 function lazy<T>(f: () => T): { value: T } {
@@ -532,26 +481,27 @@ function lazy<T>(f: () => T): { value: T } {
 
 export function innerTextResult(): OperatorFunction<Result<HTMLElement>, Result<string>> {
   return innerText(
-    mapResultValue(e => e.innerText),
+    r => mapResult(r, e => e.innerText),
     r => r.ok ? r.value : null
   )
 }
 
-function mapResultValue<T, R>(f: (v: T, r: Result<T>) => R): (r: Result<T>) => Result<R> {
-  return (r: Result<T>) => {
-    if (!r.ok) {
-      return {
-        ok: r.ok,
-        error: r.error,
-        severity: r.severity,
-        elementsInfo: r.elementsInfo
-      }
-    } else {
-      return {
-        ok: r.ok,
-        value: f(r.value, r),
-        elementsInfo: r.elementsInfo
-      }
-    }
+export function buildResult<T>(data: {
+  ok: true
+  value: T
+  elementsInfo: ElementInfo[]
+} | {
+  ok: false
+  error: string
+  severity: Severity
+  elementsInfo: ElementInfo[]
+}): Result<T> {
+  let result: Result<T>
+  if (data.ok) {
+    result = ok(data.value)
+  } else {
+    result = error(data.error, data.severity)
   }
+  result.attachments.set(ElementsInfoKey, data.elementsInfo)
+  return result
 }

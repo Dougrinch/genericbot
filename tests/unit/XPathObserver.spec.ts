@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { observeXPath } from "../../src/utils/observables/XPathObserver.ts"
 import { collect } from "./utils.ts"
 import { map } from "rxjs/operators"
@@ -38,7 +38,9 @@ describe("XPathObserver", () => {
     c4.stop()
   })
 
-  it("simple test", async () => {
+  it("mutation detected", async () => {
+    vi.useFakeTimers()
+
     const observer = observeXPath(
       "//div[@id='test-container']//*[self::button[starts-with(@class,'test')] or self::div]"
     ).pipe(map(e => {
@@ -55,12 +57,15 @@ describe("XPathObserver", () => {
     const testContainer = document.getElementById("test-container")!
     testContainer.appendChild(document.createElement("div"))
     expect(await values.next).toHaveLength(4)
+    vi.advanceTimersByTime(1000)
 
     testContainer.children.item(1)!.classList.remove("test-btn")
     expect(await values.next).toHaveLength(3)
+    vi.advanceTimersByTime(1000)
 
     testContainer.remove()
     expect(await values.next).toHaveLength(0)
+    vi.advanceTimersByTime(1000)
 
     const newContainer = document.createElement("div")
     newContainer.id = "test-container"
@@ -69,6 +74,7 @@ describe("XPathObserver", () => {
     intermediate.appendChild(document.createElement("div"))
     document.body.appendChild(newContainer)
     expect(await values.next).toHaveLength(1)
+    vi.advanceTimersByTime(1000)
 
     innerButton.classList.add("testGood")
     expect(await values.next).toHaveLength(2)

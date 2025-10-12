@@ -5,11 +5,12 @@ import { distinctUntilChanged, share } from "rxjs/operators"
 import { splitMerge } from "./SplitMerge.ts"
 import { mapWithInvalidation } from "./Invalidation.ts"
 import { collectAllToSet, elementsToRoot } from "../Collections.ts"
-import type { Try } from "../Try.ts"
+import { isResultsEqual, type Result } from "../Result.ts"
+import { isArraysEqual } from "../Equals.ts"
 
-const cache: Map<string, { subscribed: number, observable: Observable<Try<HTMLElement[]>> }> = new Map()
+const cache: Map<string, { subscribed: number, observable: Observable<Result<HTMLElement[]>> }> = new Map()
 
-export function observeXPath(xpath: string): Observable<Try<HTMLElement[]>> {
+export function observeXPath(xpath: string): Observable<Result<HTMLElement[]>> {
   return new Observable(subscriber => {
     const existing = cache.get(xpath)
     if (existing) {
@@ -34,7 +35,7 @@ export function observeXPath(xpath: string): Observable<Try<HTMLElement[]>> {
   })
 }
 
-function rawElements(xpath: string): Observable<Try<HTMLElement[]>> {
+function rawElements(xpath: string): Observable<Result<HTMLElement[]>> {
   return new Observable<void>(subscriber => {
     subscriber.next()
   }).pipe(
@@ -42,7 +43,7 @@ function rawElements(xpath: string): Observable<Try<HTMLElement[]>> {
       project: () => findElementsByXPath(xpath),
       invalidationTriggerByProjected: pipe(nodeRemoved(), mergeWith(nodeAddedOrAttrChanged))
     }),
-    distinctUntilChanged(isEquals)
+    distinctUntilChanged(isResultsEqual(isArraysEqual()))
   )
 }
 
@@ -57,7 +58,7 @@ const nodeAddedOrAttrChanged = observeMutated(document.body, {
   .pipe(throttleTime(100), share())
 
 function nodeRemoved() {
-  return splitMerge<Try<HTMLElement[]>, HTMLElement, void>(
+  return splitMerge<Result<HTMLElement[]>, HTMLElement, void>(
     elements => collectAllToSet(
       elements.ok ? elements.value : [],
       e => elementsToRoot(e, {
@@ -80,22 +81,4 @@ function nodeRemoved() {
       })
     }
   )
-}
-
-function isEquals(e1: Try<HTMLElement[]>, e2: Try<HTMLElement[]>) {
-  if (e1.ok && e2.ok) {
-    if (e1.value.length !== e2.value.length) {
-      return false
-    }
-    for (let i = 0; i < e1.value.length; i++) {
-      if (e1.value[i] !== e2.value[i]) {
-        return false
-      }
-    }
-    return true
-  }
-  if (!e1.ok && !e2.ok) {
-    return e1.error !== e2.error && e1.severity === e2.severity
-  }
-  return false
 }

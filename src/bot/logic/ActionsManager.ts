@@ -1,7 +1,8 @@
 import { type BotManager } from "./BotManager.ts"
 import type { ActionConfig } from "./Config.ts"
-import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
+import { type ElementInfo, ElementsInfoKey } from "./XPathSubscriptionManager.ts"
 import { useActionsManager } from "../BotManagerContext.tsx"
+import type { Result } from "../../utils/Result.ts"
 
 
 export function usePillStatus(id: string): PillValue | undefined {
@@ -105,7 +106,7 @@ export class ActionsManager {
           actionValue: {
             statusType: elements.ok ? "ok" : elements.severity,
             statusLine: elements.ok ? "" : elements.error,
-            elementsInfo: elements.elementsInfo
+            elementsInfo: elements.attachments.get(ElementsInfoKey)
           },
           timerId: undefined
         })
@@ -136,7 +137,7 @@ export class ActionsManager {
     data.actionValue = {
       statusType: elements.ok ? "ok" : elements.severity,
       statusLine: elements.ok ? "" : elements.error,
-      elementsInfo: elements.elementsInfo
+      elementsInfo: elements.attachments.get(ElementsInfoKey)
     }
   }
 

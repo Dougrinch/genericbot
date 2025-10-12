@@ -1,9 +1,10 @@
 import { type BotManager } from "./BotManager.ts"
-import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
+import { type ElementInfo, ElementsInfoKey } from "./XPathSubscriptionManager.ts"
 import { useBotObservable } from "../BotManagerContext.tsx"
 import { type Observable, of } from "rxjs"
 import type { ElementConfig } from "./Config.ts"
 import { map, switchMap } from "rxjs/operators"
+import type { Result } from "../../utils/Result.ts"
 
 
 export function useElementValue(id: string): ElementValue | undefined {
@@ -51,14 +52,14 @@ export class ElementsManager {
         value: elements.value,
         statusType: "ok",
         statusLine: "",
-        elementsInfo: elements.elementsInfo
+        elementsInfo: elements.attachments.get(ElementsInfoKey)
       }
     } else {
       return {
         value: undefined,
         statusType: elements.severity,
         statusLine: elements.error,
-        elementsInfo: elements.elementsInfo
+        elementsInfo: elements.attachments.get(ElementsInfoKey)
       }
     }
   }
