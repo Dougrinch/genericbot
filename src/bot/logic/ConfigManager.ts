@@ -205,7 +205,9 @@ export class ConfigManager {
       config.variables.push({
         id: newId,
         name: "",
+        elementType: "xpath",
         xpath: "",
+        element: "",
         regex: "",
         type: "number"
       })
@@ -366,6 +368,15 @@ function fixCompatibility(oldConfig: Config): Config {
             id: "elem" + button.id.slice(3)
           })
         }
+      }
+    }
+
+    for (const variable of config.variables) {
+      if (variable.elementType === undefined) {
+        variable.elementType = "xpath"
+      }
+      if (variable.element === undefined) {
+        variable.element = ""
       }
     }
   })

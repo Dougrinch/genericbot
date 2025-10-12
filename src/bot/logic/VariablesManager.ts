@@ -1,9 +1,10 @@
 import type { VariableConfig } from "./Config.ts"
 import { type BotManager } from "./BotManager.ts"
-import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
+import { type ElementInfo, innerTextResult, type Result } from "./XPathSubscriptionManager.ts"
 import { useBotObservable } from "../BotManagerContext.tsx"
 import { map, switchMap } from "rxjs/operators"
 import { type Observable, of } from "rxjs"
+import type { ElementValue } from "./ElementsManager.ts"
 
 
 export function useVariableValue(id: string): VariableValue | undefined {
@@ -39,9 +40,20 @@ export class VariablesManager {
   }
 
   private variableValue(variable: VariableConfig): Observable<VariableValue> {
-    return this.bot.xPathSubscriptionManager
-      .innerText(variable.xpath, false)
-      .pipe(map(v => this.buildValue(variable, v)))
+    if (variable.elementType === "xpath") {
+      return this.bot.xPathSubscriptionManager
+        .innerText(variable.xpath, false)
+        .pipe(map(v => this.buildValue(variable, v)))
+    } else if (variable.elementType === "element") {
+      return this.bot.elements.value(variable.element)
+        .pipe(
+          map(e => this.buildElement(e, variable.element)),
+          innerTextResult(),
+          map(v => this.buildValue(variable, v))
+        )
+    } else {
+      throw new Error("Unknown variable elementType")
+    }
   }
 
   private buildValue(variable: VariableConfig, innerText: Result<string>): VariableValue {
@@ -53,6 +65,38 @@ export class VariablesManager {
         statusType: innerText.severity,
         statusLine: innerText.error,
         elementsInfo: innerText.elementsInfo
+      }
+    }
+  }
+
+  private buildElement(element: ElementValue | undefined, id: string): Result<HTMLElement> {
+    if (element) {
+      if (!element.value) {
+        return {
+          ok: false,
+          error: element.statusLine !== "" ? element.statusLine : `Missing element in ${id}`,
+          severity: element.statusType !== "ok" ? element.statusType : "warn",
+          elementsInfo: element.elementsInfo
+        }
+      } else if (element.value.length !== 1) {
+        return {
+          ok: false,
+          error: element.statusLine !== "" ? element.statusLine : `Must be exactly one element in ${id}`,
+          severity: element.statusType !== "ok" ? element.statusType : "warn",
+          elementsInfo: element.elementsInfo
+        }
+      }
+      return {
+        ok: true,
+        value: element.value[0],
+        elementsInfo: element.elementsInfo
+      }
+    } else {
+      return {
+        ok: false,
+        error: `Element ${id} not found`,
+        severity: "err",
+        elementsInfo: []
       }
     }
   }

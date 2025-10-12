@@ -2,7 +2,7 @@ import * as React from "react"
 import { memo, useMemo } from "react"
 import type { VariableConfig } from "../logic/Config.ts"
 import { useVariableValue } from "../logic/VariablesManager.ts"
-import { useDispatch } from "../BotManagerContext.tsx"
+import { useBotObservable, useDispatch } from "../BotManagerContext.tsx"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
@@ -15,6 +15,8 @@ interface VariableRowProps {
 
 export const VariableRow = memo((props: VariableRowProps) => {
   const dispatch = useDispatch()
+
+  const elementConfigs = useBotObservable(m => m.config.elements(), [])
 
   const variable = props.variable
 
@@ -71,12 +73,40 @@ export const VariableRow = memo((props: VariableRowProps) => {
             onChange={handleInputChange("name")}
           />
 
-          <label className="label" htmlFor={`var-xpath-${variable.id}`}>XPath</label>
-          <XPathInput
-            id={`var-xpath-${variable.id}`}
-            value={variable.xpath}
-            onChange={handleInputChange("xpath")}
-          />
+          <label className="label" htmlFor={`var-element-type-${variable.id}`}>Element Type</label>
+          <select
+            id={`var-element-type-${variable.id}`}
+            value={variable.elementType}
+            onChange={handleInputChange("elementType")}
+          >
+            <option value="xpath">XPath</option>
+            <option value="element">Element</option>
+          </select>
+
+          {variable.elementType === "xpath" && (
+            <>
+              <label className="label" htmlFor={`var-xpath-${variable.id}`}>XPath</label>
+              <XPathInput
+                id={`var-xpath-${variable.id}`}
+                value={variable.xpath}
+                onChange={handleInputChange("xpath")}
+              />
+            </>
+          )}
+          {variable.elementType === "element" && (
+            <>
+              <label className="label" htmlFor={`var-element-${variable.id}`}>Element</label>
+              <select
+                id={`var-element-${variable.id}`}
+                value={variable.element}
+                onChange={handleInputChange("element")}
+              >
+                {elementConfigs.map(e => (
+                  <option key={e.id} value={e.id}>{e.name}</option>
+                ))}
+              </select>
+            </>
+          )}
 
           <label className="label" htmlFor={`var-regex-${variable.id}`}>Regex</label>
           <input
