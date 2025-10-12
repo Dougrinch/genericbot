@@ -260,7 +260,8 @@ export class ConfigManager {
         id: newId,
         name: "",
         xpath: "",
-        allowMultiple: false
+        allowMultiple: false,
+        includeInvisible: false
       })
     })
   }
@@ -368,6 +369,12 @@ function fixCompatibility(oldConfig: Config): Config {
             id: "elem" + button.id.slice(3)
           })
         }
+      }
+    }
+
+    for (const element of config.elements) {
+      if (element.includeInvisible === undefined) {
+        element.includeInvisible = true
       }
     }
 

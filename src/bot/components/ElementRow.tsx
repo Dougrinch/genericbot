@@ -82,6 +82,14 @@ export const ElementRow = memo((props: ElementRowProps) => {
             checked={element.allowMultiple}
             onChange={handleInputChange("allowMultiple")}
           />
+
+          <label className="label" htmlFor={`elem-includeInvisible-${element.id}`}>Include Invisible</label>
+          <input
+            type="checkbox"
+            id={`elem-includeInvisible-${element.id}`}
+            checked={element.includeInvisible}
+            onChange={handleInputChange("includeInvisible")}
+          />
         </>
       )}
       additionalContent={(

@@ -117,19 +117,22 @@ function initialBotConfig(): Config {
         id: "elem_1",
         name: "Dig",
         xpath: "//button[starts-with(., 'Dig for')]",
-        allowMultiple: false
+        allowMultiple: false,
+        includeInvisible: true
       },
       {
         id: "elem_2",
         name: "Buy Gnome",
         xpath: "//button[starts-with(., 'Buy Gnome')]",
-        allowMultiple: false
+        allowMultiple: false,
+        includeInvisible: true
       },
       {
         id: "elem_3",
         name: "Buy All",
         xpath: "//button[starts-with(., 'Buy')]",
-        allowMultiple: true
+        allowMultiple: true,
+        includeInvisible: true
       }
     ]
   }

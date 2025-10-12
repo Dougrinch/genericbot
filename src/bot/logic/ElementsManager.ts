@@ -41,7 +41,7 @@ export class ElementsManager {
 
   private elementValue(element: ElementConfig): Observable<ElementValue> {
     return this.bot.xPathSubscriptionManager
-      .elements(element.xpath, true, element.allowMultiple)
+      .elements(element.xpath, element.includeInvisible, element.allowMultiple)
       .pipe(map(e => this.buildElementValue(e)))
   }
 

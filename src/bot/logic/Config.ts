@@ -34,4 +34,5 @@ export type ElementConfig = Immutable<{
   name: string
   xpath: string
   allowMultiple: boolean
+  includeInvisible: boolean
 }>
