@@ -180,7 +180,9 @@ export class ActionsManager {
       void promise.then(() => {
         data.controller = undefined
         if (action.periodic) {
-          this.requestNextTick(action, data)
+          if (data.pillValue.isRunning) {
+            this.requestNextTick(action, data)
+          }
         } else {
           this.stop(data)
           this.bot.notifyListeners()

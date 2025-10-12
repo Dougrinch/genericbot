@@ -24,10 +24,16 @@ import {
 } from "./generated/script.terms.ts"
 import { findClosestScope, type LintResult, type LintScope } from "./ScriptLinter.ts"
 
+export const CONTEXT: unique symbol = Symbol("Context")
+export type Context = object & { readonly [CONTEXT]: never }
+
+export function asContext<T extends object>(obj: T): T & Context {
+  return obj as T & Context
+}
 
 export type CompilationResult = {
   code: string
-  function: (ctx: object) => Promise<void>
+  function: (ctx: Context) => Promise<void>
   usedFunctions: Set<string>
   usedVariables: Set<string>
 }

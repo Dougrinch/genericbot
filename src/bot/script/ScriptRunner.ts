@@ -1,15 +1,16 @@
 import type { BotManager } from "../logic/BotManager.ts"
-import { compile } from "./ScriptCompiler.ts"
+import { asContext, type CompilationResult, compile, type Context } from "./ScriptCompiler.ts"
 import type { FunctionDescriptor, ScriptExternals, VariableDescriptor } from "./ScriptExternals.ts"
-import { useBotManagerContext } from "../BotManagerContext.tsx"
+import { useBotObservable } from "../BotManagerContext.tsx"
 import type { ElementConfig, VariableConfig } from "../logic/Config.ts"
 import { toIdentifier } from "../../utils/Identifiers.ts"
 import { parser } from "./generated/script.ts"
 import { lint } from "./ScriptLinter.ts"
-import { BehaviorSubject, type Observable } from "rxjs"
+import { BehaviorSubject, combineLatestWith, type Observable } from "rxjs"
+import { map } from "rxjs/operators"
 
 export function useScriptExtensions(): ScriptExternals {
-  return useBotManagerContext().useStoreState(bm => bm.scriptRunner.getScriptExtensions())
+  return useBotObservable(m => m.scriptRunner.scriptExternals(), [])
 }
 
 type Extensions = {
@@ -19,40 +20,48 @@ type Extensions = {
   scriptExternals: ScriptExternals
 }
 
-type FunctionExtension = {
-  desc: FunctionDescriptor
-  value: unknown
+type Descriptor = {
+  name: string
 }
 
-type VariableExtension = {
-  desc: VariableDescriptor
-  value: unknown
+type ValueExtension<D extends Descriptor, V> = {
+  desc: D
+  value?: V
+  valueSubscription?: () => ValueSubscription<V>
+}
+
+type FunctionExtension = ValueExtension<FunctionDescriptor, ExtensionFunctionValue>
+type VariableExtension = ValueExtension<VariableDescriptor, ExtensionVariableValue>
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+type ExtensionFunctionValue = Function
+type ExtensionVariableValue = () => unknown
+
+type ValueSubscription<T> = {
+  value: T
+  stop(): void
+}
+
+type RunnableScript = {
+  run(signal: AbortSignal): Promise<void>
 }
 
 export class ScriptRunner {
   private readonly bot: BotManager
 
-  private variables: readonly VariableConfig[]
-  private elements: readonly ElementConfig[]
-
-  private extensions: Extensions
-
   constructor(botState: BotManager) {
     this.bot = botState
-    this.variables = this.bot.config.getConfig().variables
-    this.elements = this.bot.config.getConfig().elements
-    this.extensions = this.buildExtensions()
   }
 
-  private buildExtensions(): Extensions {
+  private buildExtensions(elementConfigs: readonly ElementConfig[], variableConfigs: readonly VariableConfig[]): Extensions {
     const functions: FunctionExtension[] = [...staticFunctionExtensions]
     const variables: VariableExtension[] = []
 
-    for (const element of this.elements.values()) {
+    for (const element of elementConfigs) {
       functions.push(this.elementExtension(element))
     }
 
-    for (const variable of this.variables.values()) {
+    for (const variable of variableConfigs) {
       variables.push(this.variableExtension(variable))
     }
 
@@ -66,50 +75,109 @@ export class ScriptRunner {
     }
   }
 
-  private revalidate() {
-    const newVariables = this.bot.config.getConfig().variables
-    const newElements = this.bot.config.getConfig().elements
-    if (newVariables !== this.variables || newElements !== this.elements) {
-      this.variables = newVariables
-      this.elements = newElements
-      this.extensions = this.buildExtensions()
-    }
+  scriptExternals(): Observable<ScriptExternals> {
+    return this.extensions()
+      .pipe(
+        map(e => e.scriptExternals)
+      )
   }
 
-  getScriptExtensions() {
-    this.revalidate()
-    return this.extensions.scriptExternals
+  private extensions(): Observable<Extensions> {
+    return this.bot.config.variables()
+      .pipe(
+        combineLatestWith(this.bot.config.elements()),
+        map(([v, e]) => this.buildExtensions(e, v))
+      )
+  }
+
+  runnableScript(script: string): Observable<RunnableScript | null> {
+    return this.extensions()
+      .pipe(
+        map(extensions => {
+          const tree = parser.parse(script)
+          const lintResult = lint(tree, script, extensions.scriptExternals)
+          const compilationResult = compile(lintResult)
+          if (compilationResult == null) {
+            return null
+          }
+          const contextFactory = (signal: AbortSignal) => this.createContext(compilationResult, extensions, signal)
+          return {
+            async run(signal: AbortSignal): Promise<void> {
+              const context = contextFactory(signal)
+              try {
+                return await compilationResult.function(context.context)
+              } finally {
+                context.stop()
+              }
+            }
+          }
+        })
+      )
   }
 
   run(script: string, signal: AbortSignal): Promise<void> {
-    this.revalidate()
-    const tree = parser.parse(script)
-    const lintResult = lint(tree, script, this.extensions.scriptExternals)
-    const compilationResult = compile(lintResult)
-    const context = this.createContext(signal)
-    return compilationResult!.function(context)
+    const observable = this.runnableScript(script)
+    const ref = new BehaviorSubject<RunnableScript | null>(null)
+    const sub = observable.subscribe(ref)
+    const runnableScript = ref.value!
+    sub.unsubscribe()
+    ref.complete()
+    return runnableScript.run(signal)
   }
 
-  private createContext(signal: AbortSignal) {
-    const context = {}
+  private createContext(compilationResult: CompilationResult, extensions: Extensions, signal: AbortSignal): {
+    context: Context
+    stop: () => void
+  } {
+    const context = asContext({})
+    const subscriptions: ValueSubscription<unknown>[] = []
 
-    for (const func of this.extensions.functions) {
-      Object.defineProperty(context, func.desc.name, {
-        value: func.value
-      })
+    function hasOwn<T extends object, K extends keyof T>(obj: T, key: K): obj is T & Required<Pick<T, K>> {
+      return Object.hasOwn(obj, key)
     }
 
-    for (const variable of this.extensions.variables) {
-      Object.defineProperty(context, variable.desc.name, {
-        value: variable.value
-      })
+    function add(extension: ValueExtension<Descriptor, unknown>) {
+      if (hasOwn(extension, "valueSubscription") && hasOwn(extension, "value")) {
+        throw Error(`Only one of valueFactory/value is allowed. Function: ${extension.desc.name}`)
+      }
+
+      if (hasOwn(extension, "valueSubscription")) {
+        const subscription = extension.valueSubscription()
+        subscriptions.push(subscription)
+        Object.defineProperty(context, extension.desc.name, {
+          value: subscription.value
+        })
+      } else {
+        Object.defineProperty(context, extension.desc.name, {
+          value: extension.value
+        })
+      }
+    }
+
+    for (const func of extensions.functions) {
+      if (compilationResult.usedFunctions.has(func.desc.name)) {
+        add(func)
+      }
+    }
+
+    for (const variable of extensions.variables) {
+      if (compilationResult.usedVariables.has(variable.desc.name)) {
+        add(variable)
+      }
     }
 
     Object.defineProperty(context, "signal", {
       value: signal
     })
 
-    return context
+    return {
+      context,
+      stop: () => {
+        for (const factory of subscriptions) {
+          factory.stop()
+        }
+      }
+    }
   }
 
   private variableExtension(variable: VariableConfig): VariableExtension {
@@ -118,8 +186,13 @@ export class ScriptRunner {
         name: toIdentifier(variable.name),
         async: false
       },
-      value: () => {
-        return getFirstImmediately(this.bot.variables.value(variable.id))!.value
+      valueSubscription: () => {
+        return this.createValueSubscription(
+          this.bot.variables.value(variable.id),
+          get => () => {
+            return get()?.value
+          }
+        )
       }
     }
   }
@@ -131,26 +204,38 @@ export class ScriptRunner {
         async: true,
         arguments: []
       },
-      value: async () => {
-        const elements = getFirstImmediately(this.bot.elements.value(element.id))!.value
-        if (elements) {
-          for (const e of elements) {
-            e.click()
+      valueSubscription: () => {
+        return this.createValueSubscription(
+          this.bot.elements.value(element.id),
+          get => async () => {
+            const elements = get()?.value
+            if (elements) {
+              for (const e of elements) {
+                e.click()
+              }
+              await new Promise(resolve => setTimeout(resolve, 0))
+            }
           }
-          await new Promise(resolve => setTimeout(resolve, 0))
-        }
+        )
       }
     }
   }
-}
 
-function getFirstImmediately<T>(observable: Observable<T>): T {
-  const ref = new BehaviorSubject<T | undefined>(undefined)
-  const sub = observable.subscribe(ref)
-  const result = ref.value!
-  sub.unsubscribe()
-  ref.complete()
-  return result
+  private createValueSubscription<T, V>(observable: Observable<T>, f: (get: () => T) => V): ValueSubscription<V> {
+    const UNSET = {}
+    const subject = new BehaviorSubject<T | typeof UNSET>(UNSET)
+    const subscription = observable.subscribe(subject)
+    return {
+      value: f(() => {
+        const value = subject.value
+        if (value === UNSET) {
+          throw Error("Value must be calculated")
+        }
+        return value as T
+      }),
+      stop: () => subscription.unsubscribe()
+    }
+  }
 }
 
 const staticFunctionExtensions: FunctionExtension[] = [{

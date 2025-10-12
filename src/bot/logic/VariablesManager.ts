@@ -3,7 +3,7 @@ import { type BotManager } from "./BotManager.ts"
 import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
 import { useBotObservable } from "../BotManagerContext.tsx"
 import { map, switchMap } from "rxjs/operators"
-import { type Observable, of, shareReplay } from "rxjs"
+import { type Observable, of } from "rxjs"
 
 
 export function useVariableValue(id: string): VariableValue | undefined {
@@ -34,8 +34,7 @@ export class VariablesManager {
           } else {
             return of(undefined)
           }
-        }),
-        shareReplay(1)
+        })
       )
   }
 

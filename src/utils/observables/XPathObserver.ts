@@ -16,7 +16,8 @@ export function observeXPath(xpath: string): Observable<Try<HTMLElement[]>> {
       existing.subscribed += 1
       existing.observable.subscribe(subscriber)
     } else {
-      const newObservable = rawElements(xpath).pipe(shareReplay(1))
+      const newObservable = rawElements(xpath)
+        .pipe(shareReplay({ bufferSize: 1, refCount: true }))
       newObservable.subscribe(subscriber)
       cache.set(xpath, {
         subscribed: 1,

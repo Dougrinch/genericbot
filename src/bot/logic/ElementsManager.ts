@@ -1,7 +1,7 @@
 import { type BotManager } from "./BotManager.ts"
 import type { ElementInfo, Result } from "./XPathSubscriptionManager.ts"
 import { useBotObservable } from "../BotManagerContext.tsx"
-import { type Observable, of, shareReplay } from "rxjs"
+import { type Observable, of } from "rxjs"
 import type { ElementConfig } from "./Config.ts"
 import { map, switchMap } from "rxjs/operators"
 
@@ -35,8 +35,7 @@ export class ElementsManager {
           } else {
             return of(undefined)
           }
-        }),
-        shareReplay(1)
+        })
       )
   }
 

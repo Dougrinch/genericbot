@@ -2,8 +2,8 @@ import { type ActionConfig, type Config, type ElementConfig, type VariableConfig
 import { type BotManager } from "./BotManager.ts"
 import { type Draft, produce } from "immer"
 import { useBotObservable } from "../BotManagerContext.tsx"
-import { BehaviorSubject, Observable, shareReplay } from "rxjs"
-import { map } from "rxjs/operators"
+import { BehaviorSubject, Observable } from "rxjs"
+import { distinctUntilChanged, map } from "rxjs/operators"
 
 
 export function useConfig(): Config
@@ -84,21 +84,44 @@ export class ConfigManager {
     return this.configSubject
   }
 
+  variables(): Observable<VariableConfig[]> {
+    return this.config()
+      .pipe(
+        map(c => c.variables as VariableConfig[]),
+        distinctUntilChanged()
+      )
+  }
+
+  elements(): Observable<ElementConfig[]> {
+    return this.config()
+      .pipe(
+        map(c => c.elements as ElementConfig[]),
+        distinctUntilChanged()
+      )
+  }
+
   getAction(id: string): ActionConfig | undefined {
     return this.actionsCache.get(id)
   }
 
+  action(id: string): Observable<ActionConfig | undefined> {
+    return this.config().pipe(
+      map(c => c.actions.find(v => v.id === id)),
+      distinctUntilChanged()
+    )
+  }
+
   variable(id: string): Observable<VariableConfig | undefined> {
-    return this.configSubject.pipe(
+    return this.config().pipe(
       map(c => c.variables.find(v => v.id === id)),
-      shareReplay(1)
+      distinctUntilChanged()
     )
   }
 
   element(id: string): Observable<ElementConfig | undefined> {
-    return this.configSubject.pipe(
+    return this.config().pipe(
       map(c => c.elements.find(v => v.id === id)),
-      shareReplay(1)
+      distinctUntilChanged()
     )
   }
 
@@ -123,10 +146,10 @@ export class ConfigManager {
       config.actions.push({
         id: newId,
         name: "",
-        type: "xpath",
+        type: "script",
         xpath: "",
         script: "",
-        periodic: true,
+        periodic: false,
         interval: 100,
         allowMultiple: false
       })
