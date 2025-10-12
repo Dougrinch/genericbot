@@ -26,6 +26,7 @@ export function HoverableElementHighlighter(props: HoverableElementHighlighterPr
 
     for (const element of props.elements) {
       const overlay = document.createElement("div")
+      overlay.style.boxSizing = "content-box"
       overlay.style.position = "fixed"
       overlay.style.pointerEvents = "none"
       overlay.style.border = `${borderWidth}px solid #ff4444`
