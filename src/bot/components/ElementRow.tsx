@@ -7,6 +7,7 @@ import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
 import { XPathInput } from "../xpath/XPathInput.tsx"
+import { ElementsInfoKey } from "../logic/XPathSubscriptionManager.ts"
 
 interface ElementRowProps {
   element: ElementConfig
@@ -19,9 +20,9 @@ export const ElementRow = memo((props: ElementRowProps) => {
   const element = props.element
 
   const elementValue = useElementValue(element.id)
-  const elements = elementValue?.value
-  const statusLine = elementValue?.statusLine
-  const statusType = elementValue?.statusType
+  const elements = elementValue && elementValue.ok ? elementValue.value : undefined
+  const statusLine = (!elementValue || !elementValue.ok) ? elementValue?.error : undefined
+  const statusType = (!elementValue || !elementValue.ok) ? elementValue?.severity : undefined
 
   function handleInputChange(field: keyof ElementConfig): (e: string | React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
     return e => {
@@ -100,7 +101,7 @@ export const ElementRow = memo((props: ElementRowProps) => {
             </div>
           )}
 
-          <FoundElementsList elements={elementValue?.elementsInfo ?? []} />
+          <FoundElementsList elements={elementValue?.attachments?.get(ElementsInfoKey) ?? []} />
         </>
       )}
     />

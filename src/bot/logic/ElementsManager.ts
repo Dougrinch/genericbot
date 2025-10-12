@@ -1,22 +1,13 @@
 import { type BotManager } from "./BotManager.ts"
-import { type ElementInfo, ElementsInfoKey } from "./XPathSubscriptionManager.ts"
 import { useBotObservable } from "../BotManagerContext.tsx"
 import { type Observable, of } from "rxjs"
 import type { ElementConfig } from "./Config.ts"
-import { map, switchMap } from "rxjs/operators"
+import { switchMap } from "rxjs/operators"
 import type { Result } from "../../utils/Result.ts"
 
 
-export function useElementValue(id: string): ElementValue | undefined {
+export function useElementValue(id: string): Result<HTMLElement[]> | undefined {
   return useBotObservable(m => m.elements.value(id), [id])
-}
-
-
-export type ElementValue = {
-  value: HTMLElement[] | undefined
-  statusLine: string
-  statusType: "warn" | "ok" | "err"
-  elementsInfo: ElementInfo[]
 }
 
 
@@ -27,7 +18,7 @@ export class ElementsManager {
     this.bot = botState
   }
 
-  value(id: string): Observable<ElementValue | undefined> {
+  value(id: string): Observable<Result<HTMLElement[]> | undefined> {
     return this.bot.config.element(id)
       .pipe(
         switchMap(element => {
@@ -40,27 +31,8 @@ export class ElementsManager {
       )
   }
 
-  private elementValue(element: ElementConfig): Observable<ElementValue> {
+  private elementValue(element: ElementConfig): Observable<Result<HTMLElement[]>> {
     return this.bot.xPathSubscriptionManager
       .elements(element.xpath, element.includeInvisible, element.allowMultiple)
-      .pipe(map(e => this.buildElementValue(e)))
-  }
-
-  private buildElementValue(elements: Result<HTMLElement[]>): ElementValue {
-    if (elements.ok) {
-      return {
-        value: elements.value,
-        statusType: "ok",
-        statusLine: "",
-        elementsInfo: elements.attachments.get(ElementsInfoKey)
-      }
-    } else {
-      return {
-        value: undefined,
-        statusType: elements.severity,
-        statusLine: elements.error,
-        elementsInfo: elements.attachments.get(ElementsInfoKey)
-      }
-    }
   }
 }

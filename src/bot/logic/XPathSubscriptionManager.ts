@@ -8,7 +8,7 @@ import { splitMerge } from "../../utils/observables/SplitMerge.ts"
 import { collectAllToSet, elementsToRoot } from "../../utils/Collections.ts"
 import { map } from "rxjs/operators"
 import { innerText } from "../../utils/observables/InnerText.ts"
-import { error, fmapResult, mapResult, newAttachmentKey, ok, type Result, type Severity } from "../../utils/Result.ts"
+import { error, flatMapResult, mapResult, newAttachmentKey, ok, type Result, type Severity } from "../../utils/Result.ts"
 
 type XPathSubscription = {
   readonly xpath: string
@@ -167,7 +167,7 @@ export class XPathSubscriptionManager {
         }),
         map(r => {
           if (!allowMultiple && r.ok && r.value.length > 1) {
-            return fmapResult(r, () => {
+            return flatMapResult(r, () => {
               return error(`XPath matched ${r.attachments.get(ElementsInfoKey).length} elements (need exactly 1).`, "warn")
             })
           }

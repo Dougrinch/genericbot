@@ -208,7 +208,8 @@ export class ScriptRunner {
         return this.createValueSubscription(
           this.bot.elements.value(element.id),
           get => async () => {
-            const elements = get()?.value
+            const result = get()
+            const elements = result && result.ok ? result.value : undefined
             if (elements) {
               for (const e of elements) {
                 e.click()

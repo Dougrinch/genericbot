@@ -76,7 +76,7 @@ export function mapResult<T, R>(r: Result<T>, f: (v: T) => R): Result<R> {
   }
 }
 
-export function fmapResult<T, R>(r: Result<T>, f: (v: T) => Result<R>): Result<R> {
+export function flatMapResult<T, R>(r: Result<T>, f: (v: T) => Result<R>): Result<R> {
   if (!r.ok) {
     return r
   } else {
