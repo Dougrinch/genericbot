@@ -1,4 +1,4 @@
-import { debounceTime, mergeWith, Observable, pipe, shareReplay } from "rxjs"
+import { mergeWith, Observable, pipe, shareReplay, throttleTime } from "rxjs"
 import { findElementsByXPath } from "../xpath.ts"
 import { isRelevantAttribute, observeMutated } from "./MutationObserver.ts"
 import { distinctUntilChanged, share } from "rxjs/operators"
@@ -54,7 +54,7 @@ const nodeAddedOrAttrChanged = observeMutated(document.body, {
   attributes: true,
   attributeFilter: trackedAttributes
 }, mr => isRelevantAttribute(mr, trackedAttributes) || (mr.type === "childList" && mr.addedNodes.length > 0))
-  .pipe(debounceTime(100), share())
+  .pipe(throttleTime(100), share())
 
 function nodeRemoved() {
   return splitMerge<Try<HTMLElement[]>, HTMLElement, void>(

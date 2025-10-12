@@ -40,6 +40,8 @@ export function GamePanel() {
       ? "hidden"
       : "visible"
 
+  const [selected, setSelected] = useState("111")
+
   return (
     <div className="game-panel">
       <div className="game-header">
@@ -54,6 +56,17 @@ export function GamePanel() {
           </div>
         )}
         <BuySnowWhiteButton />
+      </div>
+      <div id="selection" className="game-buttons">
+        {...["111", "222", "333"].map(value => (
+          <button
+            style={selected === value ? { textDecoration: "underline" } : {}}
+            onClick={() => setSelected(value)}
+          >
+            {value}
+          </button>
+        ))}
+        <span className="game-stats">{selected}</span>
       </div>
       <div className="control-panel">
         <div style={{ fontSize: "16px", fontWeight: "bold" }}>Gold Status: {goldStatus}</div>

@@ -145,10 +145,10 @@ button:focus-visible {
   gap: 1rem;
 }
 
-
 .game-buttons {
   display: flex;
   gap: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .control-panel {
@@ -156,9 +156,4 @@ button:focus-visible {
   flex-direction: column;
   gap: 0.5rem;
   width: fit-content;
-  margin-top: 4rem;
-}
-
-.read-the-docs {
-  color: #888;
 }
