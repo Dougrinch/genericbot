@@ -1,13 +1,14 @@
 import { ElementSubscriptionManager } from "./ElementSubscriptionManager.ts"
 import { findElementsByXPath } from "../../utils/xpath.ts"
-import { observeAttributeChange, observeMutated } from "../../utils/observables/MutationObserver.ts"
-import { EMPTY, type Observable } from "rxjs"
+import { observeAttributeChange } from "../../utils/observables/MutationObserver.ts"
+import { type Observable, type OperatorFunction } from "rxjs"
 import { observeXPath } from "../../utils/observables/XPathObserver.ts"
 import { mapWithInvalidation } from "../../utils/observables/Invalidation.ts"
 import { splitMerge } from "../../utils/observables/SplitMerge.ts"
 import { collectAllToSet, elementsToRoot } from "../../utils/Collections.ts"
-import { map, switchMap } from "rxjs/operators"
+import { map } from "rxjs/operators"
 import { mapTry, type Severity, type Try } from "../../utils/Try.ts"
+import { innerText } from "../../utils/observables/InnerText.ts"
 
 type XPathSubscription = {
   readonly xpath: string
@@ -156,21 +157,7 @@ export class XPathSubscriptionManager {
   innerText(xpath: string, includeInvisible: boolean): Observable<Result<string>> {
     return this.element(xpath, includeInvisible)
       .pipe(
-        mapWithInvalidation({
-          project: mapResultValue(e => e.innerText),
-          invalidationTriggerBySource: switchMap(r => {
-            if (r.ok) {
-              return observeMutated(r.value, {
-                subtree: true,
-                childList: true,
-                characterData: true,
-                attributes: true
-              }, () => true)
-            } else {
-              return EMPTY
-            }
-          })
-        })
+        innerTextResult()
       )
   }
 
@@ -541,6 +528,13 @@ function lazy<T>(f: () => T): { value: T } {
       return value
     }
   }
+}
+
+export function innerTextResult(): OperatorFunction<Result<HTMLElement>, Result<string>> {
+  return innerText(
+    mapResultValue(e => e.innerText),
+    r => r.ok ? r.value : null
+  )
 }
 
 function mapResultValue<T, R>(f: (v: T, r: Result<T>) => R): (r: Result<T>) => Result<R> {

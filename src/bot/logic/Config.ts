@@ -22,7 +22,9 @@ export type ActionConfig = Immutable<{
 export type VariableConfig = Immutable<{
   id: string
   name: string
+  elementType: "xpath" | "element"
   xpath: string
+  element: string
   regex: string
   type: "number" | "string"
 }>

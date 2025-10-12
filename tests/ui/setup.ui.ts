@@ -78,28 +78,36 @@ function initialBotConfig(): Config {
       {
         id: "var_1",
         name: "score",
+        elementType: "xpath",
         xpath: "//span[@id='score']",
+        element: "",
         regex: "",
         type: "number"
       },
       {
         id: "var_2",
         name: "lives",
+        elementType: "xpath",
         xpath: "//div[@class='lives']",
+        element: "",
         regex: "(\\d+)",
         type: "number"
       },
       {
         id: "var_3",
         name: "name",
+        elementType: "xpath",
         xpath: "//div[@id='name']",
+        element: "",
         regex: "",
         type: "string"
       },
       {
         id: "var_4",
         name: "Gold",
+        elementType: "xpath",
         xpath: "//div[starts-with(., 'Gold:')][not(.//div[starts-with(., 'Gold:')])]",
+        element: "",
         regex: "Gold: (\\d+)",
         type: "number"
       }
