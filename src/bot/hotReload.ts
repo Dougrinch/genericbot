@@ -23,7 +23,9 @@ export function hotReload(terminate: () => void) {
 }
 
 async function asyncHotReload(terminate: () => void) {
-  const response = await fetch("https://dougrinch.com/genericbot/bot.iife.js")
+  const response = await fetch("https://dougrinch.com/genericbot/bot.iife.js", {
+    cache: "reload"
+  })
   const code = await response.text()
 
   if (!code || !code.trim()) {
