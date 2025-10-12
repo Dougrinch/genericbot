@@ -1,14 +1,15 @@
 import * as React from "react"
 import { type PropsWithChildren, useRef, useState } from "react"
+import { BotPanelContext } from "./BotPanelContext.ts"
 
 export function BotPanel({ children }: PropsWithChildren) {
   const [position, setPosition] = useState({ bottom: 10, right: 10 })
-  const dragRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const isDragging = useRef(false)
   const dragStart = useRef({ x: 0, y: 0, bottom: 0, right: 0 })
 
   const onDragStart = (e: React.MouseEvent) => {
-    if (!dragRef.current) return
+    if (!panelRef.current) return
 
     // Only allow dragging when clicking directly on the panel, not on interactive elements
     const target = e.target as HTMLElement
@@ -22,7 +23,7 @@ export function BotPanel({ children }: PropsWithChildren) {
     if (isInteractiveElement) return
 
     isDragging.current = true
-    const rect = dragRef.current.getBoundingClientRect()
+    const rect = panelRef.current.getBoundingClientRect()
 
     dragStart.current = {
       x: e.clientX,
@@ -55,16 +56,18 @@ export function BotPanel({ children }: PropsWithChildren) {
   }
 
   return (
-    <div
-      ref={dragRef}
-      className="panel"
-      style={{
-        bottom: `${position.bottom}px`,
-        right: `${position.right}px`
-      }}
-      onMouseDown={onDragStart}
-    >
-      {children}
-    </div>
+    <BotPanelContext value={panelRef}>
+      <div
+        ref={panelRef}
+        className="panel"
+        style={{
+          bottom: `${position.bottom}px`,
+          right: `${position.right}px`
+        }}
+        onMouseDown={onDragStart}
+      >
+        {children}
+      </div>
+    </BotPanelContext>
   )
 }

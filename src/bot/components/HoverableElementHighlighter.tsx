@@ -1,4 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useRef } from "react"
+import { useBotPanelRef } from "./BotPanelContext.ts"
 
 interface HoverableElementHighlighterProps {
   elements: HTMLElement[]
@@ -6,12 +7,15 @@ interface HoverableElementHighlighterProps {
 }
 
 export function HoverableElementHighlighter(props: HoverableElementHighlighterProps) {
+  const rootRef = useBotPanelRef()
   const overlaysRef = useRef<HTMLDivElement[] | null>(null)
 
   const handleMouseLeave = useCallback(() => {
     overlaysRef.current?.forEach(e => e.remove())
     overlaysRef.current = null
-  }, [])
+
+    rootRef.current?.classList.remove("transparent-above-highlight")
+  }, [rootRef])
 
   const handleMouseEnter = useCallback(() => {
     handleMouseLeave()
@@ -38,7 +42,9 @@ export function HoverableElementHighlighter(props: HoverableElementHighlighterPr
       overlaysRef.current.push(overlay)
       document.body.appendChild(overlay)
     }
-  }, [handleMouseLeave, props.elements])
+
+    rootRef.current?.classList.add("transparent-above-highlight")
+  }, [handleMouseLeave, props.elements, rootRef])
 
   useEffect(() => {
     return () => {
