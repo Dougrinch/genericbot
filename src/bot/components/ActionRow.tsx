@@ -8,7 +8,7 @@ import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
 import { ScriptInput } from "../script/ScriptInput.tsx"
 import { XPathInput } from "../xpath/XPathInput.tsx"
-import { ElementsInfoKey } from "../logic/XPathSubscriptionManager.ts"
+import { ElementsInfoKey } from "../logic/ElementsObserver.ts"
 
 interface ActionConfigRowProps {
   action: ActionConfig

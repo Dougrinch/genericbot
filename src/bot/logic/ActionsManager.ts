@@ -7,6 +7,7 @@ import type { RunnableScript } from "../script/ScriptRunner.ts"
 import { splitMerge } from "../../utils/observables/SplitMerge.ts"
 import { ObservableMap } from "../../utils/observables/ObservableMap.ts"
 import { switchMap } from "rxjs/operators"
+import { elements } from "./ElementsObserver.ts"
 
 
 export function usePillStatus(id: string): PillStatus | undefined {
@@ -109,8 +110,7 @@ export class ActionsManager {
 
   private actionValue(action: ActionConfig): Observable<Result<RunnableScript>> {
     if (action.type === "xpath") {
-      return this.bot.xPathSubscriptionManager
-        .elements(action.xpath, true, action.allowMultiple)
+      return elements(action.xpath, true, action.allowMultiple)
         .pipe(mapResult(e => this.elementsAction(action, e)))
     } else if (action.type === "script") {
       return this.bot.scriptRunner

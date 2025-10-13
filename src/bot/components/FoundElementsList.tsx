@@ -1,4 +1,4 @@
-import type { ElementInfo } from "../logic/XPathSubscriptionManager.ts"
+import type { ElementInfo } from "../logic/ElementsObserver.ts"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
 
 interface ElementsListProps {

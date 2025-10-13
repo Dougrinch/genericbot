@@ -1,10 +1,10 @@
 import type { VariableConfig } from "./Config.ts"
 import { type BotManager } from "./BotManager.ts"
-import { innerTextResult } from "./XPathSubscriptionManager.ts"
+import { element, singleElement } from "./ElementsObserver.ts"
 import { useBotObservable } from "../BotManagerContext.tsx"
-import { map } from "rxjs/operators"
 import { type Observable } from "rxjs"
-import { error, ok, rawFlatMapResult, type Result, switchMapResult } from "../../utils/Result.ts"
+import { error, flatMapResult, ok, type Result, switchMapResult } from "../../utils/Result.ts"
+import { innerTextResult } from "../../utils/observables/InnerText.ts"
 
 
 export function useVariableValue(id: string): Result<VariableValue> {
@@ -29,34 +29,22 @@ export class VariablesManager {
   }
 
   private variableValue(variable: VariableConfig): Observable<Result<VariableValue>> {
+    return this.locateElement(variable)
+      .pipe(
+        innerTextResult(),
+        flatMapResult(innerText => this.evaluateVariableValue(variable, innerText))
+      )
+  }
+
+  private locateElement(variable: VariableConfig): Observable<Result<HTMLElement>> {
     if (variable.elementType === "xpath") {
-      return this.bot.xPathSubscriptionManager
-        .innerText(variable.xpath, false)
-        .pipe(map(v => this.buildValue(variable, v)))
+      return element(variable.xpath, false)
     } else if (variable.elementType === "element") {
       return this.bot.elements.value(variable.element)
-        .pipe(
-          map(e => this.buildElement(e, variable.element)),
-          innerTextResult(),
-          map(v => this.buildValue(variable, v))
-        )
+        .pipe(singleElement())
     } else {
       throw new Error("Unknown variable elementType")
     }
-  }
-
-  private buildValue(variable: VariableConfig, innerText: Result<string>): Result<VariableValue> {
-    return rawFlatMapResult(innerText, text => this.evaluateVariableValue(variable, text))
-  }
-
-  private buildElement(element: Result<HTMLElement[]>, id: string): Result<HTMLElement> {
-    return rawFlatMapResult(element, elements => {
-      if (elements.length !== 1) {
-        return error(`Must be exactly one element in ${id}`, "warn")
-      } else {
-        return ok(elements[0])
-      }
-    })
   }
 
   private evaluateVariableValue(variable: VariableConfig, innerText: string): Result<VariableValue> {

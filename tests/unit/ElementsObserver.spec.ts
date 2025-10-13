@@ -1,8 +1,8 @@
-import { XPathSubscriptionManager } from "../../src/bot/logic/XPathSubscriptionManager.ts"
+import { elements } from "../../src/bot/logic/ElementsObserver.ts"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { collect } from "./utils.ts"
 
-describe("XPathSubscriptionManager", () => {
+describe("ElementsObserver", () => {
   beforeEach(() => {
     // Setup test DOM
     document.body.innerHTML = `
@@ -56,9 +56,8 @@ describe("XPathSubscriptionManager", () => {
 })
 
 function getFirstValue(xpath: string) {
-  const manager = new XPathSubscriptionManager()
-  const elements = collect(manager.elements(xpath, false, true))
-  const result = elements.last
-  elements.stop()
+  const collector = collect(elements(xpath, false, true))
+  const result = collector.last
+  collector.stop()
   return result
 }

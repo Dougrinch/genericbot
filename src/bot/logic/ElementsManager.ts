@@ -3,6 +3,7 @@ import { useBotObservable } from "../BotManagerContext.tsx"
 import { type Observable } from "rxjs"
 import type { ElementConfig } from "./Config.ts"
 import { type Result, switchMapResult } from "../../utils/Result.ts"
+import { elements } from "./ElementsObserver.ts"
 
 
 export function useElementValue(id: string): Result<HTMLElement[]> {
@@ -25,7 +26,6 @@ export class ElementsManager {
   }
 
   private elementValue(element: ElementConfig): Observable<Result<HTMLElement[]>> {
-    return this.bot.xPathSubscriptionManager
-      .elements(element.xpath, element.includeInvisible, element.allowMultiple)
+    return elements(element.xpath, element.includeInvisible, element.allowMultiple)
   }
 }
