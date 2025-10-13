@@ -2,12 +2,12 @@ import type { VariableConfig } from "./Config.ts"
 import { type BotManager } from "./BotManager.ts"
 import { innerTextResult } from "./XPathSubscriptionManager.ts"
 import { useBotObservable } from "../BotManagerContext.tsx"
-import { map, switchMap } from "rxjs/operators"
-import { type Observable, of } from "rxjs"
-import { error, flatMapResult, ok, type Result } from "../../utils/Result.ts"
+import { map } from "rxjs/operators"
+import { type Observable } from "rxjs"
+import { error, ok, rawFlatMapResult, type Result, switchMapResult } from "../../utils/Result.ts"
 
 
-export function useVariableValue(id: string): Result<VariableValue> | undefined {
+export function useVariableValue(id: string): Result<VariableValue> {
   return useBotObservable(m => m.variables.value(id), [id])
 }
 
@@ -21,16 +21,10 @@ export class VariablesManager {
     this.bot = botState
   }
 
-  value(id: string): Observable<Result<VariableValue> | undefined> {
+  value(id: string): Observable<Result<VariableValue>> {
     return this.bot.config.variable(id)
       .pipe(
-        switchMap(variable => {
-          if (variable) {
-            return this.variableValue(variable)
-          } else {
-            return of(undefined)
-          }
-        })
+        switchMapResult(v => this.variableValue(v))
       )
   }
 
@@ -52,25 +46,17 @@ export class VariablesManager {
   }
 
   private buildValue(variable: VariableConfig, innerText: Result<string>): Result<VariableValue> {
-    if (innerText.ok) {
-      return flatMapResult(innerText, text => this.evaluateVariableValue(variable, text))
-    } else {
-      return innerText
-    }
+    return rawFlatMapResult(innerText, text => this.evaluateVariableValue(variable, text))
   }
 
-  private buildElement(element: Result<HTMLElement[]> | undefined, id: string): Result<HTMLElement> {
-    if (element) {
-      return flatMapResult(element, elements => {
-        if (elements.length !== 1) {
-          return error(`Must be exactly one element in ${id}`, "warn")
-        } else {
-          return ok(elements[0])
-        }
-      })
-    } else {
-      return error(`Element ${id} not found`, "err")
-    }
+  private buildElement(element: Result<HTMLElement[]>, id: string): Result<HTMLElement> {
+    return rawFlatMapResult(element, elements => {
+      if (elements.length !== 1) {
+        return error(`Must be exactly one element in ${id}`, "warn")
+      } else {
+        return ok(elements[0])
+      }
+    })
   }
 
   private evaluateVariableValue(variable: VariableConfig, innerText: string): Result<VariableValue> {

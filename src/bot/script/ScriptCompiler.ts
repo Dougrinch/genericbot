@@ -23,6 +23,7 @@ import {
   WhileStatement
 } from "./generated/script.terms.ts"
 import { findClosestScope, type LintResult, type LintScope } from "./ScriptLinter.ts"
+import { error, ok, type Result } from "../../utils/Result.ts"
 
 export const CONTEXT: unique symbol = Symbol("Context")
 export type Context = object & { readonly [CONTEXT]: never }
@@ -38,15 +39,15 @@ export type CompilationResult = {
   usedVariables: Set<string>
 }
 
-export function compile(lintResult: LintResult): CompilationResult | null {
+export function compile(lintResult: LintResult): Result<CompilationResult> {
   if (lintResult.correct) {
     return compileNode(lintResult.root, lintResult.tree.topNode, lintResult.code)
   } else {
-    return null
+    return error("Script is incorrect", "warn")
   }
 }
 
-function compileNode(root: LintScope, node: SyntaxNode, code: string): CompilationResult | null {
+function compileNode(root: LintScope, node: SyntaxNode, code: string): Result<CompilationResult> {
   const usedFunctions = new Set<string>()
   const usedVariables = new Set<string>()
 
@@ -250,15 +251,15 @@ function compileNode(root: LintScope, node: SyntaxNode, code: string): Compilati
   try {
     // eslint-disable-next-line @typescript-eslint/no-implied-eval,@typescript-eslint/no-unsafe-call
     const func = new Function(scriptCode)() as (ctx: object) => Promise<void>
-    return {
+    return ok({
       code: scriptCode,
       function: func,
       usedFunctions,
       usedVariables
-    }
+    })
   } catch (e) {
     console.error(e)
     console.log(scriptCode)
-    return null
+    return error(String(e), "err")
   }
 }

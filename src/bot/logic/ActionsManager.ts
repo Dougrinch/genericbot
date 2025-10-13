@@ -1,143 +1,139 @@
 import { type BotManager } from "./BotManager.ts"
 import type { ActionConfig } from "./Config.ts"
-import { type ElementInfo, ElementsInfoKey } from "./XPathSubscriptionManager.ts"
-import { useActionsManager } from "../BotManagerContext.tsx"
-import type { Result } from "../../utils/Result.ts"
+import { useBotObservable } from "../BotManagerContext.tsx"
+import { mapResult, type Result, switchMapResult } from "../../utils/Result.ts"
+import { BehaviorSubject, type Observable, of, type Subscription, tap } from "rxjs"
+import type { RunnableScript } from "../script/ScriptRunner.ts"
+import { splitMerge } from "../../utils/observables/SplitMerge.ts"
+import { ObservableMap } from "../../utils/observables/ObservableMap.ts"
+import { switchMap } from "rxjs/operators"
 
 
-export function usePillStatus(id: string): PillValue | undefined {
-  return useActionsManager(am => am.getPillValue(id))
+export function usePillStatus(id: string): PillStatus | undefined {
+  return useBotObservable(m => m.actions.pillStatus(id), [id])
 }
 
-export function useActionValue(id: string): ActionValue | undefined {
-  return useActionsManager(am => am.getActionValue(id))
+export function useActionValue(id: string): Result<unknown> {
+  return useBotObservable(m => m.actions.value(id), [id])
 }
 
 
 type ActionData = {
-  unsubscribe?: () => void
-  elements?: HTMLElement[]
+  pillStatus: BehaviorSubject<PillStatus>
+
+  script?: RunnableScript
   timerId?: number
   controller?: AbortController
-  pillValue: PillValue
-  actionValue: ActionValue
 }
 
-type PillValue = {
+type ActionDataWithScript = ActionData & Required<Pick<ActionData, "script">>
+
+function hasScript(data: ActionData): data is ActionDataWithScript {
+  return data.script !== undefined
+}
+
+type PillStatus = {
   isRunning: boolean
   status: "stopped" | "running" | "auto-stopped" | "waiting"
-}
-
-type ActionValue = {
-  statusLine: string
-  statusType: "warn" | "ok" | "err"
-  elementsInfo?: ElementInfo[]
 }
 
 
 export class ActionsManager {
   private readonly bot: BotManager
-  private readonly actions: Map<string, ActionData>
+  private readonly actions: ObservableMap<string, ActionData>
+
+  private subscription?: Subscription
 
   constructor(botState: BotManager) {
     this.bot = botState
-    this.actions = new Map()
+    this.actions = new ObservableMap()
   }
 
-  getPillValue(id: string) {
-    return this.actions.get(id)?.pillValue
-  }
-
-  getActionValue(id: string) {
-    return this.actions.get(id)?.actionValue
+  pillStatus(id: string) {
+    return this.actions.observe(id)
+      .pipe(switchMap(data => {
+        if (data) {
+          return data.pillStatus
+        } else {
+          return of(undefined)
+        }
+      }))
   }
 
   init() {
-    this.resetAll()
+    this.subscription = this.bot.config.actions()
+      .pipe(
+        splitMerge(
+          actions => new Set(actions.map(p => p.id)),
+          id => this.value(id)
+            .pipe(tap({
+              next: r => this.onScriptUpdate(id, r),
+              unsubscribe: () => this.onScriptRemove(id)
+            }))
+        )
+      ).subscribe()
   }
 
-  close() {
-    for (const action of this.actions.values()) {
-      action.unsubscribe?.()
-      this.stop(action)
+  private onScriptUpdate(id: string, r: Result<RunnableScript>) {
+    this.onScriptRemove(id)
+
+    const data: ActionData = {
+      pillStatus: new BehaviorSubject<PillStatus>({
+        isRunning: false,
+        status: "stopped"
+      }),
+      script: r.ok ? r.value : undefined
     }
-    this.actions.clear()
+    this.actions.set(id, data)
   }
 
-  resetAll() {
-    const uniqueIds = new Set<string>()
-    for (const action of this.bot.config.getConfig().actions.values()) {
-      uniqueIds.add(action.id)
-    }
-    for (const id of this.actions.keys()) {
-      uniqueIds.add(id)
-    }
-
-    for (const id of uniqueIds) {
-      this.reset(id)
-    }
-  }
-
-  reset(id: string) {
+  private onScriptRemove(id: string) {
     const data = this.actions.get(id)
     if (data) {
-      data.unsubscribe?.()
+      data.pillStatus.complete()
       this.stop(data)
       this.actions.delete(id)
     }
+  }
 
-    const action = this.bot.config.getAction(id)
-    if (action) {
-      if (action.type === "xpath") {
-        const { unsubscribe, elements } = this.bot.xPathSubscriptionManager.subscribeOnElements(action.xpath, true, {
-          onUpdate: element => {
-            this.handleUpdate(action.id, element)
-            this.bot.notifyListeners()
-          }
-        }, action.allowMultiple)
+  close() {
+    this.subscription?.unsubscribe()
+  }
 
-        this.actions.set(id, {
-          unsubscribe,
-          elements: elements.ok ? elements.value : undefined,
-          pillValue: {
-            isRunning: false,
-            status: "stopped"
-          },
-          actionValue: {
-            statusType: elements.ok ? "ok" : elements.severity,
-            statusLine: elements.ok ? "" : elements.error,
-            elementsInfo: elements.attachments.get(ElementsInfoKey)
-          },
-          timerId: undefined
-        })
-      } else if (action.type === "script") {
-        this.actions.set(id, {
-          pillValue: {
-            isRunning: false,
-            status: "stopped"
-          },
-          actionValue: {
-            statusType: "ok",
-            statusLine: ""
-          },
-          timerId: undefined
-        })
-      }
+  value(id: string): Observable<Result<RunnableScript>> {
+    return this.bot.config.action(id)
+      .pipe(
+        switchMapResult(action => this.actionValue(action))
+      )
+  }
+
+  private actionValue(action: ActionConfig): Observable<Result<RunnableScript>> {
+    if (action.type === "xpath") {
+      return this.bot.xPathSubscriptionManager
+        .elements(action.xpath, true, action.allowMultiple)
+        .pipe(mapResult(e => this.elementsAction(action, e)))
+    } else if (action.type === "script") {
+      return this.bot.scriptRunner
+        .runnableScript(action)
+    } else {
+      throw new Error("Unreachable")
     }
   }
 
-  private handleUpdate(id: string, elements: Result<HTMLElement[]>): void {
-    const data = this.actions.get(id)
-    if (!data) {
-      throw Error(`ActionData ${id} not found`)
-    }
-
-    data.elements = elements.ok ? elements.value : undefined
-    data.pillValue = this.buildPillValue(data)
-    data.actionValue = {
-      statusType: elements.ok ? "ok" : elements.severity,
-      statusLine: elements.ok ? "" : elements.error,
-      elementsInfo: elements.attachments.get(ElementsInfoKey)
+  elementsAction(action: ActionConfig, elements: HTMLElement[]): RunnableScript {
+    return {
+      run(): Promise<void> {
+        try {
+          for (const element of elements) {
+            element.click()
+          }
+          return Promise.resolve()
+        } catch (e) {
+          return Promise.reject(e)
+        }
+      },
+      periodic: action.periodic,
+      interval: action.interval
     }
   }
 
@@ -147,87 +143,57 @@ export class ActionsManager {
       throw Error(`ActionData ${id} not found`)
     }
 
-    if (data.pillValue.isRunning) {
+    if (data.pillStatus.value.isRunning) {
       this.stop(data)
     } else {
-      const action = this.bot.config.getAction(id)
-      if (!action) {
-        throw Error(`Action ${id} not found`)
-      }
-
-      this.start(action, data)
+      this.start(data)
     }
   }
 
-  private start(action: ActionConfig, data: ActionData) {
-    this.requestNextTick(action, data, true)
-    data.pillValue = this.buildPillValue(data)
-  }
-
-  private handleTick(id: string) {
-    const data = this.actions.get(id)
-    if (!data) {
-      throw Error(`ActionData ${id} not found`)
-    }
-    const action = this.bot.config.getAction(id)
-    if (!action) {
-      throw Error(`Action ${id} not found`)
-    }
-
-    const controller = new AbortController()
-    const promise = this.tryRunAction(action, data, controller.signal)
-    if (promise != null) {
-      data.controller = controller
-      void promise.then(() => {
-        data.controller = undefined
-        if (action.periodic) {
-          if (data.pillValue.isRunning) {
-            this.requestNextTick(action, data)
-          }
-        } else {
-          this.stop(data)
-          this.bot.notifyListeners()
-        }
-      }, reason => {
-        if (reason instanceof Error) {
-          console.error(reason)
-        }
-
-        if (data.pillValue.isRunning) {
-          this.stop(data)
-          data.pillValue.status = "auto-stopped"
-          this.bot.notifyListeners()
-        }
-      })
+  private start(data: ActionData) {
+    if (hasScript(data)) {
+      this.requestNextTick(data, true)
+      data.pillStatus.next(this.buildPillStatus(data))
     } else {
-      data.pillValue.status = "waiting"
-      this.requestNextTick(action, data)
+      data.pillStatus.next({
+        isRunning: data.pillStatus.value.isRunning,
+        status: "waiting"
+      })
     }
   }
 
-  private requestNextTick(action: ActionConfig, data: ActionData, immediate: boolean = false) {
-    data.timerId = setTimeout(() => {
-      this.handleTick(action.id)
-      this.bot.notifyListeners()
-    }, immediate ? 0 : action.interval)
-  }
-
-  private tryRunAction(action: ActionConfig, data: ActionData, signal: AbortSignal): Promise<void> | null {
-    switch (action.type) {
-      case "xpath": {
-        if (data.elements) {
-          for (const element of data.elements) {
-            element.click()
-          }
-          return Promise.resolve()
-        } else {
-          return null
+  private handleTick(data: ActionDataWithScript) {
+    const controller = new AbortController()
+    const promise = data.script.run(controller.signal)
+    data.controller = controller
+    void promise.then(() => {
+      data.controller = undefined
+      if (data.script.periodic) {
+        if (data.pillStatus.value.isRunning) {
+          this.requestNextTick(data)
         }
+      } else {
+        this.stop(data)
       }
-      case "script": {
-        return this.bot.scriptRunner.run(action.script, signal)
+    }, reason => {
+      if (reason instanceof Error) {
+        console.error(reason)
       }
-    }
+
+      if (data.pillStatus.value.isRunning) {
+        this.stop(data)
+        data.pillStatus.next({
+          isRunning: data.pillStatus.value.isRunning,
+          status: "auto-stopped"
+        })
+      }
+    })
+  }
+
+  private requestNextTick(data: ActionDataWithScript, immediate: boolean = false) {
+    data.timerId = setTimeout(() => {
+      this.handleTick(data)
+    }, immediate ? 0 : data.script.interval)
   }
 
   private stop(data: ActionData) {
@@ -239,10 +205,10 @@ export class ActionsManager {
       }
       data.controller = undefined
     }
-    data.pillValue = this.buildPillValue(data)
+    data.pillStatus.next(this.buildPillStatus(data))
   }
 
-  private buildPillValue(data: ActionData): PillValue {
+  private buildPillStatus(data: ActionData): PillStatus {
     if (data.timerId === undefined) {
       return {
         isRunning: false,
@@ -251,7 +217,7 @@ export class ActionsManager {
     } else {
       return {
         isRunning: true,
-        status: data.elements || !data.unsubscribe ? "running" : "waiting"
+        status: data.script ? "running" : "waiting"
       }
     }
   }

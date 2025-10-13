@@ -1,9 +1,9 @@
 import { type ActionConfig, type Config, type ElementConfig, type VariableConfig } from "./Config.ts"
-import { type BotManager } from "./BotManager.ts"
 import { type Draft, produce } from "immer"
 import { useBotObservable } from "../BotManagerContext.tsx"
 import { BehaviorSubject, Observable } from "rxjs"
 import { distinctUntilChanged, map } from "rxjs/operators"
+import { error, ok, type Result } from "../../utils/Result.ts"
 
 
 export function useConfig(): Config
@@ -14,74 +14,29 @@ export function useConfig<T>(selector?: (state: Config) => T): T | Config {
 }
 
 
-class Cache<T extends { readonly id: string, readonly name: string }> {
-  private readonly elements: () => readonly T[]
-
-  constructor(elements: () => readonly T[]) {
-    this.elements = elements
-  }
-
-  private readonly cache = new Map<keyof T, Map<string, { v: T } | "empty">>()
-
-  get(id: string): T | undefined {
-    return this.getBy("id", id)
-  }
-
-  getByName(name: string) {
-    return this.getBy("name", name)
-  }
-
-  getBy<K extends keyof T>(keyType: K, key: string): T | undefined {
-    let cache = this.cache.get(keyType)
-    if (cache === undefined) {
-      cache = new Map()
-      this.cache.set(keyType, cache)
-    }
-
-    const cached = cache.get(key)
-    if (cached === "empty") {
-      return undefined
-    }
-    if (cached !== undefined) {
-      return cached.v
-    }
-
-    const element = this.elements().find(e => e[keyType] === key)
-    if (element) {
-      cache.set(key, { v: element })
-      return element
-    } else {
-      cache.set(key, "empty")
-      return undefined
-    }
-  }
-
-  reset() {
-    this.cache.clear()
-  }
-}
-
-
 export const CONFIG_STORAGE_KEY = "autoclick.config.v1"
 
 export class ConfigManager {
-  private readonly bot: BotManager
-
   private readonly configSubject: BehaviorSubject<Config>
 
-  private readonly actionsCache = new Cache(() => this.getConfig().actions)
-
-  constructor(botState: BotManager) {
-    this.bot = botState
+  constructor() {
     this.configSubject = new BehaviorSubject<Config>(loadConfig())
   }
 
-  getConfig(): Config {
+  private getConfig(): Config {
     return this.configSubject.value
   }
 
   config(): Observable<Config> {
     return this.configSubject
+  }
+
+  actions(): Observable<ActionConfig[]> {
+    return this.config()
+      .pipe(
+        map(c => c.actions as ActionConfig[]),
+        distinctUntilChanged()
+      )
   }
 
   variables(): Observable<VariableConfig[]> {
@@ -100,35 +55,33 @@ export class ConfigManager {
       )
   }
 
-  getAction(id: string): ActionConfig | undefined {
-    return this.actionsCache.get(id)
-  }
-
-  action(id: string): Observable<ActionConfig | undefined> {
+  action(id: string): Observable<Result<ActionConfig>> {
     return this.config().pipe(
       map(c => c.actions.find(v => v.id === id)),
-      distinctUntilChanged()
+      distinctUntilChanged(),
+      map(v => v !== undefined ? ok(v) : error(`Action ${id} not found`, "err"))
     )
   }
 
-  variable(id: string): Observable<VariableConfig | undefined> {
+  variable(id: string): Observable<Result<VariableConfig>> {
     return this.config().pipe(
       map(c => c.variables.find(v => v.id === id)),
-      distinctUntilChanged()
+      distinctUntilChanged(),
+      map(v => v !== undefined ? ok(v) : error(`Variable ${id} not found`, "err"))
     )
   }
 
-  element(id: string): Observable<ElementConfig | undefined> {
+  element(id: string): Observable<Result<ElementConfig>> {
     return this.config().pipe(
       map(c => c.elements.find(v => v.id === id)),
-      distinctUntilChanged()
+      distinctUntilChanged(),
+      map(v => v !== undefined ? ok(v) : error(`Element ${id} not found`, "err"))
     )
   }
 
   private updateConfig(updater: (config: Draft<Config>) => void): void {
     const newConfig = produce(this.getConfig(), updater)
     saveConfig(newConfig)
-    this.actionsCache.reset()
     this.configSubject.next(newConfig)
   }
 
@@ -154,8 +107,6 @@ export class ConfigManager {
         allowMultiple: false
       })
     })
-
-    this.bot.actions.reset(newId)
   }
 
   updateAction(id: string, updates: Partial<ActionConfig>): void {
@@ -167,7 +118,6 @@ export class ConfigManager {
           ...updates
         }
       })
-      this.bot.actions.reset(id)
     }
   }
 
@@ -177,7 +127,6 @@ export class ConfigManager {
       this.updateConfig(config => {
         config.actions.splice(actionIndex, 1)
       })
-      this.bot.actions.reset(id)
     }
   }
 

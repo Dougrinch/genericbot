@@ -28,7 +28,7 @@ function forceUnsubscribeFromRoot<T>(entry: Entry<T>) {
 }
 
 
-export function useObservable<T>(observable: Observable<T>): T | undefined {
+export function useObservable<T>(observable: Observable<T>): T {
   const entryRef = useRef<Entry<T>>(null)
   if (entryRef.current == null) {
     entryRef.current = {

@@ -1,13 +1,9 @@
 import { XPathSubscriptionManager } from "../../src/bot/logic/XPathSubscriptionManager.ts"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { collect } from "./utils.ts"
 
 describe("XPathSubscriptionManager", () => {
-  let manager: XPathSubscriptionManager
-
   beforeEach(() => {
-    manager = new XPathSubscriptionManager()
-    manager.init()
-
     // Setup test DOM
     document.body.innerHTML = `
       <div id="test-container">
@@ -24,14 +20,11 @@ describe("XPathSubscriptionManager", () => {
   })
 
   afterEach(() => {
-    manager.close()
     document.body.innerHTML = ""
   })
 
   it("should subscribe to multiple elements", () => {
-    const { elements } = manager.subscribeOnElements("//button[@class='test-btn']", false, {
-      onUpdate: () => {}
-    })
+    const elements = getFirstValue("//button[@class='test-btn']")
 
     expect(elements.ok).toBe(true)
     if (elements.ok) {
@@ -43,9 +36,7 @@ describe("XPathSubscriptionManager", () => {
   })
 
   it("should handle empty results", () => {
-    const { elements } = manager.subscribeOnElements("//button[@class='nonexistent']", false, {
-      onUpdate: () => {}
-    })
+    const elements = getFirstValue("//button[@class='nonexistent']")
 
     expect(elements.ok).toBe(true)
     if (elements.ok) {
@@ -54,9 +45,7 @@ describe("XPathSubscriptionManager", () => {
   })
 
   it("should handle invalid xpath", () => {
-    const { elements } = manager.subscribeOnElements("//[", false, {
-      onUpdate: () => {}
-    })
+    const elements = getFirstValue("//[")
 
     expect(elements.ok).toBe(false)
     if (!elements.ok) {
@@ -65,3 +54,11 @@ describe("XPathSubscriptionManager", () => {
     }
   })
 })
+
+function getFirstValue(xpath: string) {
+  const manager = new XPathSubscriptionManager()
+  const elements = collect(manager.elements(xpath, false, true))
+  const result = elements.last
+  elements.stop()
+  return result
+}

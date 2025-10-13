@@ -22,9 +22,9 @@ export const VariableRow = memo((props: VariableRowProps) => {
   const variable = props.variable
 
   const variableValue = useVariableValue(variable.id)
-  const value = variableValue && variableValue.ok ? variableValue.value : undefined
-  const statusLine = (!variableValue || !variableValue.ok) ? variableValue?.error : undefined
-  const statusType = (!variableValue || !variableValue.ok) ? variableValue?.severity : undefined
+  const value = variableValue.ok ? variableValue.value : undefined
+  const statusLine = !variableValue.ok ? variableValue.error : undefined
+  const statusType = !variableValue.ok ? variableValue.severity : undefined
 
   function handleInputChange(field: keyof VariableConfig): (e: string | React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
     return e => {
@@ -40,10 +40,10 @@ export const VariableRow = memo((props: VariableRowProps) => {
     }
   }
 
-  const elementsInfo = variableValue?.attachments?.get(ElementsInfoKey)
+  const elementsInfo = variableValue.attachments.get(ElementsInfoKey)
   const elements = useMemo(() => {
-    if (variableValue?.ok ?? false) {
-      return (elementsInfo ?? [])
+    if (variableValue.ok) {
+      return elementsInfo
         .filter(e => e.isVisible)
         .map(e => e.element)
     } else {

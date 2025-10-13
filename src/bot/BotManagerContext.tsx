@@ -1,16 +1,6 @@
-import {
-  createContext,
-  type DependencyList,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useSyncExternalStore
-} from "react"
+import { createContext, type DependencyList, useContext, useMemo, useRef } from "react"
 import { BotManager } from "./logic/BotManager.ts"
 import type { Dispatch } from "../utils/ManagerStore.ts"
-import type { ActionsManager } from "./logic/ActionsManager.ts"
-import { useGetSnapshot } from "../utils/Store.ts"
 import type { Observable } from "rxjs"
 import { useObservable } from "../utils/observables/Hook.ts"
 
@@ -23,14 +13,8 @@ export function useBotObservable<T>(factory: (m: BotManager) => Observable<T>, d
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manager, ...deps])
 
-  return useObservable(observable)!
+  return useObservable(observable)
 }
-
-
-export function useActionsManager<T>(selector: (am: ActionsManager) => T): T {
-  return useBotManagerContext().useStoreState(bm => selector(bm.actions))
-}
-
 
 export function useDispatch(): Dispatch<BotManager> {
   return useBotManagerContext().dispatch
@@ -39,7 +23,6 @@ export function useDispatch(): Dispatch<BotManager> {
 
 export type BotManagerContextData = {
   manager: BotManager
-  useStoreState<T>(selector: (bm: BotManager) => T): T
   get dispatch(): Dispatch<BotManager>
 }
 
@@ -92,23 +75,12 @@ function createBotManagerContext(manager: BotManager) {
           throw new TypeError(`Tried to call non-function property "${String(lastStep)}"`)
         }
         Reflect.apply(func, current, argArray)
-        manager.notifyListeners()
       }
     })
   }
 
   return {
     manager,
-
-    useStoreState: function <T>(selector: (bm: BotManager) => T): T {
-      const subscribe = useCallback((onChange: () => void) => {
-        return manager.subscribe(onChange)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [manager])
-
-      return useSyncExternalStore(subscribe, useGetSnapshot(() => selector(manager)))
-    },
-
     dispatch: buildDispatch()
   }
 }

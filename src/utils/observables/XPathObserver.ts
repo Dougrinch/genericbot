@@ -1,7 +1,7 @@
 import { mergeWith, Observable, pipe, shareReplay, throttleTime } from "rxjs"
 import { findElementsByXPath } from "../xpath.ts"
 import { isRelevantAttribute, observeMutated } from "./MutationObserver.ts"
-import { distinctUntilChanged, share } from "rxjs/operators"
+import { share } from "rxjs/operators"
 import { splitMerge } from "./SplitMerge.ts"
 import { mapWithInvalidation } from "./Invalidation.ts"
 import { collectAllToSet, elementsToRoot } from "../Collections.ts"
@@ -41,9 +41,9 @@ function rawElements(xpath: string): Observable<Result<HTMLElement[]>> {
   }).pipe(
     mapWithInvalidation({
       project: () => findElementsByXPath(xpath),
+      isEquals: isResultsEqual(isArraysEqual()),
       invalidationTriggerByProjected: pipe(nodeRemoved(), mergeWith(nodeAddedOrAttrChanged))
-    }),
-    distinctUntilChanged(isResultsEqual(isArraysEqual()))
+    })
   )
 }
 

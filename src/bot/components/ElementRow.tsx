@@ -20,9 +20,9 @@ export const ElementRow = memo((props: ElementRowProps) => {
   const element = props.element
 
   const elementValue = useElementValue(element.id)
-  const elements = elementValue && elementValue.ok ? elementValue.value : undefined
-  const statusLine = (!elementValue || !elementValue.ok) ? elementValue?.error : undefined
-  const statusType = (!elementValue || !elementValue.ok) ? elementValue?.severity : undefined
+  const elements = elementValue.ok ? elementValue.value : undefined
+  const statusLine = !elementValue.ok ? elementValue?.error : undefined
+  const statusType = !elementValue.ok ? elementValue?.severity : undefined
 
   function handleInputChange(field: keyof ElementConfig): (e: string | React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
     return e => {
@@ -101,7 +101,7 @@ export const ElementRow = memo((props: ElementRowProps) => {
             </div>
           )}
 
-          <FoundElementsList elements={elementValue?.attachments?.get(ElementsInfoKey) ?? []} />
+          <FoundElementsList elements={elementValue.attachments.get(ElementsInfoKey)} />
         </>
       )}
     />

@@ -7,8 +7,6 @@ import { ScriptRunner } from "../script/ScriptRunner.ts"
 
 
 export class BotManager {
-  readonly listeners = new Set<() => void>([])
-
   readonly config: ConfigManager
   readonly xPathSubscriptionManager: XPathSubscriptionManager
   readonly variables: VariablesManager
@@ -17,7 +15,7 @@ export class BotManager {
   readonly scriptRunner: ScriptRunner
 
   constructor() {
-    this.config = new ConfigManager(this)
+    this.config = new ConfigManager()
     this.xPathSubscriptionManager = new XPathSubscriptionManager()
     this.variables = new VariablesManager(this)
     this.actions = new ActionsManager(this)
@@ -26,23 +24,10 @@ export class BotManager {
   }
 
   init(): void {
-    this.xPathSubscriptionManager.init()
     this.actions.init()
   }
 
   close(): void {
     this.actions.close()
-    this.xPathSubscriptionManager.close()
-  }
-
-  subscribe(onChange: () => void): () => void {
-    this.listeners.add(onChange)
-    return () => {
-      this.listeners.delete(onChange)
-    }
-  }
-
-  notifyListeners(): void {
-    this.listeners.forEach(onChange => onChange())
   }
 }

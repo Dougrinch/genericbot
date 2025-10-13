@@ -2,12 +2,13 @@ import type { BotManager } from "../logic/BotManager.ts"
 import { asContext, type CompilationResult, compile, type Context } from "./ScriptCompiler.ts"
 import type { FunctionDescriptor, ScriptExternals, VariableDescriptor } from "./ScriptExternals.ts"
 import { useBotObservable } from "../BotManagerContext.tsx"
-import type { ElementConfig, VariableConfig } from "../logic/Config.ts"
+import type { ActionConfig, ElementConfig, VariableConfig } from "../logic/Config.ts"
 import { toIdentifier } from "../../utils/Identifiers.ts"
 import { parser } from "./generated/script.ts"
 import { lint } from "./ScriptLinter.ts"
 import { BehaviorSubject, combineLatestWith, type Observable } from "rxjs"
 import { map } from "rxjs/operators"
+import { ok, type Result } from "../../utils/Result.ts"
 
 export function useScriptExtensions(): ScriptExternals {
   return useBotObservable(m => m.scriptRunner.scriptExternals(), [])
@@ -42,8 +43,10 @@ type ValueSubscription<T> = {
   stop(): void
 }
 
-type RunnableScript = {
+export type RunnableScript = {
   run(signal: AbortSignal): Promise<void>
+  periodic: boolean
+  interval: number
 }
 
 export class ScriptRunner {
@@ -90,39 +93,32 @@ export class ScriptRunner {
       )
   }
 
-  runnableScript(script: string): Observable<RunnableScript | null> {
+  runnableScript(action: ActionConfig): Observable<Result<RunnableScript>> {
     return this.extensions()
       .pipe(
         map(extensions => {
-          const tree = parser.parse(script)
-          const lintResult = lint(tree, script, extensions.scriptExternals)
+          const tree = parser.parse(action.script)
+          const lintResult = lint(tree, action.script, extensions.scriptExternals)
           const compilationResult = compile(lintResult)
-          if (compilationResult == null) {
-            return null
+          if (!compilationResult.ok) {
+            return compilationResult
           }
-          const contextFactory = (signal: AbortSignal) => this.createContext(compilationResult, extensions, signal)
-          return {
+          const contextFactory = (signal: AbortSignal) => this.createContext(compilationResult.value, extensions, signal)
+          const result: RunnableScript = {
             async run(signal: AbortSignal): Promise<void> {
               const context = contextFactory(signal)
               try {
-                return await compilationResult.function(context.context)
+                return await compilationResult.value.function(context.context)
               } finally {
                 context.stop()
               }
-            }
+            },
+            periodic: action.periodic,
+            interval: action.interval
           }
+          return ok(result)
         })
       )
-  }
-
-  run(script: string, signal: AbortSignal): Promise<void> {
-    const observable = this.runnableScript(script)
-    const ref = new BehaviorSubject<RunnableScript | null>(null)
-    const sub = observable.subscribe(ref)
-    const runnableScript = ref.value!
-    sub.unsubscribe()
-    ref.complete()
-    return runnableScript.run(signal)
   }
 
   private createContext(compilationResult: CompilationResult, extensions: Extensions, signal: AbortSignal): {
@@ -191,7 +187,7 @@ export class ScriptRunner {
           this.bot.variables.value(variable.id),
           get => () => {
             const result = get()
-            return result && result.ok ? result.value : undefined
+            return result.ok ? result.value : undefined
           }
         )
       }
@@ -210,7 +206,7 @@ export class ScriptRunner {
           this.bot.elements.value(element.id),
           get => async () => {
             const result = get()
-            const elements = result && result.ok ? result.value : undefined
+            const elements = result.ok ? result.value : undefined
             if (elements) {
               for (const e of elements) {
                 e.click()
@@ -277,7 +273,6 @@ const staticFunctionExtensions: FunctionExtension[] = [{
   value: async function (ms: number, signal: AbortSignal): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       if (signal.aborted) {
-        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         reject(signal.reason)
         return
       }
@@ -287,7 +282,6 @@ const staticFunctionExtensions: FunctionExtension[] = [{
       function onAbort() {
         clearTimeout(id!)
         signal.removeEventListener("abort", onAbort)
-        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         reject(signal.reason)
       }
 

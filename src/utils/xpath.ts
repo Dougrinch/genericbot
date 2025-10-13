@@ -1,4 +1,4 @@
-import { error, flatMapResult, ok, type Result } from "./Result.ts"
+import { error, rawFlatMapResult, ok, type Result } from "./Result.ts"
 
 export function findElementsByXPath(xpath: string): Result<HTMLElement[]> {
   if (!xpath || !xpath.trim()) {
@@ -25,7 +25,7 @@ export function findElementsByXPath(xpath: string): Result<HTMLElement[]> {
 
 export function findElementByXPath(xpath: string): Result<HTMLElement> {
   const res = findElementsByXPath(xpath)
-  return flatMapResult(res, elements => {
+  return rawFlatMapResult(res, elements => {
     if (elements.length === 0) {
       return error("XPath matched 0 elements.", "warn")
     }

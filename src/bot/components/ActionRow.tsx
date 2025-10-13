@@ -8,6 +8,7 @@ import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
 import { ScriptInput } from "../script/ScriptInput.tsx"
 import { XPathInput } from "../xpath/XPathInput.tsx"
+import { ElementsInfoKey } from "../logic/XPathSubscriptionManager.ts"
 
 interface ActionConfigRowProps {
   action: ActionConfig
@@ -18,8 +19,8 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
   const dispatch = useDispatch()
 
   const actionValue = useActionValue(action.id)
-  const statusLine = actionValue?.statusLine
-  const statusType = actionValue?.statusType
+  const statusLine = !actionValue.ok ? actionValue.error : undefined
+  const statusType = !actionValue.ok ? actionValue.severity : undefined
 
   function handleInputChange(field: keyof ActionConfig): (e: string | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void {
     return e => {
@@ -39,15 +40,16 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
     dispatch.config.updateAction(action.id, { script: value })
   }, [action.id, dispatch])
 
+  const elementsInfo = actionValue.attachments.get(ElementsInfoKey)
   const elements = useMemo(() => {
-    if (statusType === "ok") {
-      return (actionValue?.elementsInfo ?? [])
+    if (actionValue.ok) {
+      return elementsInfo
         .filter(e => e.isVisible)
         .map(e => e.element)
     } else {
       return null
     }
-  }, [actionValue?.elementsInfo, statusType])
+  }, [actionValue, elementsInfo])
 
   const value = action.type === "xpath"
     ? (elements
@@ -162,7 +164,7 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
           )}
 
           {action.type === "xpath" && (
-            <FoundElementsList elements={actionValue?.elementsInfo ?? []} />
+            <FoundElementsList elements={actionValue.attachments.get(ElementsInfoKey) ?? []} />
           )}
         </>
       )}

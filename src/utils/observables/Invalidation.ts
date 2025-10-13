@@ -1,12 +1,13 @@
 import { BehaviorSubject, type OperatorFunction } from "rxjs"
 import { operate } from "rxjs/internal/util/lift"
 import { createOperatorSubscriber } from "rxjs/internal/operators/OperatorSubscriber"
-import { filter, map } from "rxjs/operators"
+import { distinctUntilChanged, filter, map } from "rxjs/operators"
 
 
 export function mapWithInvalidation<T, R>(
-  { project, invalidationTriggerBySource, invalidationTriggerByProjected, onInvalidation }: {
+  { project, isEquals, invalidationTriggerBySource, invalidationTriggerByProjected, onInvalidation }: {
     project: (value: T) => R
+    isEquals?: (a: R, b: R) => boolean
     invalidationTriggerBySource?: OperatorFunction<T, void>
     invalidationTriggerByProjected?: OperatorFunction<R, void>
     onInvalidation?: () => void
@@ -29,7 +30,13 @@ export function mapWithInvalidation<T, R>(
       currentSource
         .pipe(
           filterInitialized(),
-          map(project)
+          map(project),
+          distinctUntilChanged((a, b) => {
+            if (isEquals) {
+              return isEquals(a, b)
+            }
+            return Object.is(a, b)
+          })
         )
         .subscribe(currentProjected)
     )

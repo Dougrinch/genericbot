@@ -58,6 +58,7 @@ export default tseslint.config([
       "@typescript-eslint/strict-boolean-expressions": "error",
       "eqeqeq": ["error", "smart"],
       "@stylistic/quote-props": "off",
+      "@typescript-eslint/prefer-promise-reject-errors": "off",
     }
   }
 ])
