@@ -190,7 +190,8 @@ export class ScriptRunner {
         return this.createValueSubscription(
           this.bot.variables.value(variable.id),
           get => () => {
-            return get()?.value
+            const result = get()
+            return result && result.ok ? result.value : undefined
           }
         )
       }

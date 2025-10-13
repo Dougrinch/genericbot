@@ -7,6 +7,7 @@ import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
 import { HoverableElementHighlighter } from "./HoverableElementHighlighter.tsx"
 import { XPathInput } from "../xpath/XPathInput.tsx"
+import { ElementsInfoKey } from "../logic/XPathSubscriptionManager.ts"
 
 interface VariableRowProps {
   variable: VariableConfig
@@ -21,9 +22,9 @@ export const VariableRow = memo((props: VariableRowProps) => {
   const variable = props.variable
 
   const variableValue = useVariableValue(variable.id)
-  const value = variableValue?.value
-  const statusLine = variableValue?.statusLine
-  const statusType = variableValue?.statusType
+  const value = variableValue && variableValue.ok ? variableValue.value : undefined
+  const statusLine = (!variableValue || !variableValue.ok) ? variableValue?.error : undefined
+  const statusType = (!variableValue || !variableValue.ok) ? variableValue?.severity : undefined
 
   function handleInputChange(field: keyof VariableConfig): (e: string | React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void {
     return e => {
@@ -39,15 +40,16 @@ export const VariableRow = memo((props: VariableRowProps) => {
     }
   }
 
+  const elementsInfo = variableValue?.attachments?.get(ElementsInfoKey)
   const elements = useMemo(() => {
-    if (statusType === "ok") {
-      return (variableValue?.elementsInfo ?? [])
+    if (variableValue?.ok ?? false) {
+      return (elementsInfo ?? [])
         .filter(e => e.isVisible)
         .map(e => e.element)
     } else {
       return null
     }
-  }, [variableValue?.elementsInfo, statusType])
+  }, [variableValue, elementsInfo])
 
   return (
     <ReorderableRow
@@ -136,7 +138,7 @@ export const VariableRow = memo((props: VariableRowProps) => {
             </div>
           )}
 
-          <FoundElementsList elements={variableValue?.elementsInfo ?? []} />
+          <FoundElementsList elements={elementsInfo ?? []} />
         </>
       )}
     />

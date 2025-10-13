@@ -1,22 +1,17 @@
 import type { VariableConfig } from "./Config.ts"
 import { type BotManager } from "./BotManager.ts"
-import { type ElementInfo, ElementsInfoKey, innerTextResult } from "./XPathSubscriptionManager.ts"
+import { innerTextResult } from "./XPathSubscriptionManager.ts"
 import { useBotObservable } from "../BotManagerContext.tsx"
 import { map, switchMap } from "rxjs/operators"
 import { type Observable, of } from "rxjs"
 import { error, flatMapResult, ok, type Result } from "../../utils/Result.ts"
 
 
-export function useVariableValue(id: string): VariableValue | undefined {
+export function useVariableValue(id: string): Result<VariableValue> | undefined {
   return useBotObservable(m => m.variables.value(id), [id])
 }
 
-export type VariableValue = {
-  value: number | string | undefined
-  statusLine: string
-  statusType: "warn" | "ok" | "err"
-  elementsInfo: ElementInfo[]
-}
+export type VariableValue = number | string
 
 
 export class VariablesManager {
@@ -26,7 +21,7 @@ export class VariablesManager {
     this.bot = botState
   }
 
-  value(id: string): Observable<VariableValue | undefined> {
+  value(id: string): Observable<Result<VariableValue> | undefined> {
     return this.bot.config.variable(id)
       .pipe(
         switchMap(variable => {
@@ -39,7 +34,7 @@ export class VariablesManager {
       )
   }
 
-  private variableValue(variable: VariableConfig): Observable<VariableValue> {
+  private variableValue(variable: VariableConfig): Observable<Result<VariableValue>> {
     if (variable.elementType === "xpath") {
       return this.bot.xPathSubscriptionManager
         .innerText(variable.xpath, false)
@@ -56,16 +51,11 @@ export class VariablesManager {
     }
   }
 
-  private buildValue(variable: VariableConfig, innerText: Result<string>): VariableValue {
+  private buildValue(variable: VariableConfig, innerText: Result<string>): Result<VariableValue> {
     if (innerText.ok) {
-      return this.evaluateVariableValue(variable, innerText.value, innerText.attachments.get(ElementsInfoKey))
+      return flatMapResult(innerText, text => this.evaluateVariableValue(variable, text))
     } else {
-      return {
-        value: undefined,
-        statusType: innerText.severity,
-        statusLine: innerText.error,
-        elementsInfo: innerText.attachments.get(ElementsInfoKey)
-      }
+      return innerText
     }
   }
 
@@ -83,7 +73,7 @@ export class VariablesManager {
     }
   }
 
-  private evaluateVariableValue(variable: VariableConfig, innerText: string, elementsInfo: ElementInfo[]): VariableValue {
+  private evaluateVariableValue(variable: VariableConfig, innerText: string): Result<VariableValue> {
     let textValue = innerText
     if (variable.regex) {
       try {
@@ -91,28 +81,13 @@ export class VariablesManager {
         if (match) {
           textValue = match[1] !== undefined ? match[1] : match[0]
         } else {
-          return {
-            value: undefined,
-            statusType: "warn",
-            statusLine: `No match for regex ${variable.regex}`,
-            elementsInfo: elementsInfo
-          }
+          return error(`No match for regex ${variable.regex}`, "warn")
         }
-      } catch (error) {
-        return {
-          value: undefined,
-          statusType: "err",
-          statusLine: error instanceof Error ? error.message : String(error),
-          elementsInfo: elementsInfo
-        }
+      } catch (e) {
+        return error(e instanceof Error ? e.message : String(e), "err")
       }
     }
 
-    return {
-      value: variable.type === "number" ? Number(textValue) : textValue,
-      statusType: "ok",
-      statusLine: "",
-      elementsInfo: elementsInfo
-    }
+    return ok(variable.type === "number" ? Number(textValue) : textValue)
   }
 }
