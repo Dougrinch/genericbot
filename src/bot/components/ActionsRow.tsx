@@ -5,24 +5,27 @@ import { useConfig } from "../logic/ConfigManager.ts"
 
 interface ActionRowProps {
   onToggleConfig: () => void
+  isMinimized: boolean
 }
 
-export function ActionsRow({ onToggleConfig }: ActionRowProps) {
+export function ActionsRow({ onToggleConfig, isMinimized }: ActionRowProps) {
   const actions = useConfig(c => c.actions)
 
   return (
     <div className="actions">
-      <div className="pill-row">
-        {actions.map(action => (
-          <ActionPill key={action.id} action={action} />
-        ))}
-      </div>
+      {!isMinimized && (
+        <div className="pill-row">
+          {actions.map(action => (
+            <ActionPill key={action.id} action={action} />
+          ))}
+        </div>
+      )}
       <div className="icons">
         <button
           className="icon"
           onClick={onToggleConfig}
         >
-          ⚙️
+          {isMinimized ? "▴" : "⚙️"}
         </button>
       </div>
     </div>

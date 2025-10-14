@@ -8,9 +8,10 @@ interface ConfigWrapperProps {
   isVisible: boolean
   onClose: () => void
   onHotReload: () => void
+  onMinimize: () => void
 }
 
-export function ConfigWrapper({ root, isVisible, onClose, onHotReload }: ConfigWrapperProps) {
+export function ConfigWrapper({ root, isVisible, onClose, onHotReload, onMinimize }: ConfigWrapperProps) {
   useEffect(() => {
     if (!isVisible) {
       return
@@ -55,8 +56,9 @@ export function ConfigWrapper({ root, isVisible, onClose, onHotReload }: ConfigW
         </div>
         <div className="config-footer">
           <div className="config-actions">
-            <button onClick={onHotReload}>Hot Reload</button>
             <button onClick={onClose}>✕ Close</button>
+            <button onClick={onHotReload}>↻ Hot Reload</button>
+            <button onClick={onMinimize}>▾ Minimize</button>
           </div>
         </div>
       </div>
