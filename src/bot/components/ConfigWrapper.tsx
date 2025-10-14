@@ -39,19 +39,21 @@ export function ConfigWrapper({ root, isVisible, onClose, onHotReload }: ConfigW
   return (
     <div className="config-wrapper" hidden={!isVisible}>
       <div className="config-tab">
-        <div className="config-section">
-          <div className="tab-header">Elements</div>
-          <ElementsList />
+        <div className="config-content-scrollable">
+          <div className="config-section">
+            <div className="tab-header">Elements</div>
+            <ElementsList />
+          </div>
+          <div className="config-section">
+            <div className="tab-header">Variables</div>
+            <VariablesList />
+          </div>
+          <div className="config-section">
+            <div className="tab-header">Actions</div>
+            <ActionsList />
+          </div>
         </div>
-        <div className="config-section">
-          <div className="tab-header">Variables</div>
-          <VariablesList />
-        </div>
-        <div className="config-section">
-          <div className="tab-header">Actions</div>
-          <ActionsList />
-        </div>
-        <div className="config-section">
+        <div className="config-footer">
           <div className="config-actions">
             <button onClick={onHotReload}>Hot Reload</button>
             <button onClick={onClose}>✕ Close</button>
