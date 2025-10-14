@@ -106,6 +106,7 @@ export class ConfigManager {
         type: "script",
         xpath: "",
         script: "",
+        element: "",
         periodic: false,
         interval: 100,
         allowMultiple: false
@@ -305,6 +306,9 @@ function fixCompatibility(oldConfig: Config): Config {
       }
       if (action.script === undefined) {
         action.script = ""
+      }
+      if (action.element === undefined) {
+        action.element = ""
       }
       if (action.periodic === undefined) {
         action.periodic = true

@@ -119,6 +119,9 @@ export class ActionsManager {
     if (action.type === "xpath") {
       return elements(action.xpath, true, action.allowMultiple)
         .pipe(mapResult(e => elementsAction(action, e)))
+    } else if (action.type === "element") {
+      return this.bot.elements.value(action.element)
+        .pipe(mapResult(e => elementsAction(action, e)))
     } else if (action.type === "script") {
       return this.bot.scriptActionFactory
         .runnableScript(action)

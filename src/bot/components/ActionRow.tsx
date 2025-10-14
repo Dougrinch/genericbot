@@ -1,7 +1,7 @@
 import * as React from "react"
 import { memo, useCallback, useMemo } from "react"
 import type { ActionConfig } from "../logic/Config.ts"
-import { useDispatch } from "../BotManagerContext.tsx"
+import { useBotObservable, useDispatch } from "../BotManagerContext.tsx"
 import { useActionValue } from "../logic/ActionsManager.ts"
 import { ReorderableRow } from "./ReorderableRow.tsx"
 import { FoundElementsList } from "./FoundElementsList.tsx"
@@ -17,6 +17,8 @@ interface ActionConfigRowProps {
 
 export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
   const dispatch = useDispatch()
+
+  const elementConfigs = useBotObservable(m => m.config.elements(), [])
 
   const actionValue = useActionValue(action.id)
   const statusLine = !actionValue.ok ? actionValue.error : undefined
@@ -51,7 +53,7 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
     }
   }, [actionValue, elementsInfo])
 
-  const value = action.type === "xpath"
+  const value = action.type === "xpath" || action.type === "element"
     ? (elements
       ? (elements.length === 1
         ? "1 element"
@@ -66,7 +68,7 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
       id={action.id}
       index={index}
       name={action.name}
-      value={action.type === "xpath"
+      value={action.type === "xpath" || action.type === "element"
         ? (
           <HoverableElementHighlighter elements={elements ?? []}>
             <span className="variable-current-value">
@@ -80,7 +82,7 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
           </span>
         )}
       handleRemove={dispatch.config.removeAction}
-      askOnRemove={action.xpath.length > 0 || action.script.length > 0}
+      askOnRemove={action.xpath.length > 0 || action.script.length > 0 || action.element.length > 0}
       fields={(
         <>
           <label className="label" htmlFor={`action-name-${action.id}`}>Name</label>
@@ -100,39 +102,51 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
           >
             <option value="xpath">XPath</option>
             <option value="script">Script</option>
+            <option value="element">Element</option>
           </select>
 
-          {action.type === "xpath"
-            ? (
-              <>
-                <label className="label" htmlFor={`action-xpath-${action.id}`}>XPath</label>
-                <XPathInput
-                  id={`action-xpath-${action.id}`}
-                  value={action.xpath}
-                  onChange={handleInputChange("xpath")}
-                />
+          {action.type === "xpath" && (
+            <>
+              <label className="label" htmlFor={`action-xpath-${action.id}`}>XPath</label>
+              <XPathInput
+                id={`action-xpath-${action.id}`}
+                value={action.xpath}
+                onChange={handleInputChange("xpath")}
+              />
 
-                <label className="label" htmlFor={`action-allowMultiple-${action.id}`}>Allow multiple</label>
-                <input
-                  type="checkbox"
-                  id={`action-allowMultiple-${action.id}`}
-                  checked={action.allowMultiple}
-                  onChange={handleInputChange("allowMultiple")}
-                />
-              </>
-            )
-            : action.type === "script"
-              ? (
-                <>
-                  <label className="label" htmlFor={`action-script-${action.id}`}>Script</label>
-                  <ScriptInput
-                    id={`action-script-${action.id}`}
-                    value={action.script}
-                    onChange={onScriptChange}
-                  />
-                </>
-              )
-              : null}
+              <label className="label" htmlFor={`action-allowMultiple-${action.id}`}>Allow multiple</label>
+              <input
+                type="checkbox"
+                id={`action-allowMultiple-${action.id}`}
+                checked={action.allowMultiple}
+                onChange={handleInputChange("allowMultiple")}
+              />
+            </>
+          )}
+          {action.type === "script" && (
+            <>
+              <label className="label" htmlFor={`action-script-${action.id}`}>Script</label>
+              <ScriptInput
+                id={`action-script-${action.id}`}
+                value={action.script}
+                onChange={onScriptChange}
+              />
+            </>
+          )}
+          {action.type === "element" && (
+            <>
+              <label className="label" htmlFor={`action-element-${action.id}`}>Element</label>
+              <select
+                id={`action-element-${action.id}`}
+                value={action.element}
+                onChange={handleInputChange("element")}
+              >
+                {elementConfigs.map(e => (
+                  <option key={e.id} value={e.id}>{e.name}</option>
+                ))}
+              </select>
+            </>
+          )}
 
           <label className="label" htmlFor={`action-periodic-${action.id}`}>Periodic</label>
           <input
@@ -163,7 +177,7 @@ export const ActionRow = memo(({ action, index }: ActionConfigRowProps) => {
             </div>
           )}
 
-          {action.type === "xpath" && (
+          {(action.type === "xpath" || action.type === "element") && (
             <FoundElementsList elements={actionValue.attachments.get(ElementsInfoKey) ?? []} />
           )}
         </>

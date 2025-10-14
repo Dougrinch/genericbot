@@ -17,7 +17,7 @@ function trySubscribeToRoot<T>(entry: Entry<T>) {
 }
 
 function tryUnsubscribeFromRoot<T>(entry: Entry<T>) {
-  if (entry.active === 0) {
+  if (entry.active === 0 && entry.subscription !== undefined) {
     forceUnsubscribeFromRoot(entry)
   }
 }
@@ -55,7 +55,9 @@ export function useObservable<T>(observable: Observable<T>): T {
     trySubscribeToRoot(entry)
     entry.active += 1
     const subscription = entry.subject.subscribe({
-      next: onChange
+      next: () => {
+        queueMicrotask(onChange)
+      }
     })
     return () => {
       subscription.unsubscribe()
