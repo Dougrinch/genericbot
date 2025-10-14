@@ -2,7 +2,7 @@ import { ConfigManager } from "./ConfigManager.ts"
 import { VariablesManager } from "./VariablesManager.ts"
 import { ActionsManager } from "./ActionsManager.ts"
 import { ElementsManager } from "./ElementsManager.ts"
-import { ScriptRunner } from "../script/ScriptRunner.ts"
+import { ScriptActionFactory } from "../script/ScriptActionFactory.ts"
 
 
 export class BotManager {
@@ -10,14 +10,14 @@ export class BotManager {
   readonly variables: VariablesManager
   readonly actions: ActionsManager
   readonly elements: ElementsManager
-  readonly scriptRunner: ScriptRunner
+  readonly scriptActionFactory: ScriptActionFactory
 
   constructor() {
     this.config = new ConfigManager()
     this.variables = new VariablesManager(this)
     this.actions = new ActionsManager(this)
     this.elements = new ElementsManager(this)
-    this.scriptRunner = new ScriptRunner(this)
+    this.scriptActionFactory = new ScriptActionFactory(this)
   }
 
   init(): void {

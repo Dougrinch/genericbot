@@ -6,7 +6,7 @@ import { autocompletion, nextSnippetField } from "@codemirror/autocomplete"
 import CodeMirror, { keymap, Prec } from "@uiw/react-codemirror"
 import type { BasicSetupOptions } from "@uiw/codemirror-extensions-basic-setup"
 import { githubDark } from "@uiw/codemirror-theme-github"
-import { useScriptExtensions } from "./ScriptRunner.ts"
+import { useScriptExtensions } from "./ScriptActionFactory.ts"
 import { lintResultField, scriptLinter } from "./ScriptLinter.ts"
 import { EditorView } from "@codemirror/view"
 

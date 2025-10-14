@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { BehaviorSubject, interval, Observable, Subject } from "rxjs"
 import { splitMerge } from "../../src/utils/observables/SplitMerge.ts"
 import { mapWithInvalidation } from "../../src/utils/observables/Invalidation.ts"
@@ -96,12 +96,14 @@ describe("Operators", () => {
   })
 
   it("splitMerge", async () => {
+    vi.useFakeTimers()
+
     const subject = new Subject<number[]>()
 
     let innerCreated = 0
     let innerClosed = 0
 
-    let startTime = 0
+    const startTime = performance.now()
 
     function inner(v: number): Observable<[number, string]> {
       innerCreated++
@@ -136,10 +138,7 @@ describe("Operators", () => {
 
     const values = collect(observable)
 
-    do {
-      startTime = Math.floor(performance.now())
-    } while (startTime % 100 !== 0)
-
+    const time = runTime(1)
 
     subject.next([1, 2, 3])
     await wait(130)
@@ -149,6 +148,8 @@ describe("Operators", () => {
     subject.complete()
 
     const value = await values.all
+    time.stop()
+
     expect(value.map(v => v[1])).toStrictEqual([
       //[1,2,3] at 0
       "1: 0", //time 100
@@ -168,11 +169,28 @@ describe("Operators", () => {
     for (let i = 0; i < expectedTimes.length; i++) {
       const realTime = value[i][0]
       const expectedTime = expectedTimes[i]
-      const delta = 10
-      expect(realTime > expectedTime - delta && realTime < expectedTime + delta).toBeTruthy()
+      expect(realTime).toBe(expectedTime)
     }
 
     expect(innerCreated).toBe(5)
     expect(innerClosed).toBe(5)
   })
 })
+
+function runTime(advanceDeltaMs: number): { stop: () => void } {
+  const controller = new AbortController()
+  const signal = controller.signal
+
+  async function nextTick() {
+    await vi.advanceTimersByTimeAsync(advanceDeltaMs)
+    if (!signal.aborted) {
+      await nextTick()
+    }
+  }
+
+  void nextTick()
+
+  return {
+    stop: () => controller.abort()
+  }
+}

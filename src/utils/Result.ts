@@ -166,9 +166,7 @@ export function isResultsEqual<T>(v: (v1: T, v2: T) => boolean = Object.is): (r1
     }
 
     if (!r1.ok && !r2.ok) {
-      if (r1.error !== r2.error || r1.severity !== r2.severity) {
-        return false
-      }
+      return r1.error === r2.error && r1.severity === r2.severity
     }
 
     if (r1.ok && r2.ok) {

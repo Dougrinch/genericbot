@@ -4,6 +4,7 @@ import { useBotObservable } from "../BotManagerContext.tsx"
 import { BehaviorSubject, Observable } from "rxjs"
 import { distinctUntilChanged, map } from "rxjs/operators"
 import { error, ok, type Result } from "../../utils/Result.ts"
+import { shared } from "../../utils/observables/Shared.ts"
 
 
 export function useConfig(): Config
@@ -55,6 +56,7 @@ export class ConfigManager {
       )
   }
 
+  @shared
   action(id: string): Observable<Result<ActionConfig>> {
     return this.config().pipe(
       map(c => c.actions.find(v => v.id === id)),
@@ -63,6 +65,7 @@ export class ConfigManager {
     )
   }
 
+  @shared
   variable(id: string): Observable<Result<VariableConfig>> {
     return this.config().pipe(
       map(c => c.variables.find(v => v.id === id)),
@@ -71,6 +74,7 @@ export class ConfigManager {
     )
   }
 
+  @shared
   element(id: string): Observable<Result<ElementConfig>> {
     return this.config().pipe(
       map(c => c.elements.find(v => v.id === id)),

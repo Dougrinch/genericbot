@@ -9,9 +9,11 @@ import { lint } from "./ScriptLinter.ts"
 import { BehaviorSubject, combineLatestWith, type Observable } from "rxjs"
 import { map } from "rxjs/operators"
 import { ok, type Result } from "../../utils/Result.ts"
+import { shared } from "../../utils/observables/Shared.ts"
+import type { Action } from "../logic/ActionsManager.ts"
 
 export function useScriptExtensions(): ScriptExternals {
-  return useBotObservable(m => m.scriptRunner.scriptExternals(), [])
+  return useBotObservable(m => m.scriptActionFactory.scriptExternals(), [])
 }
 
 type Extensions = {
@@ -43,13 +45,7 @@ type ValueSubscription<T> = {
   stop(): void
 }
 
-export type RunnableScript = {
-  run(signal: AbortSignal): Promise<void>
-  periodic: boolean
-  interval: number
-}
-
-export class ScriptRunner {
+export class ScriptActionFactory {
   private readonly bot: BotManager
 
   constructor(botState: BotManager) {
@@ -85,6 +81,7 @@ export class ScriptRunner {
       )
   }
 
+  @shared
   private extensions(): Observable<Extensions> {
     return this.bot.config.variables()
       .pipe(
@@ -93,7 +90,7 @@ export class ScriptRunner {
       )
   }
 
-  runnableScript(action: ActionConfig): Observable<Result<RunnableScript>> {
+  runnableScript(action: ActionConfig): Observable<Result<Action>> {
     return this.extensions()
       .pipe(
         map(extensions => {
@@ -104,7 +101,7 @@ export class ScriptRunner {
             return compilationResult
           }
           const contextFactory = (signal: AbortSignal) => this.createContext(compilationResult.value, extensions, signal)
-          const result: RunnableScript = {
+          const result: Action = {
             async run(signal: AbortSignal): Promise<void> {
               const context = contextFactory(signal)
               try {

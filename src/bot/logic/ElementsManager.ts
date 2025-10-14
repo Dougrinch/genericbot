@@ -4,6 +4,7 @@ import { type Observable } from "rxjs"
 import type { ElementConfig } from "./Config.ts"
 import { type Result, switchMapResult } from "../../utils/Result.ts"
 import { elements } from "./ElementsObserver.ts"
+import { shared } from "../../utils/observables/Shared.ts"
 
 
 export function useElementValue(id: string): Result<HTMLElement[]> {
@@ -18,6 +19,7 @@ export class ElementsManager {
     this.bot = botState
   }
 
+  @shared
   value(id: string): Observable<Result<HTMLElement[]>> {
     return this.bot.config.element(id)
       .pipe(

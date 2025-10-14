@@ -14,6 +14,12 @@ export default defineConfig(env => {
       }
       : {}),
 
+    esbuild: {
+      target: "ES2022",
+      supported: {
+        decorators: false
+      }
+    },
     build: {
       lib: {
         entry: "./src/bot/injection.tsx",

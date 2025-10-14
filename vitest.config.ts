@@ -4,6 +4,12 @@ import type { BrowserInstanceOption } from "vitest/node"
 export default defineConfig({
   test: {
     projects: [{
+      esbuild: {
+        target: "ES2022",
+        supported: {
+          decorators: false
+        }
+      },
       test: {
         name: "unit",
         environment: "jsdom",
@@ -11,6 +17,12 @@ export default defineConfig({
         include: ["tests/unit/**/*.spec.{ts,tsx}"]
       }
     }, {
+      esbuild: {
+        target: "ES2022",
+        supported: {
+          decorators: false
+        }
+      },
       test: {
         browser: {
           enabled: true,

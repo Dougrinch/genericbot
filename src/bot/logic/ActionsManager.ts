@@ -3,11 +3,11 @@ import type { ActionConfig } from "./Config.ts"
 import { useBotObservable } from "../BotManagerContext.tsx"
 import { mapResult, type Result, switchMapResult } from "../../utils/Result.ts"
 import { BehaviorSubject, type Observable, of, type Subscription, tap } from "rxjs"
-import type { RunnableScript } from "../script/ScriptRunner.ts"
 import { splitMerge } from "../../utils/observables/SplitMerge.ts"
 import { ObservableMap } from "../../utils/observables/ObservableMap.ts"
 import { switchMap } from "rxjs/operators"
 import { elements } from "./ElementsObserver.ts"
+import { shared } from "../../utils/observables/Shared.ts"
 
 
 export function usePillStatus(id: string): PillStatus | undefined {
@@ -22,15 +22,21 @@ export function useActionValue(id: string): Result<unknown> {
 type ActionData = {
   pillStatus: BehaviorSubject<PillStatus>
 
-  script?: RunnableScript
+  action?: Action
   timerId?: number
   controller?: AbortController
 }
 
-type ActionDataWithScript = ActionData & Required<Pick<ActionData, "script">>
+export type Action = {
+  run(signal: AbortSignal): Promise<void>
+  periodic: boolean
+  interval: number
+}
 
-function hasScript(data: ActionData): data is ActionDataWithScript {
-  return data.script !== undefined
+type ReadyActionData = ActionData & Required<Pick<ActionData, "action">>
+
+function isReady(data: ActionData): data is ReadyActionData {
+  return data.action !== undefined
 }
 
 type PillStatus = {
@@ -75,7 +81,7 @@ export class ActionsManager {
       ).subscribe()
   }
 
-  private onScriptUpdate(id: string, r: Result<RunnableScript>) {
+  private onScriptUpdate(id: string, r: Result<Action>) {
     this.onScriptRemove(id)
 
     const data: ActionData = {
@@ -83,7 +89,7 @@ export class ActionsManager {
         isRunning: false,
         status: "stopped"
       }),
-      script: r.ok ? r.value : undefined
+      action: r.ok ? r.value : undefined
     }
     this.actions.set(id, data)
   }
@@ -101,39 +107,23 @@ export class ActionsManager {
     this.subscription?.unsubscribe()
   }
 
-  value(id: string): Observable<Result<RunnableScript>> {
+  @shared
+  value(id: string): Observable<Result<Action>> {
     return this.bot.config.action(id)
       .pipe(
         switchMapResult(action => this.actionValue(action))
       )
   }
 
-  private actionValue(action: ActionConfig): Observable<Result<RunnableScript>> {
+  private actionValue(action: ActionConfig): Observable<Result<Action>> {
     if (action.type === "xpath") {
       return elements(action.xpath, true, action.allowMultiple)
-        .pipe(mapResult(e => this.elementsAction(action, e)))
+        .pipe(mapResult(e => elementsAction(action, e)))
     } else if (action.type === "script") {
-      return this.bot.scriptRunner
+      return this.bot.scriptActionFactory
         .runnableScript(action)
     } else {
       throw new Error("Unreachable")
-    }
-  }
-
-  elementsAction(action: ActionConfig, elements: HTMLElement[]): RunnableScript {
-    return {
-      run(): Promise<void> {
-        try {
-          for (const element of elements) {
-            element.click()
-          }
-          return Promise.resolve()
-        } catch (e) {
-          return Promise.reject(e)
-        }
-      },
-      periodic: action.periodic,
-      interval: action.interval
     }
   }
 
@@ -151,7 +141,7 @@ export class ActionsManager {
   }
 
   private start(data: ActionData) {
-    if (hasScript(data)) {
+    if (isReady(data)) {
       this.requestNextTick(data, true)
       data.pillStatus.next(this.buildPillStatus(data))
     } else {
@@ -162,13 +152,13 @@ export class ActionsManager {
     }
   }
 
-  private handleTick(data: ActionDataWithScript) {
+  private handleTick(data: ReadyActionData) {
     const controller = new AbortController()
-    const promise = data.script.run(controller.signal)
+    const promise = data.action.run(controller.signal)
     data.controller = controller
     void promise.then(() => {
       data.controller = undefined
-      if (data.script.periodic) {
+      if (data.action.periodic) {
         if (data.pillStatus.value.isRunning) {
           this.requestNextTick(data)
         }
@@ -190,10 +180,10 @@ export class ActionsManager {
     })
   }
 
-  private requestNextTick(data: ActionDataWithScript, immediate: boolean = false) {
+  private requestNextTick(data: ReadyActionData, immediate: boolean = false) {
     data.timerId = setTimeout(() => {
       this.handleTick(data)
-    }, immediate ? 0 : data.script.interval)
+    }, immediate ? 0 : data.action.interval)
   }
 
   private stop(data: ActionData) {
@@ -217,8 +207,25 @@ export class ActionsManager {
     } else {
       return {
         isRunning: true,
-        status: data.script ? "running" : "waiting"
+        status: data.action ? "running" : "waiting"
       }
     }
+  }
+}
+
+function elementsAction(action: ActionConfig, elements: HTMLElement[]): Action {
+  return {
+    run(): Promise<void> {
+      try {
+        for (const element of elements) {
+          element.click()
+        }
+        return Promise.resolve()
+      } catch (e) {
+        return Promise.reject(e)
+      }
+    },
+    periodic: action.periodic,
+    interval: action.interval
   }
 }

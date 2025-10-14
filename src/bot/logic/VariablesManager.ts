@@ -5,6 +5,7 @@ import { useBotObservable } from "../BotManagerContext.tsx"
 import { type Observable } from "rxjs"
 import { error, flatMapResult, ok, type Result, switchMapResult } from "../../utils/Result.ts"
 import { innerTextResult } from "../../utils/observables/InnerText.ts"
+import { shared } from "../../utils/observables/Shared.ts"
 
 
 export function useVariableValue(id: string): Result<VariableValue> {
@@ -21,6 +22,7 @@ export class VariablesManager {
     this.bot = botState
   }
 
+  @shared
   value(id: string): Observable<Result<VariableValue>> {
     return this.bot.config.variable(id)
       .pipe(
