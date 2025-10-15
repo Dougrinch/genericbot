@@ -5,7 +5,6 @@ import { readAndClearHotReloadInfo } from "./hotReload.ts";
 
 (function () {
   const botDiv = document.createElement("div")
-  botDiv.id = "bot"
   document.body.appendChild(botDiv)
 
   const shadowRoot = botDiv.attachShadow({ mode: "open" })
@@ -19,7 +18,7 @@ import { readAndClearHotReloadInfo } from "./hotReload.ts";
   root.render(
     <StrictMode>
       <Bot
-        root={botDiv}
+        outerRoot={botDiv}
         terminate={() => {
           root.unmount()
           botDiv.remove()

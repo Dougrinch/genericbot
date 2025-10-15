@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react"
-import { formatTime } from "../../utils/time.ts"
 
-export function ThrottlingDetector() {
+export function useThrottledTime() {
   const [isThrottled, setIsThrottled] = useState(false)
-  const [lostTime, setLostTime] = useState("")
+  const [lostTime, setLostTime] = useState<number | null>(null)
 
   useEffect(() => {
     let timerId: number | null = null
@@ -43,7 +42,7 @@ export function ThrottlingDetector() {
       }
 
       setIsThrottled(true)
-      setLostTime(formatTime(lostTime))
+      setLostTime(lostTime)
 
       warningTimerId = setTimeout(() => {
         resetWarning()
@@ -56,7 +55,7 @@ export function ThrottlingDetector() {
       }
       warningTimerId = null
       setIsThrottled(false)
-      setLostTime("")
+      setLostTime(null)
       startTime = performance.now()
       counter = 0
     }
@@ -75,11 +74,5 @@ export function ThrottlingDetector() {
     }
   }, [])
 
-  return (
-    <>
-      <div className={isThrottled ? "throttle-warning" : ""}>
-        {isThrottled ? `Throttling detected, lost ${lostTime}` : ""}
-      </div>
-    </>
-  )
+  return isThrottled ? lostTime : null
 }

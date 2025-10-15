@@ -1,11 +1,12 @@
-import { memo, useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { BotPanel } from "./components/BotPanel"
 import { ConfigWrapper } from "./components/ConfigWrapper"
 import { ActionsRow } from "./components/ActionsRow.tsx"
 import { hotReload, type HotReloadInfo } from "./hotReload.ts"
 import { BotManagerContext, useBotManager } from "./BotManagerContext.tsx"
 import { BotManager } from "./logic/BotManager.ts"
-import { ThrottlingDetector } from "./components/ThrottlingDetector.tsx"
+import { useThrottledTime } from "./components/ThrottlingDetector.tsx"
+import { formatTime } from "../utils/time.ts"
 
 function useCss(): string | null {
   const [value, setValue] = useState<string | null>(null)
@@ -36,21 +37,31 @@ function useCss(): string | null {
 }
 
 export type BotProps = {
-  root: HTMLElement
+  outerRoot: HTMLElement
   terminate: () => void
   hotReloadInfo?: HotReloadInfo
 }
 
 export function Bot(props: BotProps) {
+  const rootRef = useRef<HTMLDivElement>(null)
   const botManager = useBotManager(() => new BotManager())
+
+  const css = useCss()
+  if (css === null) {
+    return null
+  }
+
   return (
-    <BotManagerContext value={botManager}>
-      <BotContent root={props.root} terminate={props.terminate} hotReloadInfo={props.hotReloadInfo} />
-    </BotManagerContext>
+    <div id="bot" ref={rootRef}>
+      <style>{css}</style>
+      <BotManagerContext value={botManager}>
+        <BotContent outerRoot={props.outerRoot} terminate={props.terminate} hotReloadInfo={props.hotReloadInfo} />
+      </BotManagerContext>
+    </div>
   )
 }
 
-const BotContent = memo(({ root, terminate, hotReloadInfo }: BotProps) => {
+function BotContent({ outerRoot, terminate, hotReloadInfo }: BotProps) {
   const [isConfigVisible, setIsConfigVisible] = useState(!!hotReloadInfo)
   const [isMinimized, setIsMinimized] = useState(false)
 
@@ -70,17 +81,17 @@ const BotContent = memo(({ root, terminate, hotReloadInfo }: BotProps) => {
     setIsConfigVisible(false)
   }, [])
 
-  const css = useCss()
-  if (css === null) {
-    return null
-  }
+  const throttledTime = useThrottledTime()
 
   return (
     <BotPanel>
-      <style>{css}</style>
-      <ThrottlingDetector />
+      {throttledTime != null && (
+        <div className="throttle-warning">
+          {`Throttling detected, lost ${formatTime(throttledTime)}`}
+        </div>
+      )}
       <ConfigWrapper
-        root={root}
+        outerRoot={outerRoot}
         isVisible={isConfigVisible}
         onClose={terminate}
         onHotReload={onHotReload}
@@ -89,4 +100,4 @@ const BotContent = memo(({ root, terminate, hotReloadInfo }: BotProps) => {
       <ActionsRow onToggleConfig={handleToggleConfig} isMinimized={isMinimized} />
     </BotPanel>
   )
-})
+}

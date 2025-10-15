@@ -26,7 +26,7 @@ export function renderBot() {
   const renderResultRef = { current: null as RenderResult | null }
   renderResultRef.current = render(
     <Bot
-      root={bot}
+      outerRoot={bot}
       terminate={() => {
         renderResultRef.current?.unmount()
         bot.remove()

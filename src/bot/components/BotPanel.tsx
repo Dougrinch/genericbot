@@ -1,10 +1,10 @@
 import * as React from "react"
-import { type PropsWithChildren, useRef, useState } from "react"
-import { BotPanelContext } from "./BotPanelContext.ts"
+import { type PropsWithChildren, type RefObject, useCallback, useRef, useState } from "react"
+import { BotContext, type BotContextData } from "./BotContext.ts"
+import { ElementHighlighting } from "./ElementHighlighting.tsx"
 
-export function BotPanel({ children }: PropsWithChildren) {
+function useDrag(panelRef: RefObject<HTMLDivElement | null>) {
   const [position, setPosition] = useState({ bottom: 10, right: 10 })
-  const panelRef = useRef<HTMLDivElement>(null)
   const isDragging = useRef(false)
   const dragStart = useRef({ x: 0, y: 0, bottom: 0, right: 0 })
 
@@ -55,19 +55,68 @@ export function BotPanel({ children }: PropsWithChildren) {
     e.preventDefault()
   }
 
+  return {
+    position, onDragStart
+  }
+}
+
+export function BotPanel({ children }: PropsWithChildren) {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const drag = useDrag(panelRef)
+  const [selectedElements, setSelectedElements] = useState<ReadonlySet<HTMLElement>>(new Set())
+
+  const setPanelTransparency = useCallback((isTransparent: boolean) => {
+    if (isTransparent) {
+      panelRef.current?.classList.add("transparent-above-highlight")
+    } else {
+      panelRef.current?.classList.remove("transparent-above-highlight")
+    }
+  }, [])
+
+  const botContext: BotContextData = {
+    setPanelTransparency: setPanelTransparency,
+    selectElement: element => {
+      setSelectedElements(set => {
+        if (set.has(element)) {
+          return set
+        } else {
+          const newSet = new Set(set)
+          newSet.add(element)
+          return newSet
+        }
+      })
+      return {
+        clear: () => {
+          setSelectedElements(set => {
+            if (!set.has(element)) {
+              return set
+            } else {
+              const newSet = new Set(set)
+              newSet.delete(element)
+              return newSet
+            }
+          })
+        }
+      }
+    }
+  }
+
   return (
-    <BotPanelContext value={panelRef}>
+    <BotContext value={botContext}>
       <div
         ref={panelRef}
         className="panel"
         style={{
-          bottom: `${position.bottom}px`,
-          right: `${position.right}px`
+          bottom: `${drag.position.bottom}px`,
+          right: `${drag.position.right}px`
         }}
-        onMouseDown={onDragStart}
+        onMouseDown={drag.onDragStart}
       >
         {children}
       </div>
-    </BotPanelContext>
+      {...Array.from(selectedElements).map(e => (
+        <ElementHighlighting element={e} />
+      ))}
+    </BotContext>
   )
 }
