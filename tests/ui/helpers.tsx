@@ -43,7 +43,7 @@ export function renderBotAndGame() {
 }
 
 export async function openConfiguration() {
-  await page.getByText(/Add Variable/).expect().not.toBeVisible()
+  await page.getByText(/Add Variable/).expect().not.toBeInTheDocument()
   await page.getByText("⚙️").click()
   await page.getByText(/Add Variable/).expect().toBeVisible()
 }

@@ -1,21 +1,19 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { ActionsList } from "./ActionsList"
 import { VariablesList } from "./VariablesList"
 import { ElementsList } from "./ElementsList"
 
 interface ConfigWrapperProps {
-  outerRoot: HTMLElement
-  isVisible: boolean
   onClose: () => void
   onHotReload: () => void
   onMinimize: () => void
 }
 
-export function ConfigWrapper({ outerRoot, isVisible, onClose, onHotReload, onMinimize }: ConfigWrapperProps) {
+export function ConfigPanel({ onClose, onHotReload, onMinimize }: ConfigWrapperProps) {
+  const configRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    if (!isVisible) {
-      return
-    }
+    const config = configRef.current!
 
     let active = true
 
@@ -25,20 +23,20 @@ export function ConfigWrapper({ outerRoot, isVisible, onClose, onHotReload, onMi
       }
     }
 
-    outerRoot.addEventListener("keydown", handleKeyEvent)
-    outerRoot.addEventListener("keyup", handleKeyEvent)
-    outerRoot.addEventListener("keypress", handleKeyEvent)
+    config.addEventListener("keydown", handleKeyEvent)
+    config.addEventListener("keyup", handleKeyEvent)
+    config.addEventListener("keypress", handleKeyEvent)
 
     return () => {
       active = false
-      outerRoot.removeEventListener("keydown", handleKeyEvent)
-      outerRoot.removeEventListener("keyup", handleKeyEvent)
-      outerRoot.removeEventListener("keypress", handleKeyEvent)
+      config.removeEventListener("keydown", handleKeyEvent)
+      config.removeEventListener("keyup", handleKeyEvent)
+      config.removeEventListener("keypress", handleKeyEvent)
     }
-  }, [isVisible, outerRoot])
+  }, [])
 
   return (
-    <div className="config-wrapper" hidden={!isVisible}>
+    <div className="config-wrapper" ref={configRef}>
       <div className="config-tab">
         <div className="config-content-scrollable">
           <div className="config-section">

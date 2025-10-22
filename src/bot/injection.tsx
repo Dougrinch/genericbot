@@ -9,12 +9,9 @@ import { readAndClearHotReloadInfo } from "./hotReload.ts";
 
   const shadowRoot = botDiv.attachShadow({ mode: "open" })
 
-  const rootDiv = document.createElement("div")
-  shadowRoot.appendChild(rootDiv)
-
   const hotReloadInfo = readAndClearHotReloadInfo()
 
-  const root = createRoot(rootDiv)
+  const root = createRoot(shadowRoot)
   root.render(
     <StrictMode>
       <Bot

@@ -1,7 +1,7 @@
-const uniqueIds = new Map<unknown, number>()
+const uniqueIds = new WeakMap<object, number>()
 let lastId = 0
 
-export function getUniqueId(o: unknown): number {
+export function getUniqueId(o: object): number {
   const id = uniqueIds.get(o)
   if (id !== undefined) {
     return id

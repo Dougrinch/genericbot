@@ -1,5 +1,6 @@
 * {
     box-sizing: border-box;
+    text-align: left;
 }
 
 .transparent-above-highlight {
@@ -564,4 +565,5 @@ select {
     border-radius: 4px;
     box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
     transition: all 0.2s ease;
+    cursor: crosshair;
 }

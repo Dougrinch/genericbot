@@ -24,6 +24,9 @@ describe("Key Event Interception", () => {
     // Open config panel using the proper helper
     await openConfiguration()
 
+    await page.getVariableRow("Gold").getByText("Edit").click();
+    (page.getVariableRow("Gold").getByLabelText("Name").element() as HTMLElement).focus()
+
     // Now keys should be intercepted and not reach the page
     await userEvent.keyboard("b")
     expect(pageKeyEventFired).toBe(false)

@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useRef } from "react"
-import { type Selection, useBotContext } from "./BotContext.ts"
+import { type Selection, useSelectElement } from "./BotContentContext.ts"
+import { useSetBotUITransparency } from "./BotUIContext.tsx"
 
 interface HoverableElementHighlighterProps {
   elements: HTMLElement[]
@@ -7,7 +8,8 @@ interface HoverableElementHighlighterProps {
 }
 
 export function HoverableElementHighlighter(props: HoverableElementHighlighterProps) {
-  const botContext = useBotContext()
+  const selectElement = useSelectElement()
+  const setBotUITransparency = useSetBotUITransparency()
   const selections = useRef<Selection[]>([])
 
   const handleMouseLeave = useCallback(() => {
@@ -15,21 +17,21 @@ export function HoverableElementHighlighter(props: HoverableElementHighlighterPr
       selection.clear()
     }
 
-    botContext.setPanelTransparency(false)
-  }, [botContext])
+    setBotUITransparency(false)
+  }, [setBotUITransparency])
 
   const handleMouseEnter = useCallback(() => {
     handleMouseLeave()
 
     for (const element of props.elements) {
-      const selection = botContext.selectElement(element)
+      const selection = selectElement(element)
       selections.current.push(selection)
     }
 
     if (props.elements.length > 0) {
-      botContext.setPanelTransparency(true)
+      setBotUITransparency(true)
     }
-  }, [handleMouseLeave, props.elements, botContext])
+  }, [handleMouseLeave, props.elements, selectElement, setBotUITransparency])
 
   return (
     <div
