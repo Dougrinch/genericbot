@@ -11,9 +11,10 @@
   CompareOperator<op> { op }
   LogicOperator<op> { op }
   ArithmeticOperator<op> { op }
+  AssignmentOperator<op> { op }
 
   @precedence { Boolean, Identifier }
-  @precedence { Comment, ArithmeticOperator, Number }
+  @precedence { Comment, AssignmentOperator, ArithmeticOperator, Number }
 }
 
 @precedence {
@@ -38,6 +39,7 @@ Statement {
   Expression |
   IfStatement |
   VariableDeclaration |
+  AssignmentStatement |
   WhileStatement |
   DoWhileStatement |
   FunctionDeclaration
@@ -61,6 +63,10 @@ FunctionParametersDeclaration {
 
 VariableDeclaration {
   kw<"val"> VariableDefinition l<"="> Expression
+}
+
+AssignmentStatement {
+  Identifier AssignmentOperator<"="> Expression
 }
 
 VariableDefinition {

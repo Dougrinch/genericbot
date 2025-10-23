@@ -1,5 +1,6 @@
 import { type SyntaxNode } from "@lezer/common"
 import {
+  AssignmentStatement,
   BinaryExpression,
   Boolean as BooleanTerm,
   CodeBlock,
@@ -196,6 +197,11 @@ function compileNode(root: LintScope, node: SyntaxNode, code: string): Result<Co
         const name = node.getChild(VariableDefinition)!
         const value = node.getChild(Expression)!
         return `let ${compileNode(name, depth)} = ${compileNode(value, depth)}`
+      }
+      case AssignmentStatement: {
+        const name = node.getChild(Identifier)!
+        const value = node.getChild(Expression)!
+        return `${compileNode(name, depth)} = ${compileNode(value, depth)}`
       }
       case BinaryExpression: {
         const left = node.firstChild!
