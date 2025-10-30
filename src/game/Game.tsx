@@ -1,6 +1,7 @@
 import css from "./Game.css?inline"
 import { GameLoop } from "./GameLoop.tsx"
 import { GamePanel } from "./GamePanel.tsx"
+import { ClickCanvas } from "./ClickCanvas.tsx"
 import { useEffect, useState } from "react"
 
 export function Game() {
@@ -25,6 +26,7 @@ export function Game() {
   return (
     <GameLoop>
       <GamePanel />
+      <ClickCanvas />
     </GameLoop>
   )
 }

@@ -157,3 +157,21 @@ button:focus-visible {
   gap: 0.5rem;
   width: fit-content;
 }
+
+.click-canvas {
+  position: absolute;
+  top: 200px;
+  left: 350px;
+  width: 400px;
+  height: 250px;
+  border: 2px solid #646cff;
+  background-color: #1a1a1a;
+  cursor: crosshair;
+}
+
+@media (prefers-color-scheme: light) {
+  .click-canvas {
+    background-color: #f9f9f9;
+    border-color: #535bf2;
+  }
+}

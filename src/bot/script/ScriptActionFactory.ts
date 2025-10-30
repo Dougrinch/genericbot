@@ -290,6 +290,35 @@ const staticFunctionExtensions: FunctionExtension[] = [{
   value: function (msg: unknown) {
     console.log(msg)
   }
+}, {
+  desc: {
+    name: "clickAt",
+    async: false,
+    arguments: [{
+      name: "x",
+      async: false,
+      implicit: false
+    }, {
+      name: "y",
+      async: false,
+      implicit: false
+    }]
+  },
+  value: function (x: number, y: number): void {
+    const element = document.elementFromPoint(x, y)
+    if (element) {
+      const mouseEventInit: MouseEventInit = {
+        clientX: x,
+        clientY: y,
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }
+      element.dispatchEvent(new MouseEvent("mousedown", mouseEventInit))
+      element.dispatchEvent(new MouseEvent("mouseup", mouseEventInit))
+      element.dispatchEvent(new MouseEvent("click", mouseEventInit))
+    }
+  }
 }]
 
 class ScriptAction implements Action {
