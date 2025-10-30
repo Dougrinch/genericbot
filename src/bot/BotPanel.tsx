@@ -1,7 +1,7 @@
 import { useThrottledTime } from "./components/ThrottlingDetector.tsx"
 import { formatTime } from "../utils/time.ts"
 import { ConfigPanel } from "./components/ConfigPanel.tsx"
-import { ActionsRow } from "./components/ActionsRow.tsx"
+import { PillsRow } from "./components/PillsRow.tsx"
 import * as React from "react"
 import { useCallback, useState } from "react"
 import { hotReload, type HotReloadInfo } from "./hotReload.ts"
@@ -50,7 +50,7 @@ export function BotPanel({ terminate, hotReloadInfo }: BotPanelProps) {
           />
         )
       }
-      <ActionsRow
+      <PillsRow
         onToggleConfig={handleToggleConfig}
         isMinimized={isMinimized}
       />

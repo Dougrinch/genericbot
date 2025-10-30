@@ -3,12 +3,12 @@ import { useDispatch } from "../BotManagerContext.tsx"
 import { usePillStatus } from "../logic/ActionsManager.ts"
 import { useConfig } from "../logic/ConfigManager.ts"
 
-interface ActionRowProps {
+interface PillsRowProps {
   onToggleConfig: () => void
   isMinimized: boolean
 }
 
-export function ActionsRow({ onToggleConfig, isMinimized }: ActionRowProps) {
+export function PillsRow({ onToggleConfig, isMinimized }: PillsRowProps) {
   const actions = useConfig(c => c.actions)
 
   return (
