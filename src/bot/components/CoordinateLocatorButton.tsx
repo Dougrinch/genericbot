@@ -56,13 +56,13 @@ export function CoordinateLocatorButton() {
       overlay.style.inset = "0"
       overlay.style.background = "transparent"
       overlay.style.cursor = "crosshair"
-      overlay.style.zIndex = "2147483646"
+      overlay.style.zIndex = "2147483647"
       overlay.style.display = "block"
 
-      overlay.addEventListener("mousemove", (e: MouseEvent) => {
+      function handlePosition(x: number, y: number, shouldSelect: boolean) {
         const element = doWithDisplayNone(overlay, () => {
           return doWithDisplayNone(outerBotRoot.shadowRoot!.getElementById("config-panel")!, () => {
-            return document.elementFromPoint(e.clientX, e.clientY)
+            return document.elementFromPoint(x, y)
           })
         })
 
@@ -73,22 +73,26 @@ export function CoordinateLocatorButton() {
 
           if (element instanceof HTMLElement) {
             selectedElement.current = element
-            selection.current = selectElement(element)
+            selection.current = shouldSelect ? selectElement(element) : null
           } else {
             selectedElement.current = null
             selection.current = null
           }
         }
-      })
+      }
+
+      overlay.addEventListener("mousemove", e => handlePosition(e.clientX, e.clientY, true))
 
       overlay.addEventListener("click", (e: MouseEvent) => {
         const element = selectedElement.current
 
         console.log(e.clientX, e.clientY, element)
-        // alert(`clickAt(${e.clientX}, ${e.clientY})`)
+        alert(`clickAt(${e.clientX}, ${e.clientY})`)
 
         setOverlay(null)
       })
+
+      handlePosition(e.clientX, e.clientY, false)
 
       setOverlay(overlay)
     } else {
@@ -100,9 +104,9 @@ export function CoordinateLocatorButton() {
     <button
       className="icon"
       onClick={handleButtonClick}
-      style={{
-        background: overlay ? "#0096ff" : "#666"
-      }}
+      // style={{
+      //   background: overlay ? "#0096ff" : "#666"
+      // }}
     >
       🔍
     </button>
