@@ -90,30 +90,18 @@ export class ScriptActionFactory {
       )
   }
 
-  runnableScript(action: ActionConfig): Observable<Result<Action>> {
+  runnableScript(config: ActionConfig): Observable<Result<Action>> {
     return this.extensions()
       .pipe(
         map(extensions => {
-          const tree = parser.parse(action.script)
-          const lintResult = lint(tree, action.script, extensions.scriptExternals)
+          const tree = parser.parse(config.script)
+          const lintResult = lint(tree, config.script, extensions.scriptExternals)
           const compilationResult = compile(lintResult)
           if (!compilationResult.ok) {
             return compilationResult
           }
           const contextFactory = (signal: AbortSignal) => this.createContext(compilationResult.value, extensions, signal)
-          const result: Action = {
-            async run(signal: AbortSignal): Promise<void> {
-              const context = contextFactory(signal)
-              try {
-                return await compilationResult.value.function(context.context)
-              } finally {
-                context.stop()
-              }
-            },
-            periodic: action.periodic,
-            interval: action.interval
-          }
-          return ok(result)
+          return ok(new ScriptAction(config, compilationResult.value, extensions, contextFactory))
         })
       )
   }
@@ -303,3 +291,47 @@ const staticFunctionExtensions: FunctionExtension[] = [{
     console.log(msg)
   }
 }]
+
+class ScriptAction implements Action {
+  private readonly config: ActionConfig
+  private readonly compilationResult: CompilationResult
+  private readonly extensions: Extensions
+  private readonly contextFactory: (signal: AbortSignal) => { context: Context, stop: () => void }
+
+  constructor(
+    config: ActionConfig,
+    compilationResult: CompilationResult,
+    extensions: Extensions,
+    contextFactory: (signal: AbortSignal) => { context: Context, stop: () => void }
+  ) {
+    this.config = config
+    this.compilationResult = compilationResult
+    this.extensions = extensions
+    this.contextFactory = contextFactory
+  }
+
+  async run(signal: AbortSignal): Promise<void> {
+    const context = this.contextFactory(signal)
+    try {
+      return await this.compilationResult.function(context.context)
+    } finally {
+      context.stop()
+    }
+  }
+
+  get periodic(): boolean {
+    return this.config.periodic
+  }
+
+  get interval(): number {
+    return this.config.interval
+  }
+
+  isEqualsTo(other: Action): boolean {
+    if (!(other instanceof ScriptAction)) {
+      return false
+    }
+    return this.config === other.config
+      && this.extensions === other.extensions
+  }
+}

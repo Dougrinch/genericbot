@@ -8,6 +8,7 @@ import { ObservableMap } from "../../utils/observables/ObservableMap.ts"
 import { switchMap } from "rxjs/operators"
 import { elements } from "./ElementsObserver.ts"
 import { shared } from "../../utils/observables/Shared.ts"
+import { zipWithPrev } from "../../utils/observables/ZipWithPrev.ts"
 
 
 export function usePillStatus(id: string): PillStatus | undefined {
@@ -27,10 +28,12 @@ type ActionData = {
   controller?: AbortController
 }
 
-export type Action = {
+export interface Action {
   run(signal: AbortSignal): Promise<void>
   periodic: boolean
   interval: number
+
+  isEqualsTo(other: Action): boolean
 }
 
 type ReadyActionData = ActionData & Required<Pick<ActionData, "action">>
@@ -73,23 +76,37 @@ export class ActionsManager {
         splitMerge(
           actions => new Set(actions.map(p => p.id)),
           id => this.value(id)
-            .pipe(tap({
-              next: r => this.onScriptUpdate(id, r),
-              unsubscribe: () => this.onScriptRemove(id)
-            }))
+            .pipe(
+              zipWithPrev(),
+              tap({
+                next: r => this.onScriptUpdate(id, r.prev, r.current),
+                unsubscribe: () => this.onScriptRemove(id)
+              })
+            )
         )
       ).subscribe()
   }
 
-  private onScriptUpdate(id: string, r: Result<Action>) {
+  private onScriptUpdate(id: string, prev: Result<Action> | null, current: Result<Action>): void {
+    if (prev && prev.ok && current.ok && prev.value.isEqualsTo(current.value)) {
+      const data = this.actions.get(id)
+      if (data) {
+        data.action = current.value
+        return
+      }
+    }
+
+    const oldData = this.actions.get(id)
+    const oldIsRunning = oldData?.pillStatus.value.isRunning ?? false
+    const oldStatus = oldData?.pillStatus.value.status
     this.onScriptRemove(id)
 
     const data: ActionData = {
       pillStatus: new BehaviorSubject<PillStatus>({
         isRunning: false,
-        status: "stopped"
+        status: oldIsRunning || oldStatus === "auto-stopped" ? "auto-stopped" : "stopped"
       }),
-      action: r.ok ? r.value : undefined
+      action: current.ok ? current.value : undefined
     }
     this.actions.set(id, data)
   }
@@ -111,20 +128,20 @@ export class ActionsManager {
   value(id: string): Observable<Result<Action>> {
     return this.bot.config.action(id)
       .pipe(
-        switchMapResult(action => this.actionValue(action))
+        switchMapResult(config => this.actionValue(config))
       )
   }
 
-  private actionValue(action: ActionConfig): Observable<Result<Action>> {
-    if (action.type === "xpath") {
-      return elements(action.xpath, true, action.allowMultiple)
-        .pipe(mapResult(e => elementsAction(action, e)))
-    } else if (action.type === "element") {
-      return this.bot.elements.value(action.element)
-        .pipe(mapResult(e => elementsAction(action, e)))
-    } else if (action.type === "script") {
+  private actionValue(config: ActionConfig): Observable<Result<Action>> {
+    if (config.type === "xpath") {
+      return elements(config.xpath, true, config.allowMultiple)
+        .pipe(mapResult(e => new ElementsAction(config, e)))
+    } else if (config.type === "element") {
+      return this.bot.elements.value(config.element)
+        .pipe(mapResult(e => new ElementsAction(config, e)))
+    } else if (config.type === "script") {
       return this.bot.scriptActionFactory
-        .runnableScript(action)
+        .runnableScript(config)
     } else {
       throw new Error("Unreachable")
     }
@@ -139,7 +156,14 @@ export class ActionsManager {
     if (data.pillStatus.value.isRunning) {
       this.stop(data)
     } else {
-      this.start(data)
+      if (data.pillStatus.value.status === "auto-stopped") {
+        data.pillStatus.next({
+          isRunning: data.pillStatus.value.isRunning,
+          status: "stopped"
+        })
+      } else {
+        this.start(data)
+      }
     }
   }
 
@@ -150,7 +174,7 @@ export class ActionsManager {
     } else {
       data.pillStatus.next({
         isRunning: data.pillStatus.value.isRunning,
-        status: "waiting"
+        status: "auto-stopped"
       })
     }
   }
@@ -216,19 +240,38 @@ export class ActionsManager {
   }
 }
 
-function elementsAction(action: ActionConfig, elements: HTMLElement[]): Action {
-  return {
-    run(): Promise<void> {
-      try {
-        for (const element of elements) {
-          element.click()
-        }
-        return Promise.resolve()
-      } catch (e) {
-        return Promise.reject(e)
+class ElementsAction implements Action {
+  private readonly config: ActionConfig
+  private readonly elements: HTMLElement[]
+
+  constructor(config: ActionConfig, elements: HTMLElement[]) {
+    this.config = config
+    this.elements = elements
+  }
+
+  run(): Promise<void> {
+    try {
+      for (const element of this.elements) {
+        element.click()
       }
-    },
-    periodic: action.periodic,
-    interval: action.interval
+      return Promise.resolve()
+    } catch (e) {
+      return Promise.reject(e)
+    }
+  }
+
+  get periodic(): boolean {
+    return this.config.periodic
+  }
+
+  get interval(): number {
+    return this.config.interval
+  }
+
+  isEqualsTo(other: Action): boolean {
+    if (!(other instanceof ElementsAction)) {
+      return false
+    }
+    return this.config === other.config
   }
 }

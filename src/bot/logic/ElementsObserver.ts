@@ -16,6 +16,7 @@ import {
   type Result
 } from "../../utils/Result.ts"
 import { isArraysEqual } from "../../utils/Equals.ts"
+import { distinctUntilChanged } from "rxjs/operators"
 
 
 export const ElementsInfoKey = newAttachmentKey<ElementInfo[]>("elementsInfo")
@@ -55,6 +56,7 @@ export function elements(xpath: string, includeInvisible: boolean, allowMultiple
         return (includeInvisible ? elements : elements.filter(i => i.isVisible))
           .map(i => i.element)
       }),
+      distinctUntilChanged(isResultsEqual(isArraysEqual((e1, e2) => e1 === e2))),
       flatMapResult((elements, r) => {
         if (!allowMultiple && elements.length > 1) {
           return error(`XPath matched ${r.attachments.get(ElementsInfoKey).length} elements (need exactly 1).`, "warn")
