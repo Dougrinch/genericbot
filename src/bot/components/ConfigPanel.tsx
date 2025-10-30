@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react"
 import { ActionsList } from "./ActionsList"
 import { VariablesList } from "./VariablesList"
 import { ElementsList } from "./ElementsList"
+import { CoordinateLocatorButton } from "./CoordinateLocatorButton.tsx"
 
 interface ConfigWrapperProps {
   onClose: () => void
@@ -54,6 +55,7 @@ export function ConfigPanel({ onClose, onHotReload, onMinimize }: ConfigWrapperP
         </div>
         <div className="config-footer">
           <div className="config-actions">
+            <CoordinateLocatorButton />
             <button onClick={onClose}>✕ Close</button>
             <button onClick={onHotReload}>↻ Hot Reload</button>
             <button onClick={onMinimize}>▾ Minimize</button>

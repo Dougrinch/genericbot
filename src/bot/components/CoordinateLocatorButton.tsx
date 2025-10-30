@@ -32,6 +32,8 @@ export function CoordinateLocatorButton() {
         overlay.style.display = "block"
 
         console.log(e.clientX, e.clientY, element)
+        alert(`clickAt(${e.clientX}, ${e.clientY})`)
+
         setOverlay(null)
       })
 
