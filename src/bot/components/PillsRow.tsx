@@ -2,6 +2,7 @@ import type { ActionConfig } from "../logic/Config.ts"
 import { useDispatch } from "../BotManagerContext.tsx"
 import { usePillStatus } from "../logic/ActionsManager.ts"
 import { useConfig } from "../logic/ConfigManager.ts"
+import { CoordinateLocatorButton } from "./CoordinateLocatorButton.tsx"
 
 interface PillsRowProps {
   onToggleConfig: () => void
@@ -21,6 +22,7 @@ export function PillsRow({ onToggleConfig, isMinimized }: PillsRowProps) {
         </div>
       )}
       <div className="icons">
+        <CoordinateLocatorButton />
         <button
           className="icon"
           onClick={onToggleConfig}

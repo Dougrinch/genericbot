@@ -561,7 +561,7 @@ select {
     pointer-events: none;
     border: 10px solid #ff4444;
     background-color: rgba(255, 68, 68, 0.1);
-    z-index: 2147483646;
+    z-index: 2147483645;
     border-radius: 4px;
     box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
     transition: all 0.2s ease;
