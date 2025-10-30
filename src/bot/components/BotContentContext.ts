@@ -9,7 +9,7 @@ export type Selection = {
 export function useSelectElement() {
   const ctx = useContext(BotContentContext)
   if (ctx === null) {
-    throw new Error("useBotPanelRef must be used within a BotPanelContext")
+    throw new Error("useSelectElement must be used within a BotContentContext")
   }
   return ctx
 }

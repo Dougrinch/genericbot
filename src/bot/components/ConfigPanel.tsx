@@ -37,7 +37,7 @@ export function ConfigPanel({ onClose, onHotReload, onMinimize }: ConfigWrapperP
   }, [])
 
   return (
-    <div className="config-wrapper" ref={configRef}>
+    <div id="config-panel" className="config-wrapper" ref={configRef}>
       <div className="config-tab">
         <div className="config-content-scrollable">
           <div className="config-section">

@@ -5,6 +5,7 @@ import { BotManagerContext, useBotManager } from "./BotManagerContext.tsx"
 import { BotManager } from "./logic/BotManager.ts"
 import { BotCSS } from "./BotCSS.tsx"
 import { BotContent } from "./components/BotContent.tsx"
+import { BotContext } from "./components/BotContext.ts"
 
 export type BotProps = {
   outerRoot: HTMLElement
@@ -21,12 +22,14 @@ export function Bot(props: BotProps) {
   }, [botManager, props])
 
   return (
-    <div id="bot">
-      <BotCSS>
-        <BotManagerContext value={botManager}>
-          <BotContent terminate={terminate} hotReloadInfo={props.hotReloadInfo} />
-        </BotManagerContext>
-      </BotCSS>
-    </div>
+    <BotContext value={props.outerRoot}>
+      <div id="bot">
+        <BotCSS>
+          <BotManagerContext value={botManager}>
+            <BotContent terminate={terminate} hotReloadInfo={props.hotReloadInfo} />
+          </BotManagerContext>
+        </BotCSS>
+      </div>
+    </BotContext>
   )
 }

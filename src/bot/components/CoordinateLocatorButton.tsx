@@ -1,22 +1,55 @@
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { type Selection, useSelectElement } from "./BotContentContext.ts"
+import { useSetBotUITransparency } from "./BotUIContext.tsx"
+import { useOuterBotRoot } from "./BotContext.ts"
 
 export function CoordinateLocatorButton() {
+  const selectElement = useSelectElement()
+  const setBotUITransparency = useSetBotUITransparency()
+  const outerBotRoot = useOuterBotRoot()
+
   const [overlay, setOverlay] = useState<HTMLDivElement | null>(null)
+
+  const selectedElement = useRef<HTMLElement | null>(null)
+  const selection = useRef<Selection | null>(null)
+  const keyDownHandler = useRef<((e: KeyboardEvent) => void) | null>(null)
 
   useEffect(() => {
     if (overlay) {
+      if (selectedElement.current) {
+        selection.current = selectElement(selectedElement.current)
+      }
+      if (keyDownHandler.current) {
+        document.addEventListener("keydown", keyDownHandler.current, { capture: true })
+      }
       document.body.appendChild(overlay)
+      setBotUITransparency(true)
       return () => {
+        if (selection.current) {
+          selection.current.clear()
+        }
+        if (keyDownHandler.current) {
+          document.removeEventListener("keydown", keyDownHandler.current)
+        }
         document.body.removeChild(overlay)
+        setBotUITransparency(false)
       }
     }
-  }, [overlay])
+  }, [overlay, selectElement, setBotUITransparency])
 
   const handleButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation()
 
     if (!overlay) {
+      selectedElement.current = null
+      selection.current = null
+      keyDownHandler.current = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setOverlay(null)
+        }
+      }
+
       const overlay = document.createElement("div")
 
       overlay.style.position = "fixed"
@@ -26,13 +59,33 @@ export function CoordinateLocatorButton() {
       overlay.style.zIndex = "2147483646"
       overlay.style.display = "block"
 
+      overlay.addEventListener("mousemove", (e: MouseEvent) => {
+        const element = doWithDisplayNone(overlay, () => {
+          return doWithDisplayNone(outerBotRoot.shadowRoot!.getElementById("config-panel")!, () => {
+            return document.elementFromPoint(e.clientX, e.clientY)
+          })
+        })
+
+        if (element !== selectedElement.current) {
+          if (selection.current) {
+            selection.current.clear()
+          }
+
+          if (element instanceof HTMLElement) {
+            selectedElement.current = element
+            selection.current = selectElement(element)
+          } else {
+            selectedElement.current = null
+            selection.current = null
+          }
+        }
+      })
+
       overlay.addEventListener("click", (e: MouseEvent) => {
-        overlay.style.display = "none"
-        const element = document.elementFromPoint(e.clientX, e.clientY)
-        overlay.style.display = "block"
+        const element = selectedElement.current
 
         console.log(e.clientX, e.clientY, element)
-        alert(`clickAt(${e.clientX}, ${e.clientY})`)
+        // alert(`clickAt(${e.clientX}, ${e.clientY})`)
 
         setOverlay(null)
       })
@@ -54,4 +107,14 @@ export function CoordinateLocatorButton() {
       🔍
     </button>
   )
+}
+
+function doWithDisplayNone<T>(css: ElementCSSInlineStyle, body: () => T): T {
+  const oldDisplay = css.style.display
+  try {
+    css.style.display = "none"
+    return body()
+  } finally {
+    css.style.display = oldDisplay
+  }
 }
