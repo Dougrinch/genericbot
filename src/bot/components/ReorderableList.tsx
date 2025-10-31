@@ -8,7 +8,7 @@ export type ReorderableListProps = {
   handleReorder: (orderedIds: string[]) => void
   children: React.ReactNode
   addButtonLabel: string
-  addButtonOnClick: () => void
+  addButtonOnClick: (e: React.MouseEvent) => void
 }
 
 export function ReorderableList(props: ReorderableListProps) {

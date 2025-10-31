@@ -307,6 +307,9 @@ const staticFunctionExtensions: FunctionExtension[] = [{
   value: function (x: number, y: number): void {
     const element = document.elementFromPoint(x, y)
     if (element) {
+      if (element instanceof HTMLElement) {
+        element.focus()
+      }
       const mouseEventInit: MouseEventInit = {
         clientX: x,
         clientY: y,

@@ -1,10 +1,13 @@
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { type DependencyList, useCallback, useEffect, useRef, useState } from "react"
 import { type Selection, useSelectElement } from "./BotContentContext.ts"
 import { useSetBotUITransparency } from "./BotUIContext.tsx"
 import { useOuterBotRoot } from "./BotContext.ts"
 
-export function CoordinateLocatorButton() {
+export function useLocateElement(onLocate: (element: HTMLElement, x: number, y: number) => void, deps: DependencyList) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const cachedOnLocate = useCallback(onLocate, deps)
+
   const selectElement = useSelectElement()
   const setBotUITransparency = useSetBotUITransparency()
   const outerBotRoot = useOuterBotRoot()
@@ -38,7 +41,7 @@ export function CoordinateLocatorButton() {
     }
   }, [overlay, selectElement, setBotUITransparency])
 
-  const handleButtonClick = (e: React.MouseEvent) => {
+  return useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
 
     if (!overlay) {
@@ -86,8 +89,9 @@ export function CoordinateLocatorButton() {
       overlay.addEventListener("click", (e: MouseEvent) => {
         const element = selectedElement.current
 
-        console.log(e.clientX, e.clientY, element)
-        alert(`clickAt(${e.clientX}, ${e.clientY})`)
+        if (element) {
+          cachedOnLocate(element, e.clientX, e.clientY)
+        }
 
         setOverlay(null)
       })
@@ -98,19 +102,7 @@ export function CoordinateLocatorButton() {
     } else {
       setOverlay(null)
     }
-  }
-
-  return (
-    <button
-      className="icon"
-      onClick={handleButtonClick}
-      // style={{
-      //   background: overlay ? "#0096ff" : "#666"
-      // }}
-    >
-      🔍
-    </button>
-  )
+  }, [outerBotRoot, overlay, cachedOnLocate, selectElement])
 }
 
 function doWithDisplayNone<T>(css: ElementCSSInlineStyle, body: () => T): T {

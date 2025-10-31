@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 import { ActionsList } from "./ActionsList"
 import { VariablesList } from "./VariablesList"
 import { ElementsList } from "./ElementsList"
-import { CoordinateLocatorButton } from "./CoordinateLocatorButton.tsx"
+import { useLocateElement } from "./ElementLocator.tsx"
 
 interface ConfigWrapperProps {
   onClose: () => void
@@ -36,6 +36,10 @@ export function ConfigPanel({ onClose, onHotReload, onMinimize }: ConfigWrapperP
     }
   }, [])
 
+  const locateElement = useLocateElement((_, x, y) => {
+    alert(`clickAt(${x}, ${y})`)
+  }, [])
+
   return (
     <div id="config-panel" className="config-wrapper" ref={configRef}>
       <div className="config-tab">
@@ -55,7 +59,12 @@ export function ConfigPanel({ onClose, onHotReload, onMinimize }: ConfigWrapperP
         </div>
         <div className="config-footer">
           <div className="config-actions">
-            <CoordinateLocatorButton />
+            <button
+              className="icon"
+              onClick={locateElement}
+            >
+              🔍
+            </button>
             <button onClick={onClose}>✕ Close</button>
             <button onClick={onHotReload}>↻ Hot Reload</button>
             <button onClick={onMinimize}>▾ Minimize</button>

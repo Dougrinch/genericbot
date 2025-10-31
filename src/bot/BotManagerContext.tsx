@@ -1,4 +1,4 @@
-import { createContext, type DependencyList, useContext, useMemo, useRef } from "react"
+import { createContext, type DependencyList, useCallback, useContext, useMemo, useRef } from "react"
 import { BotManager } from "./logic/BotManager.ts"
 import type { Dispatch } from "../utils/ManagerStore.ts"
 import type { Observable } from "rxjs"
@@ -8,10 +8,12 @@ import { useObservable } from "../utils/observables/Hook.ts"
 export function useBotObservable<T>(factory: (m: BotManager) => Observable<T>, deps: DependencyList): T {
   const manager = useBotManagerContext().manager
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const cachedFactory = useCallback(factory, deps)
+
   const observable = useMemo(() => {
-    return factory(manager)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manager, ...deps])
+    return cachedFactory(manager)
+  }, [manager, cachedFactory])
 
   return useObservable(observable)
 }
