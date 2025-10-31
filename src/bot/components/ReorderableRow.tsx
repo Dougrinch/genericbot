@@ -1,5 +1,5 @@
 import * as React from "react"
-import { type ReactNode, useEffect, useState } from "react"
+import { type ReactNode, useEffect, useRef, useState } from "react"
 import { useReorderableListContext } from "./ReorderableListContext.ts"
 
 export type ReorderableRowProps = {
@@ -30,6 +30,25 @@ export function ReorderableRow(props: ReorderableRowProps) {
   }, [onDragStop])
 
   const [isEditing, setIsEditing] = useState(!props.name)
+
+  const [isConfirmingRemove, setIsConfirmingRemove] = useState(false)
+  const removeButtonRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!isConfirmingRemove) {
+      return
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (removeButtonRef.current && !removeButtonRef.current.contains(event.target as Node)) {
+        setIsConfirmingRemove(false)
+      }
+    }
+
+    document.addEventListener("click", handleClickOutside)
+    return () => {
+      document.removeEventListener("click", handleClickOutside)
+    }
+  }, [isConfirmingRemove])
 
   if (!isEditing) {
     return (
@@ -78,18 +97,23 @@ export function ReorderableRow(props: ReorderableRowProps) {
             )}
           </div>
           <button
+            ref={removeButtonRef}
             className="reorderable-item-remove-btn"
-            onClick={() => {
+            onClick={e => {
               if (props.askOnRemove) {
-                if (confirm(`Remove "${props.name}"`)) {
+                if (isConfirmingRemove) {
                   props.handleRemove(props.id)
+                  setIsConfirmingRemove(false)
+                } else {
+                  e.stopPropagation()
+                  setIsConfirmingRemove(true)
                 }
               } else {
                 props.handleRemove(props.id)
               }
             }}
           >
-            Remove
+            {isConfirmingRemove ? "Confirm?" : "Remove"}
           </button>
           <button className="reorderable-item-edit-btn" onClick={() => setIsEditing(false)}>
             Done
