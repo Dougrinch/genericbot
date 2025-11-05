@@ -55,9 +55,7 @@ export function useObservable<T>(observable: Observable<T>): T {
     trySubscribeToRoot(entry)
     entry.active += 1
     const subscription = entry.subject.subscribe({
-      next: () => {
-        queueMicrotask(onChange)
-      }
+      next: onChange
     })
     return () => {
       subscription.unsubscribe()
