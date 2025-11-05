@@ -104,9 +104,8 @@ function GameTopPanel(props: { isGoldVisible: boolean, isGoldInTree: boolean }) 
 
 function DigButton() {
   return (
-    <button onClick={() => dispatch({ type: "dig" })}>
-      Dig for 1 Gold
-    </button>
+    <input type="button" value="Dig for 1 Gold" onClick={() => dispatch({ type: "dig" })}>
+    </input>
   )
 }
 

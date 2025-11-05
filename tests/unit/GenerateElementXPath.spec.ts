@@ -41,7 +41,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//div[@id='form']//button[contains(.,'Submit')]")
+      expect(xpath).toBe("//div[@id='form']//button[.='Submit']")
     })
 
     it("should use parent id prefix with text containing integers", () => {
@@ -68,7 +68,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//div[@id='root']//button[contains(.,'Click')]")
+      expect(xpath).toBe("//div[@id='root']//button[.='Click']")
     })
 
     it("should use closest parent with id", () => {
@@ -77,7 +77,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//div[@id='inner']//button[contains(.,'Click')]")
+      expect(xpath).toBe("//div[@id='inner']//button[.='Click']")
     })
   })
 
@@ -87,7 +87,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//button[contains(.,'Click Here')]")
+      expect(xpath).toBe("//button[.='Click Here']")
     })
 
     it("should split text by integers and use multiple contains", () => {
@@ -145,7 +145,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(div)
 
-      expect(xpath).toBe("//div[contains(.,'ClickHere') and not(descendant::div[contains(.,'ClickHere')])]")
+      expect(xpath).toBe("//div[.='ClickHere' and not(descendant::div[.='ClickHere'])]")
     })
 
     it("should handle deeply nested text", () => {
@@ -162,7 +162,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//div[@id='container']//button[contains(.,'ClickNow')]")
+      expect(xpath).toBe("//div[@id='container']//button[.='ClickNow']")
     })
   })
 
@@ -182,7 +182,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//button[contains(.,'Click')]")
+      expect(xpath).toBe("//button[.='Click']")
     })
 
     it("should handle element with only whitespace", () => {
