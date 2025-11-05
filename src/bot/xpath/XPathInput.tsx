@@ -6,6 +6,8 @@ import { githubDark } from "@uiw/codemirror-theme-github"
 import type { BasicSetupOptions } from "@uiw/codemirror-extensions-basic-setup"
 import { type Diagnostic, linter } from "@codemirror/lint"
 import { syntaxTree } from "@codemirror/language"
+import { useLocateElement } from "../components/ElementLocator.tsx"
+import { initialElementXPath } from "../components/GenerateElementXPath.ts"
 
 interface XPathInputProps {
   id: string
@@ -47,14 +49,30 @@ export function XPathInput({ id, value, onChange }: XPathInputProps) {
     }
   }, [])
 
+  const locateElement = useLocateElement(element => {
+    const xpath = initialElementXPath(element)
+    onChange(xpath)
+  }, [])
+
   return (
-    <CodeMirror
-      id={id}
-      theme={githubDark}
-      extensions={extensions}
-      basicSetup={basicSetup}
-      value={value}
-      onChange={onChange}
-    />
+    <div className="xpath-input-container">
+      <div className="xpath-input-editor">
+        <CodeMirror
+          id={id}
+          theme={githubDark}
+          extensions={extensions}
+          basicSetup={basicSetup}
+          value={value}
+          onChange={onChange}
+        />
+      </div>
+      <button
+        type="button"
+        className="xpath-input-button"
+        onClick={locateElement}
+      >
+        🔍
+      </button>
+    </div>
   )
 }

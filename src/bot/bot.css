@@ -284,6 +284,22 @@ button:hover {
     white-space: nowrap;
 }
 
+.xpath-input-container {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.xpath-input-editor {
+    flex: 1;
+}
+
+.xpath-input-button {
+    padding: 4px 8px;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
 input, select, textarea {
     padding: 6px 8px;
     border-radius: 8px;
