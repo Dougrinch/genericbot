@@ -37,7 +37,7 @@ afterEach(() => {
 
 function resetConfig(): void {
   const config = initialBotConfig()
-  localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config))
+  localStorage.setItem(CONFIG_STORAGE_KEY + "_" + window.location.href, JSON.stringify(config))
 }
 
 function initialBotConfig(): Config {

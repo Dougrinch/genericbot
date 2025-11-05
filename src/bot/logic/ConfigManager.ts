@@ -262,7 +262,7 @@ export class ConfigManager {
 
 function loadConfig(): Config {
   try {
-    const saved = localStorage.getItem(CONFIG_STORAGE_KEY)
+    const saved = readConfig()
     if (saved !== null && saved.length > 0) {
       return fixCompatibility(JSON.parse(saved) as Config)
     }
@@ -276,9 +276,17 @@ function loadConfig(): Config {
   }
 }
 
+function readConfig(): string | null {
+  const config = localStorage.getItem(CONFIG_STORAGE_KEY + "_" + window.location.href)
+  if (config !== null) {
+    return config
+  }
+  return localStorage.getItem(CONFIG_STORAGE_KEY)
+}
+
 function saveConfig(config: Config): void {
   try {
-    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config))
+    localStorage.setItem(CONFIG_STORAGE_KEY + "_" + window.location.href, JSON.stringify(config))
   } catch (error) {
     console.error("Failed to save config to localStorage:", error)
   }
