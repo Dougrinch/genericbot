@@ -166,6 +166,16 @@ describe("GenerateElementXPath", () => {
     })
   })
 
+  describe("Input elements", () => {
+    it("should use type and value attributes for input[type=button]", () => {
+      const input = html("<input type=\"button\" value=\"Submit Form\">")
+
+      const xpath = initialElementXPath(input)
+
+      expect(xpath).toBe("//input[@type='button' and @value='Submit Form']")
+    })
+  })
+
   describe("Edge cases", () => {
     it("should trim whitespace from text", () => {
       const button = html("<button>  Click  </button>")

@@ -5,17 +5,20 @@ export function initialElementXPath(element: HTMLElement): string {
     return `//${tagName}[@id='${element.id}']`
   }
 
+  const parentSelector = buildParentSelector(element)
+  const elementSelector = buildElementSelector(element)
+
+  return `${parentSelector}${elementSelector}`
+}
+
+function buildParentSelector(element: HTMLElement) {
   const parentWithId = findParentWithId(element)
-
-  const textParts = extractTextParts(element)
-  const textPredicate = buildTextPredicate(tagName, textParts)
-
   if (parentWithId) {
     const parentTag = parentWithId.tagName.toLowerCase()
     const parentId = parentWithId.id
-    return `//${parentTag}[@id='${parentId}']//${tagName}${textPredicate}`
+    return `//${parentTag}[@id='${parentId}']`
   } else {
-    return `//${tagName}${textPredicate}`
+    return ""
   }
 }
 
@@ -30,6 +33,18 @@ function findParentWithId(element: HTMLElement): HTMLElement | null {
   }
 
   return null
+}
+
+function buildElementSelector(element: HTMLElement) {
+  const tagName = element.tagName.toLowerCase()
+
+  if (tagName === "input" && element instanceof HTMLInputElement && element.type === "button" && element.value) {
+    return `//${tagName}[@type='button' and @value='${element.value}']`
+  }
+
+  const textParts = extractTextParts(element)
+  const textPredicate = buildTextPredicate(tagName, textParts)
+  return `//${tagName}${textPredicate}`
 }
 
 function extractTextParts(element: HTMLElement): string[] {
@@ -56,7 +71,6 @@ function buildTextPredicate(tagName: string, parts: string[]): string {
   const predicates = parts.map(part => `contains(.,'${part}')`)
   const textConditions = predicates.join(" and ")
 
-  // Add descendant filter only for divs to prevent matching parent when child also matches
   if (tagName === "div") {
     const descendantFilter = `not(descendant::${tagName}[${textConditions}])`
     return `[${textConditions} and ${descendantFilter}]`
