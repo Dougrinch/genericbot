@@ -56,8 +56,11 @@ function buildTextPredicate(tagName: string, parts: string[]): string {
   const predicates = parts.map(part => `contains(.,'${part}')`)
   const textConditions = predicates.join(" and ")
 
-  // Add descendant filter to prevent matching parent when child also matches
-  const descendantFilter = `not(descendant::${tagName}[${textConditions}])`
+  // Add descendant filter only for divs to prevent matching parent when child also matches
+  if (tagName === "div") {
+    const descendantFilter = `not(descendant::${tagName}[${textConditions}])`
+    return `[${textConditions} and ${descendantFilter}]`
+  }
 
-  return `[${textConditions} and ${descendantFilter}]`
+  return `[${textConditions}]`
 }

@@ -41,7 +41,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//div[@id='form']//button[contains(.,'Submit') and not(descendant::button[contains(.,'Submit')])]")
+      expect(xpath).toBe("//div[@id='form']//button[contains(.,'Submit')]")
     })
 
     it("should use parent id prefix with text containing integers", () => {
@@ -50,7 +50,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(span)
 
-      expect(xpath).toBe("//div[@id='cart']//span[contains(.,'Price:') and contains(.,'dollars') and not(descendant::span[contains(.,'Price:') and contains(.,'dollars')])]")
+      expect(xpath).toBe("//div[@id='cart']//span[contains(.,'Price:') and contains(.,'dollars')]")
     })
 
     it("should use parent id prefix when element has no text", () => {
@@ -68,7 +68,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//div[@id='root']//button[contains(.,'Click') and not(descendant::button[contains(.,'Click')])]")
+      expect(xpath).toBe("//div[@id='root']//button[contains(.,'Click')]")
     })
 
     it("should use closest parent with id", () => {
@@ -77,7 +77,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//div[@id='inner']//button[contains(.,'Click') and not(descendant::button[contains(.,'Click')])]")
+      expect(xpath).toBe("//div[@id='inner']//button[contains(.,'Click')]")
     })
   })
 
@@ -87,7 +87,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//button[contains(.,'Click Here') and not(descendant::button[contains(.,'Click Here')])]")
+      expect(xpath).toBe("//button[contains(.,'Click Here')]")
     })
 
     it("should split text by integers and use multiple contains", () => {
@@ -95,7 +95,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(span)
 
-      expect(xpath).toBe("//span[contains(.,'Count:') and contains(.,'items') and not(descendant::span[contains(.,'Count:') and contains(.,'items')])]")
+      expect(xpath).toBe("//span[contains(.,'Count:') and contains(.,'items')]")
     })
 
     it("should handle text with decimal numbers", () => {
@@ -103,7 +103,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(span)
 
-      expect(xpath).toBe("//span[contains(.,'Price: $') and contains(.,'only') and not(descendant::span[contains(.,'Price: $') and contains(.,'only')])]")
+      expect(xpath).toBe("//span[contains(.,'Price: $') and contains(.,'only')]")
     })
 
     it("should handle text with exponential notation", () => {
@@ -111,7 +111,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(span)
 
-      expect(xpath).toBe("//span[contains(.,'Value:') and contains(.,'items') and not(descendant::span[contains(.,'Value:') and contains(.,'items')])]")
+      expect(xpath).toBe("//span[contains(.,'Value:') and contains(.,'items')]")
     })
 
     it("should handle text with negative exponential notation", () => {
@@ -119,7 +119,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(span)
 
-      expect(xpath).toBe("//span[contains(.,'Small:') and contains(.,'units') and not(descendant::span[contains(.,'Small:') and contains(.,'units')])]")
+      expect(xpath).toBe("//span[contains(.,'Small:') and contains(.,'units')]")
     })
 
     it("should return tag name only when element has no text", () => {
@@ -135,7 +135,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(span)
 
-      expect(xpath).toBe("//span[contains(.,'Range:') and contains(.,'to') and contains(.,'items') and not(descendant::span[contains(.,'Range:') and contains(.,'to') and contains(.,'items')])]")
+      expect(xpath).toBe("//span[contains(.,'Range:') and contains(.,'to') and contains(.,'items')]")
     })
   })
 
@@ -162,7 +162,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//div[@id='container']//button[contains(.,'ClickNow') and not(descendant::button[contains(.,'ClickNow')])]")
+      expect(xpath).toBe("//div[@id='container']//button[contains(.,'ClickNow')]")
     })
   })
 
@@ -172,7 +172,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(button)
 
-      expect(xpath).toBe("//button[contains(.,'Click') and not(descendant::button[contains(.,'Click')])]")
+      expect(xpath).toBe("//button[contains(.,'Click')]")
     })
 
     it("should handle element with only whitespace", () => {
@@ -196,7 +196,7 @@ describe("GenerateElementXPath", () => {
 
       const xpath = initialElementXPath(span)
 
-      expect(xpath).toBe("//span[contains(.,'Total:') and contains(.,'items') and not(descendant::span[contains(.,'Total:') and contains(.,'items')])]")
+      expect(xpath).toBe("//span[contains(.,'Total:') and contains(.,'items')]")
     })
   })
 })
