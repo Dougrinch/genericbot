@@ -12,7 +12,9 @@ export function ElementsList() {
 
   const locateElement = useLocateElement(element => {
     const xpath = initialElementXPath(element)
-    dispatch.config.addElement(xpath)
+    const nameMatch = element.innerText.match(/[a-zA-Z ]+/g)
+    const name = nameMatch && nameMatch.length > 0 ? nameMatch[0].trim() : ""
+    dispatch.config.addElement(xpath, name)
   }, [])
 
   return (
