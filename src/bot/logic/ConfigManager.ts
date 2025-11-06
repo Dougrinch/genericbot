@@ -199,7 +199,7 @@ export class ConfigManager {
     })
   }
 
-  addElement(xpath: string, name: string): void {
+  addElement(): void {
     const oldIds = this.getConfig().elements
       .map(e => e.id.match(/^elem_(\d+)$/))
       .filter(m => m !== null)
@@ -212,8 +212,8 @@ export class ConfigManager {
     this.updateConfig(config => {
       config.elements.push({
         id: newId,
-        name: name,
-        xpath: xpath,
+        name: "",
+        xpath: "",
         allowMultiple: false,
         includeInvisible: false
       })

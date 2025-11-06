@@ -3,7 +3,7 @@ import { formatTime } from "../utils/time.ts"
 import { ConfigPanel } from "./components/ConfigPanel.tsx"
 import { PillsRow } from "./components/PillsRow.tsx"
 import * as React from "react"
-import { useCallback, useState } from "react"
+import { memo, useCallback, useState } from "react"
 import { hotReload, type HotReloadInfo } from "./hotReload.ts"
 
 export type BotPanelProps = {
@@ -11,7 +11,7 @@ export type BotPanelProps = {
   hotReloadInfo?: HotReloadInfo
 }
 
-export function BotPanel({ terminate, hotReloadInfo }: BotPanelProps) {
+export const BotPanel = memo(({ terminate, hotReloadInfo }: BotPanelProps) => {
   const throttledTime = useThrottledTime()
 
   const [isConfigVisible, setIsConfigVisible] = useState(!!hotReloadInfo)
@@ -56,4 +56,4 @@ export function BotPanel({ terminate, hotReloadInfo }: BotPanelProps) {
       />
     </div>
   )
-}
+})

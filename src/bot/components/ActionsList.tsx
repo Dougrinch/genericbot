@@ -13,7 +13,7 @@ export function ActionsList() {
       rowIdPrefix="action"
       handleReorder={dispatch.config.reorderActions}
       addButtonLabel="Add Action"
-      addButtonOnClick={() => dispatch.config.addAction()}
+      addButtonOnClick={dispatch.config.addAction}
     >
       {actions.map((action, index) => (
         <ActionRow

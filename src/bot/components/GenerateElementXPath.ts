@@ -58,22 +58,13 @@ function buildElementSelector(element: HTMLElement) {
 }
 
 function buildTextFilter(key: string, text: string): string {
-  const parts = extractTextParts(text)
-
-  if (parts.length === 1) {
-    return `${key}='${parts[0]}'`
+  if (text.match(/^[a-zA-Z ]+$/g)) {
+    return `${key}='${text}'`
   }
 
-  return parts
-    .map(part => `contains(${key},'${part}')`)
-    .join(" and ")
-}
-
-function extractTextParts(text: string): string[] {
-  // Split by numbers
-  const parts = text.split(/\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g)
-
-  return parts
+  return text.split(/\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g)
     .map(part => part.trim().replaceAll("\n", ""))
     .filter(part => part.length > 0)
+    .map(part => `contains(${key},'${part}')`)
+    .join(" and ")
 }

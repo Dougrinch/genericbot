@@ -98,6 +98,14 @@ describe("GenerateElementXPath", () => {
       expect(xpath).toBe("//span[contains(.,'Count:') and contains(.,'items')]")
     })
 
+    it("should use contains if has number", () => {
+      const span = html("<span>Gold: 42</span>")
+
+      const xpath = initialElementXPath(span)
+
+      expect(xpath).toBe("//span[contains(.,'Gold:')]")
+    })
+
     it("should handle text with decimal numbers", () => {
       const span = html("<span>Price: $19.99 only</span>")
 

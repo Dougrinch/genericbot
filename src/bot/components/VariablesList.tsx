@@ -14,7 +14,7 @@ export function VariablesList() {
         rowIdPrefix="var"
         handleReorder={dispatch.config.reorderVariables}
         addButtonLabel="Add Variable"
-        addButtonOnClick={() => dispatch.config.addVariable()}
+        addButtonOnClick={dispatch.config.addVariable}
       >
         {variables.map((variable, index) => (
           <VariableRow

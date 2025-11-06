@@ -4,6 +4,7 @@ import { useReorderableListContext } from "./ReorderableListContext.ts"
 
 export type ReorderableRowProps = {
   id: string
+  isNew?: boolean
   index: number
   name: string
   value?: ReactNode
@@ -29,7 +30,7 @@ export function ReorderableRow(props: ReorderableRowProps) {
     })
   }, [onDragStop])
 
-  const [isEditing, setIsEditing] = useState(!props.name)
+  const [isEditing, setIsEditing] = useState(!props.name || props.isNew)
 
   const [isConfirmingRemove, setIsConfirmingRemove] = useState(false)
   const removeButtonRef = useRef<HTMLButtonElement>(null)
