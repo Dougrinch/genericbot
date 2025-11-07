@@ -30,7 +30,7 @@ export function ReorderableRow(props: ReorderableRowProps) {
     })
   }, [onDragStop])
 
-  const [isEditing, setIsEditing] = useState(!props.name || props.isNew)
+  const [isEditing, setIsEditing] = useState(!props.name || (props.isNew === true) || false)
 
   const [isConfirmingRemove, setIsConfirmingRemove] = useState(false)
   const removeButtonRef = useRef<HTMLButtonElement>(null)
