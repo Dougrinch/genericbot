@@ -193,12 +193,7 @@ export class ScriptActionFactory {
           get => async () => {
             const result = get()
             const elements = result.ok ? result.value : undefined
-            if (elements) {
-              for (const e of elements) {
-                e.click()
-              }
-              await new Promise(resolve => setTimeout(resolve, 0))
-            }
+            await click(elements)
           }
         )
       }
@@ -240,7 +235,27 @@ export class ScriptActionFactory {
   }
 }
 
+const click = async (elements: HTMLElement[] | undefined) => {
+  if (elements) {
+    for (const e of elements) {
+      e.click()
+    }
+    await new Promise(resolve => setTimeout(resolve, 0))
+  }
+}
+
 const staticFunctionExtensions: FunctionExtension[] = [{
+  desc: {
+    name: "click",
+    async: true,
+    arguments: [{
+      name: "elements",
+      async: false,
+      implicit: false
+    }]
+  },
+  value: click
+}, {
   desc: {
     name: "repeat",
     async: true,
