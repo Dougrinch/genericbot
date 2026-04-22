@@ -58,6 +58,7 @@ export class ScriptActionFactory {
 
     for (const element of elementConfigs) {
       functions.push(this.elementExtension(element))
+      variables.push(this.elementVariableExtension(element))
     }
 
     for (const variable of variableConfigs) {
@@ -182,7 +183,7 @@ export class ScriptActionFactory {
   private elementExtension(element: ElementConfig): FunctionExtension {
     return {
       desc: {
-        name: toIdentifier(element.name),
+        name: toIdentifier("click " + element.name),
         async: true,
         arguments: []
       },
@@ -198,6 +199,24 @@ export class ScriptActionFactory {
               }
               await new Promise(resolve => setTimeout(resolve, 0))
             }
+          }
+        )
+      }
+    }
+  }
+
+  private elementVariableExtension(element: ElementConfig): VariableExtension {
+    return {
+      desc: {
+        name: toIdentifier(element.name),
+        async: false
+      },
+      valueSubscription: () => {
+        return this.createValueSubscription(
+          this.bot.elements.value(element.id),
+          get => () => {
+            const result = get()
+            return result.ok ? result.value : undefined
           }
         )
       }
@@ -289,6 +308,18 @@ const staticFunctionExtensions: FunctionExtension[] = [{
   },
   value: function (msg: unknown) {
     console.log(msg)
+  }
+}, {
+  desc: {
+    name: "has",
+    async: false,
+    arguments: [{
+      name: "array",
+      async: false
+    }]
+  },
+  value: function (array: unknown[]): boolean {
+    return array.length > 0
   }
 }, {
   desc: {
