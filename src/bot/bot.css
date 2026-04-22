@@ -317,7 +317,7 @@ input, select, textarea {
 
 .script-input .cm-editor {
     min-height: 100px;
-    max-height: 500px;
+    max-height: 400px;
 }
 
 input[type="text"], input[type="number"], select, textarea {
