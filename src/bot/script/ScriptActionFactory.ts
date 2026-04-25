@@ -45,6 +45,10 @@ type ValueSubscription<T> = {
   stop(): void
 }
 
+type ElementsRef = {
+  elements: () => (HTMLElement[] | undefined)
+}
+
 export class ScriptActionFactory {
   private readonly bot: BotManager
 
@@ -57,8 +61,7 @@ export class ScriptActionFactory {
     const variables: VariableExtension[] = []
 
     for (const element of elementConfigs) {
-      functions.push(this.elementExtension(element))
-      variables.push(this.elementVariableExtension(element))
+      variables.push(this.elementExtension(element))
     }
 
     for (const variable of variableConfigs) {
@@ -180,27 +183,7 @@ export class ScriptActionFactory {
     }
   }
 
-  private elementExtension(element: ElementConfig): FunctionExtension {
-    return {
-      desc: {
-        name: toIdentifier("click " + element.name),
-        async: true,
-        arguments: []
-      },
-      valueSubscription: () => {
-        return this.createValueSubscription(
-          this.bot.elements.value(element.id),
-          get => async () => {
-            const result = get()
-            const elements = result.ok ? result.value : undefined
-            await click(elements)
-          }
-        )
-      }
-    }
-  }
-
-  private elementVariableExtension(element: ElementConfig): VariableExtension {
+  private elementExtension(element: ElementConfig): VariableExtension {
     return {
       desc: {
         name: toIdentifier(element.name),
@@ -210,8 +193,13 @@ export class ScriptActionFactory {
         return this.createValueSubscription(
           this.bot.elements.value(element.id),
           get => () => {
-            const result = get()
-            return result.ok ? result.value : undefined
+            const ref: ElementsRef = {
+              elements: () => {
+                const result = get()
+                return result.ok ? result.value : undefined
+              }
+            }
+            return ref
           }
         )
       }
@@ -235,15 +223,6 @@ export class ScriptActionFactory {
   }
 }
 
-const click = async (elements: HTMLElement[] | undefined) => {
-  if (elements) {
-    for (const e of elements) {
-      e.click()
-    }
-    await new Promise(resolve => setTimeout(resolve, 0))
-  }
-}
-
 const staticFunctionExtensions: FunctionExtension[] = [{
   desc: {
     name: "click",
@@ -254,7 +233,15 @@ const staticFunctionExtensions: FunctionExtension[] = [{
       implicit: false
     }]
   },
-  value: click
+  value: async (elementsRef: ElementsRef) => {
+    const elements = elementsRef.elements()
+    if (elements) {
+      for (const e of elements) {
+        e.click()
+      }
+      await new Promise(resolve => setTimeout(resolve, 0))
+    }
+  }
 }, {
   desc: {
     name: "repeat",
@@ -345,8 +332,8 @@ const staticFunctionExtensions: FunctionExtension[] = [{
       async: false
     }]
   },
-  value: function (array: unknown[]): boolean {
-    return array.length > 0
+  value: function (elements: ElementsRef): boolean {
+    return (elements.elements()?.length ?? 0) > 0
   }
 }, {
   desc: {

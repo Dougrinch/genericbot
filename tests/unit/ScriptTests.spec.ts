@@ -4,16 +4,53 @@ import { expectScriptCompilation } from "./scriptCompilationTestUtils.ts"
 describe("ScriptTests", () => {
   test("repeat", async () => {
     await expectScriptCompilation({
-      elements: ["dig"],
       script: `
         repeat (2) {
-          clickDig()
+          print(1)
         }
       `,
       expected: `
         await repeat(2, async () => {
-          await clickDig();
+          print(1);
         });
+      `
+    })
+  })
+
+  test("variable", async () => {
+    await expectScriptCompilation({
+      variables: ["foo"],
+      script: `
+        val a = foo + 2
+      `,
+      expected: `
+        let a = foo() + 2;
+      `
+    })
+  })
+
+  test("elementRef", async () => {
+    await expectScriptCompilation({
+      elements: ["foo"],
+      script: `
+        val a = foo
+        click(a)
+      `,
+      expected: `
+        let a = foo();
+        await click(a);
+      `
+    })
+  })
+
+  test("elementClick", async () => {
+    await expectScriptCompilation({
+      elements: ["foo"],
+      script: `
+        click(foo)
+      `,
+      expected: `
+        await click(foo());
       `
     })
   })
