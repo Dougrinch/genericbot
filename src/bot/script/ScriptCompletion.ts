@@ -17,7 +17,8 @@ export function scriptCompletion(externals: ScriptExternals): (context: Completi
     { label: "if", type: "keyword", detail: "block", apply: snippet("if (${1:name}) {${2}\n}") },
     { label: "while", type: "keyword", detail: "loop", apply: snippet("while (${1:condition}) {${2}\n}") },
     { label: "do", type: "keyword", detail: "loop", apply: snippet("do {\n  ${1}\n} while (${2:condition})") },
-    { label: "val", type: "keyword", apply: snippet("val ${1:name} = ${2}") }
+    { label: "val", type: "keyword", apply: snippet("val ${1:name} = ${2}") },
+    { label: "return", type: "keyword", apply: snippet("return ${1:value}") }
   ]
 
   const functionOptions: Completion[] = Array.from(externals.functions.values()).map(functionCompletion)
