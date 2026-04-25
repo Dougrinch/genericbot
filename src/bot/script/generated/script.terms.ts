@@ -14,7 +14,7 @@ export const
   String = 23,
   Boolean = 24,
   IfStatement = 25,
-  Keyword = 40,
+  Keyword = 43,
   ElseStatement = 27,
   VariableDeclaration = 29,
   VariableDefinition = 31,
@@ -22,4 +22,5 @@ export const
   WhileStatement = 35,
   DoWhileStatement = 37,
   FunctionDeclaration = 39,
-  FunctionParametersDeclaration = 41
+  FunctionParametersDeclaration = 41,
+  ReturnStatement = 42

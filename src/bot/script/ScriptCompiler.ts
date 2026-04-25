@@ -15,7 +15,7 @@ import {
   Identifier,
   IfStatement,
   Number as NumberTerm,
-  ParenthesizedExpression,
+  ParenthesizedExpression, ReturnStatement,
   Script,
   Statement,
   String as StringTerm,
@@ -276,6 +276,10 @@ function compileNode(root: LintScope, node: SyntaxNode, code: string): Result<Co
           }
         }
         return name
+      }
+      case ReturnStatement: {
+        const value = node.getChild(Expression)!
+        return `return ${compileNode(value, depth)}`
       }
       case StringTerm:
       case NumberTerm:

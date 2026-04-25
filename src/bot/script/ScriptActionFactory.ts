@@ -326,6 +326,18 @@ const staticFunctionExtensions: FunctionExtension[] = [{
   }
 }, {
   desc: {
+    name: "alert",
+    async: false,
+    arguments: [{
+      name: "msg",
+      async: false
+    }]
+  },
+  value: function (msg: unknown) {
+    alert(msg)
+  }
+}, {
+  desc: {
     name: "has",
     async: false,
     arguments: [{

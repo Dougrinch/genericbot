@@ -149,6 +149,7 @@ function normalizeCode(code: string): string {
   return code
     .split("\n")
     .map(line => line.replace(/^\s+/, ""))
+    .filter(line => line.length > 0)
     .join("\n")
     .trim()
 }

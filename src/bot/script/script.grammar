@@ -42,7 +42,12 @@ Statement {
   AssignmentStatement |
   WhileStatement |
   DoWhileStatement |
-  FunctionDeclaration
+  FunctionDeclaration |
+  ReturnStatement
+}
+
+ReturnStatement {
+  kw<"return"> Expression
 }
 
 IfStatement {
