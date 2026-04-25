@@ -15,10 +15,12 @@ import {
   Identifier,
   IfStatement,
   Number as NumberTerm,
-  ParenthesizedExpression, ReturnStatement,
+  ParenthesizedExpression,
+  ReturnStatement,
   Script,
   Statement,
   String as StringTerm,
+  UnaryExpression,
   VariableDeclaration,
   VariableDefinition,
   WhileStatement
@@ -248,6 +250,11 @@ function compileNode(root: LintScope, node: SyntaxNode, code: string): Result<Co
         const operator = left.nextSibling!
         const right = node.lastChild!
         return `${compileNode(left, depth)} ${compileNode(operator, depth)} ${compileNode(right, depth)}`
+      }
+      case UnaryExpression: {
+        const operator = node.firstChild!
+        const value = node.getChild(Expression)!
+        return `${compileNode(operator, depth)}${compileNode(value, depth)}`
       }
       case Identifier: {
         const name = slice(node)

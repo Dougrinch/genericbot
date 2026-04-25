@@ -74,4 +74,18 @@ describe("ScriptTests", () => {
       `
     })
   })
+
+  test("unary not", async () => {
+    await expectScriptCompilation({
+      variables: ["foo", "bar"],
+      script: `
+        val a = !foo
+        val b = !(foo == bar)
+      `,
+      expected: `
+        let a = !foo();
+        let b = !(foo() === bar());
+      `
+    })
+  })
 })

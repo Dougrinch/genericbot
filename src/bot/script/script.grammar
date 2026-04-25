@@ -18,7 +18,8 @@
 }
 
 @precedence {
-  call
+  call,
+  not,
   times @left,
   plus @left,
   compare @left
@@ -97,6 +98,7 @@ DoWhileStatement {
 Expression {
   ParenthesizedExpression |
   FunctionCall |
+  UnaryExpression |
   BinaryExpression |
   terminalExpression
 }
@@ -112,6 +114,10 @@ BinaryExpression {
   Expression !equal CompareOperator<"==" | "!="> Expression |
   Expression !and LogicOperator<"&&"> Expression |
   Expression !or LogicOperator<"||"> Expression
+}
+
+UnaryExpression {
+  !not LogicOperator<"!"> Expression
 }
 
 terminalExpression {
