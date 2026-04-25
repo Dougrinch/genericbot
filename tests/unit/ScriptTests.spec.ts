@@ -4,9 +4,7 @@ import { expectScriptCompilation } from "./scriptCompilationTestUtils.ts"
 describe("ScriptTests", () => {
   test("repeat", async () => {
     await expectScriptCompilation({
-      elements: [{
-        name: "Dig"
-      }],
+      elements: ["dig"],
       script: `
         repeat (2) {
           clickDig()

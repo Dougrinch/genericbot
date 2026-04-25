@@ -44,8 +44,48 @@ export function compile(lintResult: LintResult): Result<CompilationResult> {
   if (lintResult.correct) {
     return compileNode(lintResult.root, lintResult.tree.topNode, lintResult.code)
   } else {
-    return error("Script is incorrect", "warn")
+    return error(buildLintErrorMessage(lintResult), "warn")
   }
+}
+
+function buildLintErrorMessage(lintResult: LintResult): string {
+  if (lintResult.diagnostics.length === 0) {
+    return "Script is incorrect"
+  }
+
+  const diagnostics = lintResult.diagnostics
+    .map(diagnostic => {
+      return `- ${diagnostic.severity} at ${formatRange(lintResult.code, diagnostic.from, diagnostic.to)}: ${diagnostic.message}`
+    })
+    .join("\n")
+
+  return `Script is incorrect:\n${diagnostics}`
+}
+
+function formatRange(code: string, from: number, to: number): string {
+  const start = positionAt(code, from)
+  const end = positionAt(code, to)
+  if (start.line === end.line) {
+    return `${start.line}:${start.column}-${end.column}`
+  }
+  return `${start.line}:${start.column}-${end.line}:${end.column}`
+}
+
+function positionAt(code: string, offset: number): { line: number, column: number } {
+  const normalizedOffset = Math.max(0, Math.min(offset, code.length))
+  let line = 1
+  let column = 1
+
+  for (let i = 0; i < normalizedOffset; i++) {
+    if (code[i] === "\n") {
+      line += 1
+      column = 1
+    } else {
+      column += 1
+    }
+  }
+
+  return { line, column }
 }
 
 function compileNode(root: LintScope, node: SyntaxNode, code: string): Result<CompilationResult> {

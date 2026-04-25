@@ -1,14 +1,14 @@
 import { expect } from "vitest"
 import { firstValueFrom } from "rxjs"
 import { BotManager } from "../../src/bot/logic/BotManager.ts"
-import type { ActionConfig, Config, ElementConfig, VariableConfig } from "../../src/bot/logic/Config.ts"
+import type { ActionConfig, Config } from "../../src/bot/logic/Config.ts"
 import { CONFIG_STORAGE_KEY } from "../../src/bot/logic/ConfigManager.ts"
 import type { CompilationResult } from "../../src/bot/script/ScriptCompiler.ts"
 import type { Action } from "../../src/bot/logic/ActionsManager.ts"
 
 type ScriptCompilationTestUtils = {
-  elements?: Partial<ElementConfig>[]
-  variables?: Partial<VariableConfig>[]
+  elements?: string[]
+  variables?: string[]
   script: string
   expected: string
   usedFunctions?: string[]
@@ -101,34 +101,32 @@ function installTestLocalStorage(): void {
   })
 }
 
-function seedElements(bot: BotManager, elementConfigs: Partial<ElementConfig>[]): void {
-  for (const [index, elementConfig] of elementConfigs.entries()) {
+function seedElements(bot: BotManager, elementNames: string[]): void {
+  for (const [index, elementName] of elementNames.entries()) {
     const id = `elem_${index + 1}`
     bot.config.addElement()
     bot.config.updateElement(id, {
       id,
-      name: `Element ${index + 1}`,
+      name: elementName,
       xpath: `//*[@data-test-element='${index + 1}']`,
       allowMultiple: false,
-      includeInvisible: true,
-      ...elementConfig
+      includeInvisible: true
     })
   }
 }
 
-function seedVariables(bot: BotManager, variableConfigs: Partial<VariableConfig>[]): void {
-  for (const [index, variableConfig] of variableConfigs.entries()) {
+function seedVariables(bot: BotManager, variableNames: string[]): void {
+  for (const [index, variableName] of variableNames.entries()) {
     const id = `var_${index + 1}`
     bot.config.addVariable()
     bot.config.updateVariable(id, {
       id,
-      name: `Variable ${index + 1}`,
+      name: variableName,
       elementType: "xpath",
       xpath: `//*[@data-test-variable='${index + 1}']`,
       element: "",
       regex: "",
-      type: "number",
-      ...variableConfig
+      type: "number"
     })
   }
 }
