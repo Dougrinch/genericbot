@@ -274,6 +274,35 @@ const staticFunctionExtensions: FunctionExtension[] = [{
   }
 }, {
   desc: {
+    name: "hoverOut",
+    async: true,
+    arguments: [{
+      name: "element",
+      async: false,
+      implicit: false
+    }]
+  },
+  value: async (elementRef: ElementsRef) => {
+    const elements = elementRef.elements()
+    if (elements && elements.length === 1) {
+      const element = elements[0]
+
+      const rect = element.getBoundingClientRect()
+      const mouseEventInit: MouseEventInit = {
+        clientX: rect.left + rect.width / 2,
+        clientY: rect.top + rect.height / 2,
+        bubbles: true,
+        cancelable: true
+      }
+
+      element.dispatchEvent(new MouseEvent("mouseout", mouseEventInit))
+      element.dispatchEvent(new MouseEvent("mouseleave", mouseEventInit))
+
+      await new Promise(resolve => setTimeout(resolve, 0))
+    }
+  }
+}, {
+  desc: {
     name: "repeat",
     async: true,
     arguments: [{
