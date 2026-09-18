@@ -4,6 +4,7 @@ import { BotManager } from "../../src/bot/logic/BotManager.ts"
 import type { ActionConfig, Config } from "../../src/bot/logic/Config.ts"
 import { CONFIG_STORAGE_KEY } from "../../src/bot/logic/ConfigManager.ts"
 import type { Action } from "../../src/bot/logic/ActionsManager.ts"
+import type { CompiledScriptAction } from "./scriptCompilationTestUtils.ts"
 import { pageElements, pageVariables, TestPage } from "./scriptTestPage.ts"
 
 /**
@@ -106,6 +107,7 @@ export class ScriptRun {
   private readonly observer: MutationObserver
   private readonly consoleLog: typeof console.log
 
+  private code = ""
   private status: RunStatus = "running"
   private failure: unknown = undefined
   private stopped = false
@@ -133,6 +135,7 @@ export class ScriptRun {
   }
 
   launch(action: Action): void {
+    this.code = (action as CompiledScriptAction).compilationResult.code
     action.run(this.controller.signal).then(
       () => {
         this.status = "completed"
@@ -142,6 +145,11 @@ export class ScriptRun {
         this.failure = reason
       }
     )
+  }
+
+  /** The JavaScript the script compiled to, wrapper included. */
+  compiledCode(): string {
+    return this.code
   }
 
   /** Everything the script has passed to `print` so far, in order. */

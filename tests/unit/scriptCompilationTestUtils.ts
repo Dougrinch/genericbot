@@ -15,7 +15,14 @@ type ScriptCompilationTestUtils = {
   usedVariables?: string[]
 }
 
-type CompiledScriptAction = Action & {
+type ScriptCompilationErrorTestUtils = {
+  elements?: string[]
+  variables?: string[]
+  script: string
+  error: string | RegExp
+}
+
+export type CompiledScriptAction = Action & {
   readonly compilationResult: CompilationResult
 }
 
@@ -40,6 +47,23 @@ export async function expectScriptCompilation(testCase: ScriptCompilationTestUti
   if (testCase.usedVariables !== undefined) {
     expect(Array.from(compilation.usedVariables)).toEqual(testCase.usedVariables)
   }
+}
+
+/** Compiles a script that is expected to be rejected, and checks why. */
+export async function expectScriptCompilationError(testCase: ScriptCompilationErrorTestUtils): Promise<void> {
+  const bot = createBotManager()
+
+  seedElements(bot, testCase.elements ?? [])
+  seedVariables(bot, testCase.variables ?? [])
+
+  const result = await firstValueFrom(bot.scriptActionFactory.runnableScript(scriptAction(testCase.script)))
+
+  if (result.ok) {
+    const code = (result.value as CompiledScriptAction).compilationResult.code
+    throw new Error(`Script compiled, but it should not have.\n${code}`)
+  }
+
+  expect(result.error).toMatch(testCase.error)
 }
 
 function createBotManager(): BotManager {

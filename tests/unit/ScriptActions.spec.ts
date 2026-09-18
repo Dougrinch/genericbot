@@ -148,3 +148,214 @@ describe("ScriptActions", () => {
     expect(s.page.counter("a")).toBe(0)
   })
 })
+
+describe("ScriptActions: custom functions", () => {
+  test("a custom function runs its body on every call", async () => {
+    const s = await runScript(`
+      fun clickA() {
+        click(buttonA)
+      }
+
+      clickA()
+      clickA()
+    `)
+
+    await s.expectCompleted()
+    expect(s.page.counter("a")).toBe(2)
+  })
+
+  test("a custom function returns a value to its caller", async () => {
+    const s = await runScript(`
+      fun add(a, b) {
+        return a + b
+      }
+
+      print(add(1, add(2, 3)))
+    `)
+
+    await s.expectCompleted()
+    expect(s.printed()).toEqual([6])
+  })
+
+  test("an element passed as an argument is the one acted on", async () => {
+    const s = await runScript(`
+      fun clickTwice(target) {
+        click(target)
+        click(target)
+      }
+
+      clickTwice(buttonB)
+    `, { page: p => p.show("b") })
+
+    await s.expectCompleted()
+    expect(s.page.counters()).toEqual({ a: 0, b: 2 })
+  })
+
+  test("an element returned by a custom function is the one acted on", async () => {
+    const s = await runScript(`
+      fun target() {
+        return buttonA
+      }
+
+      click(target())
+    `)
+
+    await s.expectCompleted()
+    expect(s.page.counter("a")).toBe(1)
+  })
+
+  test("a parameter is local to the call, so the caller's value is untouched", async () => {
+    const s = await runScript(`
+      fun bump(n) {
+        n = n + 1
+        return n
+      }
+
+      val x = 1
+      print(bump(x))
+      print(x)
+    `)
+
+    await s.expectCompleted()
+    expect(s.printed()).toEqual([2, 1])
+  })
+
+  test("a custom function reads a variable at call time, not at declaration time", async () => {
+    const s = await runScript(`
+      fun done() {
+        return counterA >= 3
+      }
+
+      while (!done()) {
+        click(buttonA)
+      }
+      print("done")
+    `)
+
+    await s.expectCompleted()
+    expect(s.page.counter("a")).toBe(3)
+    expect(s.printed()).toEqual(["done"])
+  })
+
+  test("a custom function suspends its caller while it waits", async () => {
+    const s = await runScript(`
+      fun clickTwice() {
+        click(buttonA)
+        wait(100)
+        click(buttonA)
+      }
+
+      clickTwice()
+      print("after")
+    `)
+
+    await s.expectRunning()
+    expect(s.page.counter("a")).toBe(1)
+    expect(s.printed()).toEqual([])
+
+    await s.advance(100)
+    await s.expectCompleted()
+    expect(s.page.counter("a")).toBe(2)
+    expect(s.printed()).toEqual(["after"])
+  })
+
+  test("a custom function waiting on the page resumes when it shows up", async () => {
+    const s = await runScript(`
+      fun clickWhenReady(target) {
+        waitFor(target)
+        click(target)
+      }
+
+      clickWhenReady(buttonB)
+      print("clicked")
+    `)
+
+    await s.expectRunning()
+    expect(s.page.counter("b")).toBe(0)
+
+    s.page.show("b")
+
+    await s.expectCompleted()
+    expect(s.page.counter("b")).toBe(1)
+    expect(s.printed()).toEqual(["clicked"])
+  })
+
+  test("a custom function calls itself until its base case", async () => {
+    const s = await runScript(`
+      fun countdown(n) {
+        if (n > 0) {
+          print(n)
+          countdown(n - 1)
+        }
+      }
+
+      countdown(3)
+    `)
+
+    await s.expectCompleted()
+    expect(s.printed()).toEqual([3, 2, 1])
+  })
+
+  test("a custom function can drive a built-in block", async () => {
+    const s = await runScript(`
+      fun clickTimes(n) {
+        repeat (n) {
+          click(buttonA)
+        }
+      }
+
+      clickTimes(3)
+    `)
+
+    await s.expectCompleted()
+    expect(s.page.counter("a")).toBe(3)
+  })
+
+  test("a nested function is callable inside the one declaring it", async () => {
+    const s = await runScript(`
+      fun outer() {
+        fun inner() {
+          click(buttonA)
+        }
+
+        inner()
+        inner()
+      }
+
+      outer()
+    `)
+
+    await s.expectCompleted()
+    expect(s.page.counter("a")).toBe(2)
+  })
+
+  test("stopping the action fails the caller through the custom function", async () => {
+    const s = await runScript(`
+      fun slow() {
+        wait(10000)
+        click(buttonA)
+      }
+
+      slow()
+    `)
+
+    await s.expectRunning()
+    s.abort()
+
+    await s.expectFailed("Stopped")
+    expect(s.page.counter("a")).toBe(0)
+  })
+
+  test("a failure inside a custom function surfaces from the call", async () => {
+    const s = await runScript(`
+      fun clickValue(value) {
+        click(value)
+      }
+
+      clickValue(counterA)
+    `)
+
+    await s.expectFailed(/elements is not a function/)
+    expect(s.page.counter("a")).toBe(0)
+  })
+})
