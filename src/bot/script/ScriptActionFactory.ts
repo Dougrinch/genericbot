@@ -7,7 +7,7 @@ import { toIdentifier } from "../../utils/Identifiers.ts"
 import { parser } from "./generated/script.ts"
 import { lint } from "./ScriptLinter.ts"
 import { BehaviorSubject, combineLatestWith, type Observable } from "rxjs"
-import { map } from "rxjs/operators"
+import { filter, map } from "rxjs/operators"
 import { ok, type Result } from "../../utils/Result.ts"
 import { shared } from "../../utils/observables/Shared.ts"
 import type { Action } from "../logic/ActionsManager.ts"
@@ -47,6 +47,7 @@ type ValueSubscription<T> = {
 
 type ElementsRef = {
   elements: () => (HTMLElement[] | undefined)
+  changes: Observable<HTMLElement[] | undefined>
 }
 
 export class ScriptActionFactory {
@@ -192,24 +193,29 @@ export class ScriptActionFactory {
       valueSubscription: () => {
         return this.createValueSubscription(
           this.bot.elements.value(element.id),
-          get => () => {
-            const ref: ElementsRef = {
-              elements: () => {
-                const result = get()
-                return result.ok ? result.value : undefined
+          (get, changes) => {
+            const elementChanges = changes.pipe(map(result => result.ok ? result.value : undefined))
+            return () => {
+              const ref: ElementsRef = {
+                elements: () => {
+                  const result = get()
+                  return result.ok ? result.value : undefined
+                },
+                changes: elementChanges
               }
+              return ref
             }
-            return ref
           }
         )
       }
     }
   }
 
-  private createValueSubscription<T, V>(observable: Observable<T>, f: (get: () => T) => V): ValueSubscription<V> {
+  private createValueSubscription<T, V>(observable: Observable<T>, f: (get: () => T, changes: Observable<T>) => V): ValueSubscription<V> {
     const UNSET = {}
     const subject = new BehaviorSubject<T | typeof UNSET>(UNSET)
     const subscription = observable.subscribe(subject)
+    const changes = subject.pipe(filter((value): value is T => value !== UNSET))
     return {
       value: f(() => {
         const value = subject.value
@@ -217,7 +223,7 @@ export class ScriptActionFactory {
           throw Error("Value must be calculated")
         }
         return value as T
-      }),
+      }, changes),
       stop: () => subscription.unsubscribe()
     }
   }
@@ -356,6 +362,53 @@ const staticFunctionExtensions: FunctionExtension[] = [{
         signal.removeEventListener("abort", onAbort)
         resolve()
       }, ms)
+    })
+  }
+}, {
+  desc: {
+    name: "waitFor",
+    async: true,
+    arguments: [{
+      name: "elements",
+      async: false,
+      implicit: false
+    }, {
+      name: "signal",
+      async: false,
+      implicit: true
+    }]
+  },
+  value: async function (elementsRef: ElementsRef, signal: AbortSignal): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (signal.aborted) {
+        reject(signal.reason)
+        return
+      }
+
+      const existing = elementsRef.elements()
+      if (existing && existing.length > 0) {
+        resolve()
+        return
+      }
+
+      const subscription = elementsRef.changes.subscribe(elements => {
+        if (elements && elements.length > 0) {
+          cleanup()
+          resolve()
+        }
+      })
+
+      function onAbort() {
+        cleanup()
+        reject(signal.reason)
+      }
+
+      function cleanup() {
+        subscription.unsubscribe()
+        signal.removeEventListener("abort", onAbort)
+      }
+
+      signal.addEventListener("abort", onAbort, { once: true })
     })
   }
 }, {

@@ -75,6 +75,18 @@ describe("ScriptTests", () => {
     })
   })
 
+  test("waitFor", async () => {
+    await expectScriptCompilation({
+      elements: ["foo"],
+      script: `
+        waitFor(foo)
+      `,
+      expected: `
+        await waitFor(foo(), signal);
+      `
+    })
+  })
+
   test("unary not", async () => {
     await expectScriptCompilation({
       variables: ["foo", "bar"],
