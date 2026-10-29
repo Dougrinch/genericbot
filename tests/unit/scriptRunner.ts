@@ -234,6 +234,7 @@ export class ScriptRun {
       await realDelay(5)
     }
     this.observer.disconnect()
+    this.page.destroy()
     console.log = this.consoleLog
     vi.useRealTimers()
     document.body.innerHTML = ""

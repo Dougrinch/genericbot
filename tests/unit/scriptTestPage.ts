@@ -16,11 +16,19 @@ import type { ElementConfig, VariableConfig } from "../../src/bot/logic/Config.t
 
 const PAGE_ID = "page"
 
+type GridPosition = readonly [column: number, row: number]
+
 export class TestPage {
   private readonly root: HTMLElement
+  private readonly keyDownEvents: KeyboardEvent[] = []
+
+  private readonly onKeyDown = (event: KeyboardEvent) => {
+    this.keyDownEvents.push(event)
+  }
 
   private constructor(root: HTMLElement) {
     this.root = root
+    document.addEventListener("keydown", this.onKeyDown)
   }
 
   /** Replaces the document body with a fresh copy of the page. */
@@ -31,6 +39,7 @@ export class TestPage {
     root.id = PAGE_ID
     root.innerHTML = `<div class="row"><button data-button="a">Click A</button><span data-counter="a">0</span></div>`
       + `<div class="row"><button data-button="b" hidden>Click B</button><span data-counter="b">0</span></div>`
+      + `<div data-grid></div>`
 
     const page = new TestPage(root)
     root.addEventListener("click", event => {
@@ -81,6 +90,44 @@ export class TestPage {
     this.button(name).click()
   }
 
+  setGrid(apples: readonly GridPosition[], player: readonly GridPosition[]): void {
+    const cells = new Map<string, HTMLElement>()
+
+    const getCell = ([column, row]: GridPosition) => {
+      const id = `${column}:${row}`
+      let cell = cells.get(id)
+      if (cell === undefined) {
+        cell = document.createElement("div")
+        cell.className = "apple-grid-cell"
+        cell.dataset.column = String(column)
+        cell.dataset.row = String(row)
+        cells.set(id, cell)
+      }
+      return cell
+    }
+
+    for (const position of apples) {
+      getCell(position).classList.add("has-apple")
+    }
+    for (const position of player) {
+      getCell(position).classList.add("player")
+    }
+
+    this.grid().replaceChildren(...cells.values())
+  }
+
+  pressedKeys(): string[] {
+    return this.keyDownEvents.map(event => event.key)
+  }
+
+  pressedCodes(): string[] {
+    return this.keyDownEvents.map(event => event.code)
+  }
+
+  destroy(): void {
+    document.removeEventListener("keydown", this.onKeyDown)
+  }
+
   private button(name: string): HTMLElement {
     const button = this.root.querySelector<HTMLElement>(`[data-button="${name}"]`)
     if (button === null) {
@@ -96,6 +143,14 @@ export class TestPage {
     }
     return element
   }
+
+  private grid(): HTMLElement {
+    const grid = this.root.querySelector<HTMLElement>("[data-grid]")
+    if (grid === null) {
+      throw new Error("No grid on the page")
+    }
+    return grid
+  }
 }
 
 /**
@@ -106,7 +161,9 @@ export class TestPage {
 export const pageElements: ElementConfig[] = [
   element("elem_1", "Button A", "//button[@data-button='a']", false),
   element("elem_2", "Button B", "//button[@data-button='b']", false),
-  element("elem_3", "All Buttons", "//button[@data-button]", true)
+  element("elem_3", "All Buttons", "//button[@data-button]", true),
+  element("elem_4", "Apples", "//*[contains(concat(' ', normalize-space(@class), ' '), ' has-apple ')]", true),
+  element("elem_5", "Player Cells", "//*[contains(concat(' ', normalize-space(@class), ' '), ' player ')]", true)
 ]
 
 /** Variables the scripts can reference: `counterA` and `counterB`. */

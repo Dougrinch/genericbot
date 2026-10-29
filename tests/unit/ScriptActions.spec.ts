@@ -120,6 +120,50 @@ describe("ScriptActions", () => {
     expect(s.page.counter("a")).toBe(0)
   })
 
+  test("generic element and keyboard functions can drive toward the closest target", async () => {
+    const s = await runScript(`
+      val lastDirection = ""
+      while (true) {
+        val offset = nearestManhattanOffset(apples, playerCells, "data-column", "data-row")
+        val direction = dominantAxisDirection(offset, "w", "a", "s", "d")
+
+        if (direction == "") {
+          lastDirection = ""
+        } else if (direction != lastDirection) {
+          pressKey(direction)
+          lastDirection = direction
+        }
+        wait(50)
+      }
+    `, {
+      page: page => page.setGrid(
+        [[6, 1], [6, 8]],
+        [[1, 0], [2, 0], [1, 1], [2, 1]]
+      )
+    })
+
+    await s.expectRunning()
+    expect(s.page.pressedKeys()).toEqual(["d"])
+    expect(s.page.pressedCodes()).toEqual(["KeyD"])
+
+    s.page.setGrid(
+      [[6, 1], [6, 8]],
+      [[3, 0], [4, 0], [3, 1], [4, 1]]
+    )
+    await s.advance(50)
+    expect(s.page.pressedKeys()).toEqual(["d"])
+
+    s.page.setGrid(
+      [[6, 8]],
+      [[5, 0], [6, 0], [5, 1], [6, 1]]
+    )
+    await s.advance(50)
+    expect(s.page.pressedKeys()).toEqual(["d", "s"])
+
+    s.abort()
+    await s.expectFailed("Stopped")
+  })
+
   test("a loop that never touches the page still runs to the end", async () => {
     const s = await runScript(`
       val x = 0

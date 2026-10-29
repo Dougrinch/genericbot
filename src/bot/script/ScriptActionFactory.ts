@@ -11,6 +11,13 @@ import { filter, map } from "rxjs/operators"
 import { ok, type Result } from "../../utils/Result.ts"
 import { shared } from "../../utils/observables/Shared.ts"
 import type { Action } from "../logic/ActionsManager.ts"
+import { pressKey } from "./Keyboard.ts"
+import {
+  dominantAxisDirection,
+  nearestManhattanOffset,
+  offsetX,
+  offsetY
+} from "./Spatial.ts"
 
 export function useScriptExtensions(): ScriptExternals {
   return useBotObservable(m => m.scriptActionFactory.scriptExternals(), [])
@@ -307,6 +314,132 @@ const staticFunctionExtensions: FunctionExtension[] = [{
       await new Promise(resolve => setTimeout(resolve, 0))
     }
   }
+}, {
+  desc: {
+    name: "pressKey",
+    async: false,
+    arguments: [{
+      name: "key",
+      async: false
+    }]
+  },
+  value: pressKey
+}, {
+  desc: {
+    name: "elementCount",
+    async: false,
+    arguments: [{
+      name: "elements",
+      async: false
+    }]
+  },
+  value: (elements: ElementsRef): number => elements.elements()?.length ?? 0
+}, {
+  desc: {
+    name: "elementAttribute",
+    async: false,
+    arguments: [{
+      name: "elements",
+      async: false
+    }, {
+      name: "index",
+      async: false
+    }, {
+      name: "attribute",
+      async: false
+    }]
+  },
+  value: (elements: ElementsRef, index: number, attribute: string): string | undefined => {
+    return elements.elements()?.[index]?.getAttribute(attribute) ?? undefined
+  }
+}, {
+  desc: {
+    name: "toNumber",
+    async: false,
+    arguments: [{
+      name: "value",
+      async: false
+    }]
+  },
+  value: (value: unknown): number => Number(value)
+}, {
+  desc: {
+    name: "abs",
+    async: false,
+    arguments: [{
+      name: "value",
+      async: false
+    }]
+  },
+  value: (value: number): number => Math.abs(value)
+}, {
+  desc: {
+    name: "nearestManhattanOffset",
+    async: false,
+    arguments: [{
+      name: "targets",
+      async: false
+    }, {
+      name: "origins",
+      async: false
+    }, {
+      name: "xAttribute",
+      async: false
+    }, {
+      name: "yAttribute",
+      async: false
+    }]
+  },
+  value: (targets: ElementsRef, origins: ElementsRef, xAttribute: string, yAttribute: string) => {
+    return nearestManhattanOffset(
+      targets.elements() ?? [],
+      origins.elements() ?? [],
+      xAttribute,
+      yAttribute
+    )
+  }
+}, {
+  desc: {
+    name: "offsetX",
+    async: false,
+    arguments: [{
+      name: "offset",
+      async: false
+    }]
+  },
+  value: offsetX
+}, {
+  desc: {
+    name: "offsetY",
+    async: false,
+    arguments: [{
+      name: "offset",
+      async: false
+    }]
+  },
+  value: offsetY
+}, {
+  desc: {
+    name: "dominantAxisDirection",
+    async: false,
+    arguments: [{
+      name: "offset",
+      async: false
+    }, {
+      name: "up",
+      async: false
+    }, {
+      name: "left",
+      async: false
+    }, {
+      name: "down",
+      async: false
+    }, {
+      name: "right",
+      async: false
+    }]
+  },
+  value: dominantAxisDirection
 }, {
   desc: {
     name: "repeat",

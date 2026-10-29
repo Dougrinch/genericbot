@@ -87,6 +87,46 @@ describe("ScriptTests", () => {
     })
   })
 
+  test("element inspection and keyboard control", async () => {
+    await expectScriptCompilation({
+      elements: ["apples"],
+      script: `
+        val count = elementCount(apples)
+        val column = toNumber(elementAttribute(apples, 0, "data-column"))
+        val distance = abs(column - 5)
+        pressKey("d")
+      `,
+      expected: `
+        let count = elementCount(apples());
+        let column = toNumber(elementAttribute(apples(), 0, "data-column"));
+        let distance = abs(column - 5);
+        pressKey("d");
+      `,
+      usedFunctions: ["elementCount", "toNumber", "elementAttribute", "abs", "pressKey"],
+      usedVariables: ["apples"]
+    })
+  })
+
+  test("spatial helpers", async () => {
+    await expectScriptCompilation({
+      elements: ["apples", "playerCells"],
+      script: `
+        val offset = nearestManhattanOffset(apples, playerCells, "data-column", "data-row")
+        val dx = offsetX(offset)
+        val dy = offsetY(offset)
+        val direction = dominantAxisDirection(offset, "w", "a", "s", "d")
+      `,
+      expected: `
+        let offset = nearestManhattanOffset(apples(), playerCells(), "data-column", "data-row");
+        let dx = offsetX(offset);
+        let dy = offsetY(offset);
+        let direction = dominantAxisDirection(offset, "w", "a", "s", "d");
+      `,
+      usedFunctions: ["nearestManhattanOffset", "offsetX", "offsetY", "dominantAxisDirection"],
+      usedVariables: ["apples", "playerCells"]
+    })
+  })
+
   test("unary not", async () => {
     await expectScriptCompilation({
       variables: ["foo", "bar"],
