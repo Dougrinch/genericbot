@@ -46,4 +46,25 @@ describe("Variables", () => {
 
     await page.getVariableRow("Gold").expect().not.toBeInTheDocument()
   })
+
+  test("supports configurable decimal and thousands separators", async () => {
+    renderBotAndGame()
+
+    const score = document.createElement("span")
+    score.id = "score"
+    score.textContent = "1,234.5"
+    document.body.appendChild(score)
+
+    await openConfiguration()
+
+    const row = page.getVariableRow("score")
+    await row.getByText(/^1234.5$/).expect().toBeVisible()
+    await row.getByText("Edit").click()
+
+    await row.getByLabelText("Decimal Separator").selectOptions(",")
+    await row.getByLabelText("Thousands Separator").expect().toHaveValue(".")
+
+    score.textContent = "1.234,5"
+    await row.getByText(/^1234.5$/).expect().toBeVisible()
+  })
 })

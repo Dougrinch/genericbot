@@ -1,6 +1,6 @@
 import * as React from "react"
 import { memo, useMemo } from "react"
-import type { VariableConfig } from "../logic/Config.ts"
+import type { DecimalSeparator, VariableConfig } from "../logic/Config.ts"
 import { useVariableValue } from "../logic/VariablesManager.ts"
 import { useBotObservable, useDispatch } from "../BotManagerContext.tsx"
 import { ReorderableRow } from "./ReorderableRow.tsx"
@@ -38,6 +38,16 @@ export const VariableRow = memo((props: VariableRowProps) => {
 
       dispatch.config.updateVariable(variable.id, { [field]: value })
     }
+  }
+
+  function handleDecimalSeparatorChange(e: React.ChangeEvent<HTMLSelectElement>): void {
+    const decimalSeparator = e.target.value as DecimalSeparator
+    dispatch.config.updateVariable(variable.id, {
+      decimalSeparator,
+      thousandsSeparator: variable.thousandsSeparator === decimalSeparator
+        ? variable.decimalSeparator
+        : variable.thousandsSeparator
+    })
   }
 
   const elementsInfo = variableValue.attachments.get(ElementsInfoKey)
@@ -128,6 +138,31 @@ export const VariableRow = memo((props: VariableRowProps) => {
             <option value="number">Number</option>
             <option value="string">String</option>
           </select>
+
+          {variable.type === "number" && (
+            <>
+              <label className="label" htmlFor={`var-decimal-separator-${variable.id}`}>Decimal Separator</label>
+              <select
+                id={`var-decimal-separator-${variable.id}`}
+                value={variable.decimalSeparator}
+                onChange={handleDecimalSeparatorChange}
+              >
+                <option value=".">Dot (.)</option>
+                <option value=",">Comma (,)</option>
+              </select>
+
+              <label className="label" htmlFor={`var-thousands-separator-${variable.id}`}>Thousands Separator</label>
+              <select
+                id={`var-thousands-separator-${variable.id}`}
+                value={variable.thousandsSeparator}
+                onChange={handleInputChange("thousandsSeparator")}
+              >
+                <option value="">None</option>
+                <option value="." disabled={variable.decimalSeparator === "."}>Dot (.)</option>
+                <option value="," disabled={variable.decimalSeparator === ","}>Comma (,)</option>
+              </select>
+            </>
+          )}
         </>
       )}
       additionalContent={(

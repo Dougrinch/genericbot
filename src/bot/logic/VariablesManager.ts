@@ -6,6 +6,7 @@ import { type Observable } from "rxjs"
 import { error, flatMapResult, ok, type Result, switchMapResult } from "../../utils/Result.ts"
 import { innerTextResult } from "../../utils/observables/InnerText.ts"
 import { shared } from "../../utils/observables/Shared.ts"
+import { parseFormattedNumber } from "./NumberParsing.ts"
 
 
 export function useVariableValue(id: string): Result<VariableValue> {
@@ -64,6 +65,8 @@ export class VariablesManager {
       }
     }
 
-    return ok(variable.type === "number" ? Number(textValue) : textValue)
+    return ok(variable.type === "number"
+      ? parseFormattedNumber(textValue, variable.decimalSeparator, variable.thousandsSeparator)
+      : textValue)
   }
 }

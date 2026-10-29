@@ -163,7 +163,9 @@ export class ConfigManager {
         xpath: "",
         element: "",
         regex: "",
-        type: "number"
+        type: "number",
+        decimalSeparator: ".",
+        thousandsSeparator: ","
       })
     })
   }
@@ -349,6 +351,15 @@ function fixCompatibility(oldConfig: Config): Config {
       }
       if (variable.element === undefined) {
         variable.element = ""
+      }
+      if (variable.decimalSeparator === undefined) {
+        variable.decimalSeparator = "."
+      }
+      if (variable.thousandsSeparator === undefined) {
+        variable.thousandsSeparator = ","
+      }
+      if (variable.decimalSeparator === variable.thousandsSeparator) {
+        variable.thousandsSeparator = ""
       }
     }
   })

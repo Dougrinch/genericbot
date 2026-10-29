@@ -150,7 +150,9 @@ function seedVariables(bot: BotManager, variableNames: string[]): void {
       xpath: `//*[@data-test-variable='${index + 1}']`,
       element: "",
       regex: "",
-      type: "number"
+      type: "number",
+      decimalSeparator: ".",
+      thousandsSeparator: ","
     })
   }
 }

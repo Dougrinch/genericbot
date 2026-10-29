@@ -85,7 +85,9 @@ function initialBotConfig(): Config {
         xpath: "//span[@id='score']",
         element: "",
         regex: "",
-        type: "number"
+        type: "number",
+        decimalSeparator: ".",
+        thousandsSeparator: ","
       },
       {
         id: "var_2",
@@ -94,7 +96,9 @@ function initialBotConfig(): Config {
         xpath: "//div[@class='lives']",
         element: "",
         regex: "(\\d+)",
-        type: "number"
+        type: "number",
+        decimalSeparator: ".",
+        thousandsSeparator: ","
       },
       {
         id: "var_3",
@@ -103,7 +107,9 @@ function initialBotConfig(): Config {
         xpath: "//div[@id='name']",
         element: "",
         regex: "",
-        type: "string"
+        type: "string",
+        decimalSeparator: ".",
+        thousandsSeparator: ","
       },
       {
         id: "var_4",
@@ -112,7 +118,9 @@ function initialBotConfig(): Config {
         xpath: "//div[starts-with(., 'Gold:')][not(.//div[starts-with(., 'Gold:')])]",
         element: "",
         regex: "Gold: (\\d+)",
-        type: "number"
+        type: "number",
+        decimalSeparator: ".",
+        thousandsSeparator: ","
       }
     ],
     elements: [

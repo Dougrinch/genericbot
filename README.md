@@ -10,6 +10,10 @@ Scripts can inspect configured element collections and control the page without 
 - `offsetX(offset)` and `offsetY(offset)` expose the result for custom strategies
 - `dominantAxisDirection(offset, up, left, down, right)` maps an offset to a direction, preferring the horizontal axis on ties
 
+## Localized number variables
+
+Variables with type `Number` have independent decimal and thousands separator settings. Both separators support a dot or comma, while the thousands separator can also be disabled. Changing the decimal separator automatically swaps a conflicting thousands separator. The defaults are decimal dot and thousands comma, so values such as `226,407.5` work without extra setup.
+
 ## Grid navigation example
 
 For the apple grid, add these two Elements with **Allow multiple** enabled:

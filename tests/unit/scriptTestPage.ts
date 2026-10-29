@@ -190,6 +190,8 @@ function variable(id: string, name: string, xpath: string): VariableConfig {
     xpath,
     element: "",
     regex: "",
-    type: "number"
+    type: "number",
+    decimalSeparator: ".",
+    thousandsSeparator: ","
   }
 }

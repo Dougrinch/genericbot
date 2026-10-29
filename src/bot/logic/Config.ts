@@ -28,7 +28,12 @@ export type VariableConfig = Immutable<{
   element: string
   regex: string
   type: "number" | "string"
+  decimalSeparator: DecimalSeparator
+  thousandsSeparator: ThousandsSeparator
 }>
+
+export type DecimalSeparator = "." | ","
+export type ThousandsSeparator = "" | DecimalSeparator
 
 export type ElementConfig = Immutable<{
   id: string
