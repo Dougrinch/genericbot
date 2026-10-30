@@ -67,4 +67,17 @@ describe("Variables", () => {
     score.textContent = "1.234,5"
     await row.getByText(/^1234.5$/).expect().toBeVisible()
   })
+
+  test("displays finite numbers beyond the native number range", async () => {
+    renderBotAndGame()
+
+    const score = document.createElement("span")
+    score.id = "score"
+    score.textContent = "1.28e348"
+    document.body.appendChild(score)
+
+    await openConfiguration()
+
+    await page.getVariableRow("score").getByText(/^1\.28e\+348$/).expect().toBeVisible()
+  })
 })

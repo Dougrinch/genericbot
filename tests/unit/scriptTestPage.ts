@@ -61,7 +61,7 @@ export class TestPage {
     return Number(this.counterElement(name).textContent)
   }
 
-  setCounter(name: string, value: number): void {
+  setCounter(name: string, value: number | string): void {
     this.counterElement(name).textContent = String(value)
   }
 

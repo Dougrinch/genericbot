@@ -18,6 +18,12 @@ import {
   offsetX,
   offsetY
 } from "./Spatial.ts"
+import {
+  absoluteBotNumber,
+  printableBotValue,
+  toBotNumber,
+  type BotNumber
+} from "../logic/Numbers.ts"
 
 export function useScriptExtensions(): ScriptExternals {
   return useBotObservable(m => m.scriptActionFactory.scriptExternals(), [])
@@ -361,7 +367,7 @@ const staticFunctionExtensions: FunctionExtension[] = [{
       async: false
     }]
   },
-  value: (value: unknown): number => Number(value)
+  value: toBotNumber
 }, {
   desc: {
     name: "abs",
@@ -371,7 +377,7 @@ const staticFunctionExtensions: FunctionExtension[] = [{
       async: false
     }]
   },
-  value: (value: number): number => Math.abs(value)
+  value: (value: BotNumber): BotNumber => absoluteBotNumber(value)
 }, {
   desc: {
     name: "nearestManhattanOffset",
@@ -554,7 +560,7 @@ const staticFunctionExtensions: FunctionExtension[] = [{
     }]
   },
   value: function (msg: unknown) {
-    console.log(msg)
+    console.log(printableBotValue(msg))
   }
 }, {
   desc: {

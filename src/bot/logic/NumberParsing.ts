@@ -1,11 +1,12 @@
 import type { DecimalSeparator, ThousandsSeparator } from "./Config.ts"
+import { parseBotNumber, type BotNumber } from "./Numbers.ts"
 
 
 export function parseFormattedNumber(
   value: string,
   decimalSeparator: DecimalSeparator,
   thousandsSeparator: ThousandsSeparator
-): number {
+): BotNumber {
   if (decimalSeparator === thousandsSeparator) {
     return Number.NaN
   }
@@ -16,5 +17,5 @@ export function parseFormattedNumber(
   const normalized = decimalSeparator === "."
     ? withoutThousands
     : withoutThousands.replaceAll(decimalSeparator, ".")
-  return Number(normalized)
+  return parseBotNumber(normalized)
 }

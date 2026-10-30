@@ -27,6 +27,11 @@ import {
 } from "./generated/script.terms.ts"
 import { findClosestScope, type LintResult, type LintScope } from "./ScriptLinter.ts"
 import { error, ok, type Result } from "../../utils/Result.ts"
+import {
+  evaluateScriptBinary,
+  parseBotNumber,
+  scriptValueIsTruthy
+} from "../logic/Numbers.ts"
 
 export const CONTEXT: unique symbol = Symbol("Context")
 export type Context = object & { readonly [CONTEXT]: never }
@@ -109,22 +114,6 @@ function compileNode(root: LintScope, node: SyntaxNode, code: string): Result<Co
         return `{${newLine}${singleOffset}${nested}${newLine}}`
       } else {
         return `{${newLine}}`
-      }
-    }
-
-    switch (node.type.name) {
-      case "CompareOperator":
-      case "LogicOperator":
-      case "ArithmeticOperator": {
-        const op = slice(node)
-        switch (op) {
-          case "==":
-            return "==="
-          case "!=":
-            return "!=="
-          default:
-            return op
-        }
       }
     }
 
@@ -212,12 +201,12 @@ function compileNode(root: LintScope, node: SyntaxNode, code: string): Result<Co
       case WhileStatement: {
         const condition = node.getChild(Expression)!
         const body = node.getChild(CodeBlock)!
-        return `while (${compileNode(condition, depth)}) ${nestedBlock(body)}`
+        return `while ($truthy(${compileNode(condition, depth)})) ${nestedBlock(body)}`
       }
       case DoWhileStatement: {
         const body = node.getChild(CodeBlock)!
         const condition = node.getChild(Expression)!
-        return `do ${nestedBlock(body)} while (${compileNode(condition, depth)})`
+        return `do ${nestedBlock(body)} while ($truthy(${compileNode(condition, depth)}))`
       }
       case IfStatement: {
         const condition = node.getChild(Expression)!
@@ -227,12 +216,12 @@ function compileNode(root: LintScope, node: SyntaxNode, code: string): Result<Co
           const nestedIfStatement = elseStatement.getChild(IfStatement)
           const elseCodeBlock = elseStatement.getChild(CodeBlock)
           if (nestedIfStatement) {
-            return `if (${compileNode(condition, depth)}) ${nestedBlock(body)} else ${compileNode(nestedIfStatement, depth)}`
+            return `if ($truthy(${compileNode(condition, depth)})) ${nestedBlock(body)} else ${compileNode(nestedIfStatement, depth)}`
           } else {
-            return `if (${compileNode(condition, depth)}) ${nestedBlock(body)} else ${nestedBlock(elseCodeBlock!)}`
+            return `if ($truthy(${compileNode(condition, depth)})) ${nestedBlock(body)} else ${nestedBlock(elseCodeBlock!)}`
           }
         } else {
-          return `if (${compileNode(condition, depth)}) ${nestedBlock(body)}`
+          return `if ($truthy(${compileNode(condition, depth)})) ${nestedBlock(body)}`
         }
       }
       case VariableDeclaration: {
@@ -249,12 +238,19 @@ function compileNode(root: LintScope, node: SyntaxNode, code: string): Result<Co
         const left = node.firstChild!
         const operator = left.nextSibling!
         const right = node.lastChild!
-        return `${compileNode(left, depth)} ${compileNode(operator, depth)} ${compileNode(right, depth)}`
+        const operatorCode = slice(operator)
+        if (operatorCode === "&&" || operatorCode === "||") {
+          const leftCode = compileNode(left, depth)
+          const rightCode = compileNode(right, depth)
+          const whenTruthy = operatorCode === "&&" ? rightCode : "$left"
+          const whenFalsy = operatorCode === "&&" ? "$left" : rightCode
+          return `await (async ($left) => $truthy($left) ? ${whenTruthy} : ${whenFalsy})(${leftCode})`
+        }
+        return `$binary("${operatorCode}", ${compileNode(left, depth)}, ${compileNode(right, depth)})`
       }
       case UnaryExpression: {
-        const operator = node.firstChild!
         const value = node.getChild(Expression)!
-        return `${compileNode(operator, depth)}${compileNode(value, depth)}`
+        return `!$truthy(${compileNode(value, depth)})`
       }
       case Identifier: {
         const name = slice(node)
@@ -289,9 +285,14 @@ function compileNode(root: LintScope, node: SyntaxNode, code: string): Result<Co
         return `return ${compileNode(value, depth)}`
       }
       case StringTerm:
-      case NumberTerm:
       case BooleanTerm: {
         return slice(node)
+      }
+      case NumberTerm: {
+        const numberCode = slice(node)
+        return Number.isFinite(Number(numberCode))
+          ? numberCode
+          : `$number("${numberCode}")`
       }
       default: {
         return `${node.type.name}(/*${slice(node)}*/)`
@@ -307,7 +308,11 @@ function compileNode(root: LintScope, node: SyntaxNode, code: string): Result<Co
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-implied-eval,@typescript-eslint/no-unsafe-call
-    const func = new Function(scriptCode)() as (ctx: object) => Promise<void>
+    const func = new Function("$binary", "$number", "$truthy", scriptCode)(
+      evaluateScriptBinary,
+      parseBotNumber,
+      scriptValueIsTruthy
+    ) as (ctx: object) => Promise<void>
     return ok({
       code: scriptCode,
       function: func,

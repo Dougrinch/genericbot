@@ -7,13 +7,14 @@ import { error, flatMapResult, ok, type Result, switchMapResult } from "../../ut
 import { innerTextResult } from "../../utils/observables/InnerText.ts"
 import { shared } from "../../utils/observables/Shared.ts"
 import { parseFormattedNumber } from "./NumberParsing.ts"
+import type { BotNumber } from "./Numbers.ts"
 
 
 export function useVariableValue(id: string): Result<VariableValue> {
   return useBotObservable(m => m.variables.value(id), [id])
 }
 
-export type VariableValue = number | string
+export type VariableValue = BotNumber | string
 
 
 export class VariablesManager {

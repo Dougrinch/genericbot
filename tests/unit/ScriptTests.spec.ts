@@ -24,7 +24,7 @@ describe("ScriptTests", () => {
         val a = foo + 2
       `,
       expected: `
-        let a = foo() + 2;
+        let a = $binary("+", foo(), 2);
       `
     })
   })
@@ -67,7 +67,7 @@ describe("ScriptTests", () => {
       `,
       expected: `
         async function plusFive(n) {
-          return n + 5;
+          return $binary("+", n, 5);
         };
         
         alert(await plusFive(2));
@@ -99,7 +99,7 @@ describe("ScriptTests", () => {
       expected: `
         let count = elementCount(apples());
         let column = toNumber(elementAttribute(apples(), 0, "data-column"));
-        let distance = abs(column - 5);
+        let distance = abs($binary("-", column, 5));
         pressKey("d");
       `,
       usedFunctions: ["elementCount", "toNumber", "elementAttribute", "abs", "pressKey"],
@@ -135,8 +135,19 @@ describe("ScriptTests", () => {
         val b = !(foo == bar)
       `,
       expected: `
-        let a = !foo();
-        let b = !(foo() === bar());
+        let a = !$truthy(foo());
+        let b = !$truthy(($binary("==", foo(), bar())));
+      `
+    })
+  })
+
+  test("large number literal", async () => {
+    await expectScriptCompilation({
+      script: `
+        val value = 1.28e348 / 2
+      `,
+      expected: `
+        let value = $binary("/", $number("1.28e348"), 2);
       `
     })
   })
@@ -173,7 +184,7 @@ describe("custom functions", () => {
       `,
       expected: `
         async function add(a,b) {
-          return a + b;
+          return $binary("+", a, b);
         };
         print(await add(1, await add(2, 3)));
       `
@@ -237,8 +248,8 @@ describe("custom functions", () => {
       `,
       expected: `
         async function countdown(n) {
-          if (n > 0) {
-            await countdown(n - 1);
+          if ($truthy($binary(">", n, 0))) {
+            await countdown($binary("-", n, 1));
           };
         };
         await countdown(3);
@@ -285,9 +296,9 @@ describe("custom functions", () => {
       `,
       expected: `
         async function done() {
-          return foo() >= 2;
+          return $binary(">=", foo(), 2);
         };
-        while (!await done()) {
+        while ($truthy(!$truthy(await done()))) {
           print(foo());
         };
       `

@@ -70,6 +70,44 @@ describe("ScriptActions", () => {
     expect(s.page.counter("a")).toBe(1)
   })
 
+  test("large variables support arithmetic, comparisons and large literals", async () => {
+    const s = await runScript(`
+      val half = counterA / 2
+      print(half)
+      print(counterA + counterA)
+      print(counterA - counterA)
+      print(counterA * 2)
+      print(counterA % 1e348)
+      if (half > counterB && counterA == 1.28e348) {
+        print("ready")
+      }
+    `, {
+      page: page => {
+        page.setCounter("a", "1.28e348")
+        page.setCounter("b", "6e347")
+      }
+    })
+
+    await s.expectCompleted()
+    expect(s.printed()).toEqual([
+      "6.4e+347",
+      "2.56e+348",
+      "0",
+      "2.56e+348",
+      "2.8e+347",
+      "ready"
+    ])
+  })
+
+  test("arithmetic promotes a native result instead of overflowing", async () => {
+    const s = await runScript(`print(counterA * 2)`, {
+      page: page => page.setCounter("a", "1e308")
+    })
+
+    await s.expectCompleted()
+    expect(s.printed()).toEqual(["2e+308"])
+  })
+
   test("wait suspends the script for the given delay", async () => {
     const s = await runScript(`
       click(buttonA)

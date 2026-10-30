@@ -15,6 +15,10 @@ describe("parseFormattedNumber", () => {
     expect(parseFormattedNumber("12,5", ",", "")).toBe(12.5)
   })
 
+  test("parses a finite value beyond the native number range", () => {
+    expect(String(parseFormattedNumber("1,28e348", ",", ""))).toBe("1.28e+348")
+  })
+
   test("rejects an ambiguous separator configuration", () => {
     expect(parseFormattedNumber("1.234", ".", ".")).toBeNaN()
   })
